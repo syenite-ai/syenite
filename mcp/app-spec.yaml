@@ -1,0 +1,41 @@
+name: syenite-mcp
+region: nyc
+services:
+  - name: mcp-server
+    github:
+      repo: sap-tlabs/syenite
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: mcp/Dockerfile
+    source_dir: mcp
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    routes:
+      - path: /
+    envs:
+      - key: ALCHEMY_API_KEY
+        value: "${ALCHEMY_API_KEY}"
+        type: SECRET
+      - key: ADMIN_PASSWORD
+        value: "${ADMIN_PASSWORD}"
+        type: SECRET
+      - key: SEED_API_KEY
+        value: "${SEED_API_KEY}"
+        type: SECRET
+      - key: DATABASE_PATH
+        value: /data/syenite.db
+      - key: PORT
+        value: "3000"
+      - key: NODE_ENV
+        value: production
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 10
+      period_seconds: 30
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+domains:
+  - domain: syenite.ai
+    type: PRIMARY
