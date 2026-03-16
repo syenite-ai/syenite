@@ -13,11 +13,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist/ dist/
 
+RUN mkdir -p /data && chown node:node /data
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV DATABASE_PATH=/data/syenite.db
 
-VOLUME /data
 EXPOSE 3000
 
 USER node

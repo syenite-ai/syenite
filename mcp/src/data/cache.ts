@@ -1,10 +1,26 @@
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import Database from "better-sqlite3";
 
 let db: Database.Database | null = null;
 
+function resolveDbPath(): string {
+  const preferred = process.env.DATABASE_PATH;
+  if (preferred) {
+    const dir = dirname(preferred);
+    try {
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+      return preferred;
+    } catch {
+      console.warn(`Cannot create ${dir}, falling back to /tmp/syenite.db`);
+    }
+  }
+  return "/tmp/syenite.db";
+}
+
 export function getDb(dbPath?: string): Database.Database {
   if (db) return db;
-  const path = dbPath ?? process.env.DATABASE_PATH ?? "./syenite.db";
+  const path = dbPath ?? resolveDbPath();
   db = new Database(path);
   db.pragma("journal_mode = WAL");
   initSchema(db);
