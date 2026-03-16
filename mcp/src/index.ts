@@ -1,0 +1,151 @@
+import "dotenv/config";
+import express from "express";
+import { randomUUID } from "node:crypto";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createMcpServer } from "./server.js";
+import { validateApiKey, seedApiKeyFromEnv } from "./auth/keys.js";
+import { checkRateLimit } from "./auth/rate-limit.js";
+import { getHealthStatus } from "./logging/health.js";
+import { getUsageStats } from "./logging/usage.js";
+import { landingPageHtml } from "./web/landing.js";
+import { dashboardHtml } from "./web/dashboard.js";
+import { wellKnownMcp } from "./web/well-known.js";
+
+const PORT = parseInt(process.env.PORT ?? "3000", 10);
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin";
+
+seedApiKeyFromEnv();
+
+const app = express();
+app.use(express.json());
+
+// ── MCP Endpoint (stateless) ────────────────────────────────────────
+
+app.post("/mcp", async (req, res) => {
+  // Extract API key from auth header
+  const authHeader = req.headers.authorization;
+  const apiKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+  // Validate API key (allow anonymous for now, but log it)
+  let keyName: string | undefined;
+  if (apiKey) {
+    const validation = validateApiKey(apiKey);
+    if (!validation.valid) {
+      res.status(401).json({
+        jsonrpc: "2.0",
+        error: { code: -32001, message: "Invalid API key" },
+        id: null,
+      });
+      return;
+    }
+    keyName = validation.name;
+
+    const rateCheck = checkRateLimit(apiKey);
+    if (!rateCheck.allowed) {
+      res.status(429).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32002,
+          message: `Rate limit exceeded. Resets at ${new Date(rateCheck.resetAt).toISOString()}`,
+        },
+        id: null,
+      });
+      return;
+    }
+  }
+
+  try {
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+
+    const server = createMcpServer(apiKey);
+
+    res.on("close", () => {
+      transport.close();
+      server.close();
+    });
+
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (e) {
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32603,
+          message: e instanceof Error ? e.message : "Internal server error",
+        },
+        id: null,
+      });
+    }
+  }
+});
+
+app.get("/mcp", (_req, res) => {
+  res.status(405).json({ error: "Use POST for MCP requests. See / for documentation." });
+});
+
+app.delete("/mcp", (_req, res) => {
+  res.status(405).json({ error: "Session management not available (stateless mode)." });
+});
+
+// ── Web Routes ──────────────────────────────────────────────────────
+
+app.get("/", (_req, res) => {
+  res.type("html").send(landingPageHtml());
+});
+
+app.get("/health", async (_req, res) => {
+  const health = await getHealthStatus();
+  res.status(health.status === "unhealthy" ? 503 : 200).json(health);
+});
+
+app.get("/.well-known/mcp.json", (_req, res) => {
+  res.json(wellKnownMcp());
+});
+
+// ── Dashboard (password-protected) ──────────────────────────────────
+
+app.get("/dashboard", (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith("Basic ")) {
+    res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
+    res.status(401).send("Authentication required");
+    return;
+  }
+  const decoded = Buffer.from(auth.slice(6), "base64").toString();
+  const [, password] = decoded.split(":");
+  if (password !== ADMIN_PASSWORD) {
+    res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
+    res.status(401).send("Invalid credentials");
+    return;
+  }
+  const stats = getUsageStats();
+  res.type("html").send(dashboardHtml(stats));
+});
+
+app.get("/dashboard/stats", (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Basic ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const decoded = Buffer.from(auth.slice(6), "base64").toString();
+  const [, password] = decoded.split(":");
+  if (password !== ADMIN_PASSWORD) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  res.json(getUsageStats());
+});
+
+// ── Start ───────────────────────────────────────────────────────────
+
+app.listen(PORT, () => {
+  console.log(`Syenite MCP Lending Server running on http://localhost:${PORT}`);
+  console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
+  console.log(`  Landing page:  http://localhost:${PORT}/`);
+  console.log(`  Health check:  http://localhost:${PORT}/health`);
+  console.log(`  Dashboard:     http://localhost:${PORT}/dashboard`);
+});

@@ -1,0 +1,320 @@
+import { type Address, formatUnits } from "viem";
+import { getClient } from "./client.js";
+import { cacheGet, cacheSet } from "./cache.js";
+import { getBtcPrice, getStablePrice } from "./prices.js";
+import {
+  AAVE_V3,
+  TOKENS,
+  TOKEN_DECIMALS,
+  CACHE_TTL,
+  RAY,
+  type ProtocolRate,
+  type PositionData,
+} from "./types.js";
+
+// ── Minimal ABIs ────────────────────────────────────────────────────
+
+const poolAbi = [
+  {
+    name: "getReserveData",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "asset", type: "address" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "configuration", type: "uint256" },
+          { name: "liquidityIndex", type: "uint128" },
+          { name: "currentLiquidityRate", type: "uint128" },
+          { name: "variableBorrowIndex", type: "uint128" },
+          { name: "currentVariableBorrowRate", type: "uint128" },
+          { name: "currentStableBorrowRate", type: "uint128" },
+          { name: "lastUpdateTimestamp", type: "uint40" },
+          { name: "id", type: "uint16" },
+          { name: "aTokenAddress", type: "address" },
+          { name: "stableDebtTokenAddress", type: "address" },
+          { name: "variableDebtTokenAddress", type: "address" },
+          { name: "interestRateStrategyAddress", type: "address" },
+          { name: "accruedToTreasury", type: "uint128" },
+          { name: "unbacked", type: "uint128" },
+          { name: "isolationModeTotalDebt", type: "uint128" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "getUserAccountData",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [
+      { name: "totalCollateralBase", type: "uint256" },
+      { name: "totalDebtBase", type: "uint256" },
+      { name: "availableBorrowsBase", type: "uint256" },
+      { name: "currentLiquidationThreshold", type: "uint256" },
+      { name: "ltv", type: "uint256" },
+      { name: "healthFactor", type: "uint256" },
+    ],
+  },
+] as const;
+
+const dataProviderAbi = [
+  {
+    name: "getReserveConfigurationData",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "asset", type: "address" }],
+    outputs: [
+      { name: "decimals", type: "uint256" },
+      { name: "ltv", type: "uint256" },
+      { name: "liquidationThreshold", type: "uint256" },
+      { name: "liquidationBonus", type: "uint256" },
+      { name: "reserveFactor", type: "uint256" },
+      { name: "usageAsCollateralEnabled", type: "bool" },
+      { name: "borrowingEnabled", type: "bool" },
+      { name: "stableBorrowRateEnabled", type: "bool" },
+      { name: "isActive", type: "bool" },
+      { name: "isFrozen", type: "bool" },
+    ],
+  },
+  {
+    name: "getReserveData",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "asset", type: "address" }],
+    outputs: [
+      { name: "unbacked", type: "uint256" },
+      { name: "accruedToTreasuryScaled", type: "uint256" },
+      { name: "totalAToken", type: "uint256" },
+      { name: "totalStableDebt", type: "uint256" },
+      { name: "totalVariableDebt", type: "uint256" },
+      { name: "liquidityRate", type: "uint256" },
+      { name: "variableBorrowRate", type: "uint256" },
+      { name: "stableBorrowRate", type: "uint256" },
+      { name: "averageStableBorrowRate", type: "uint256" },
+      { name: "liquidityIndex", type: "uint256" },
+      { name: "variableBorrowIndex", type: "uint256" },
+      { name: "lastUpdateTimestamp", type: "uint40" },
+    ],
+  },
+  {
+    name: "getUserReserveData",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "asset", type: "address" },
+      { name: "user", type: "address" },
+    ],
+    outputs: [
+      { name: "currentATokenBalance", type: "uint256" },
+      { name: "currentStableDebt", type: "uint256" },
+      { name: "currentVariableDebt", type: "uint256" },
+      { name: "principalStableDebt", type: "uint256" },
+      { name: "scaledVariableDebt", type: "uint256" },
+      { name: "stableBorrowRate", type: "uint256" },
+      { name: "liquidityRate", type: "uint256" },
+      { name: "stableRateLastUpdated", type: "uint40" },
+      { name: "usageAsCollateralEnabled", type: "bool" },
+    ],
+  },
+] as const;
+
+// ── Helpers ─────────────────────────────────────────────────────────
+
+// Aave V3 rates from getReserveData are annualized rates in RAY (1e27)
+function rayToPercent(rayRate: bigint): number {
+  return (Number(rayRate) / Number(RAY)) * 100;
+}
+
+// ── Public API ──────────────────────────────────────────────────────
+
+const BTC_WRAPPERS: Array<{ symbol: string; address: Address }> = [
+  { symbol: "wBTC", address: TOKENS.wBTC },
+  { symbol: "tBTC", address: TOKENS.tBTC },
+  { symbol: "cbBTC", address: TOKENS.cbBTC },
+];
+
+export async function getAaveRates(
+  collateralFilter?: string,
+  borrowAsset: string = "USDC"
+): Promise<ProtocolRate[]> {
+  const cacheKey = `aave:rates:${collateralFilter ?? "all"}:${borrowAsset}`;
+  const cached = cacheGet<ProtocolRate[]>(cacheKey);
+  if (cached) return cached;
+
+  const client = getClient();
+  const btcPrice = await getBtcPrice();
+
+  const wrappers =
+    collateralFilter && collateralFilter !== "all"
+      ? BTC_WRAPPERS.filter((w) => w.symbol === collateralFilter)
+      : BTC_WRAPPERS;
+
+  // Borrow rate comes from the borrow asset's reserve (shared pool)
+  const borrowAssetAddress = TOKENS[borrowAsset];
+  if (!borrowAssetAddress) return [];
+
+  const borrowReserve = await client.readContract({
+    address: AAVE_V3.pool,
+    abi: poolAbi,
+    functionName: "getReserveData",
+    args: [borrowAssetAddress],
+  });
+  const borrowAPY = rayToPercent(borrowReserve.currentVariableBorrowRate);
+
+  // Get borrow asset liquidity (available to borrow)
+  const borrowDpData = await client.readContract({
+    address: AAVE_V3.poolDataProvider,
+    abi: dataProviderAbi,
+    functionName: "getReserveData",
+    args: [borrowAssetAddress],
+  });
+  const borrowDecimals = TOKEN_DECIMALS[borrowAsset] ?? 6;
+  const totalBorrowSupply = Number(formatUnits(borrowDpData[2], borrowDecimals));
+  const totalBorrowed =
+    Number(formatUnits(borrowDpData[3], borrowDecimals)) +
+    Number(formatUnits(borrowDpData[4], borrowDecimals));
+  const borrowAvailableLiquidity = totalBorrowSupply - totalBorrowed;
+  const borrowUtilization =
+    totalBorrowSupply > 0 ? (totalBorrowed / totalBorrowSupply) * 100 : 0;
+
+  const results: ProtocolRate[] = [];
+
+  for (const wrapper of wrappers) {
+    try {
+      const [configData, collateralReserve] = await Promise.all([
+        client.readContract({
+          address: AAVE_V3.poolDataProvider,
+          abi: dataProviderAbi,
+          functionName: "getReserveConfigurationData",
+          args: [wrapper.address],
+        }),
+        client.readContract({
+          address: AAVE_V3.pool,
+          abi: poolAbi,
+          functionName: "getReserveData",
+          args: [wrapper.address],
+        }),
+      ]);
+
+      if (!configData[8]) continue; // isActive
+      if (!configData[5]) continue; // usageAsCollateralEnabled
+
+      const supplyAPY = rayToPercent(collateralReserve.currentLiquidityRate);
+
+      results.push({
+        protocol: "aave-v3",
+        market: `Aave v3 ${wrapper.symbol}/${borrowAsset}`,
+        collateral: wrapper.symbol,
+        borrowAsset,
+        supplyAPY,
+        borrowAPY,
+        availableLiquidity: borrowAvailableLiquidity,
+        availableLiquidityUSD: borrowAvailableLiquidity,
+        totalSupply: totalBorrowSupply,
+        totalBorrow: totalBorrowed,
+        utilization: borrowUtilization,
+        maxLTV: Number(configData[1]) / 100,
+        liquidationThreshold: Number(configData[2]) / 100,
+        lastUpdated: new Date().toISOString(),
+      });
+    } catch {
+      // Reserve not available for this wrapper
+    }
+  }
+
+  if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.rates);
+  return results;
+}
+
+export async function getAavePosition(
+  userAddress: Address,
+  collateralSymbol?: string
+): Promise<PositionData[]> {
+  const client = getClient();
+  const btcPrice = await getBtcPrice();
+  const positions: PositionData[] = [];
+
+  const accountData = await client.readContract({
+    address: AAVE_V3.pool,
+    abi: poolAbi,
+    functionName: "getUserAccountData",
+    args: [userAddress],
+  });
+
+  // Aave returns base currency values in 8 decimals (USD)
+  const totalCollateralUSD = Number(formatUnits(accountData[0], 8));
+  const totalDebtUSD = Number(formatUnits(accountData[1], 8));
+  const healthFactor = Number(formatUnits(accountData[5], 18));
+
+  if (totalCollateralUSD === 0 && totalDebtUSD === 0) return [];
+
+  const wrappers =
+    collateralSymbol && collateralSymbol !== "all"
+      ? BTC_WRAPPERS.filter((w) => w.symbol === collateralSymbol)
+      : BTC_WRAPPERS;
+
+  for (const wrapper of wrappers) {
+    try {
+      const userReserve = await client.readContract({
+        address: AAVE_V3.poolDataProvider,
+        abi: dataProviderAbi,
+        functionName: "getUserReserveData",
+        args: [wrapper.address, userAddress],
+      });
+
+      const collDecimals = TOKEN_DECIMALS[wrapper.symbol] ?? 8;
+      const collateralAmount = Number(formatUnits(userReserve[0], collDecimals));
+      if (collateralAmount === 0) continue;
+
+      const collateralUSD = collateralAmount * btcPrice;
+      const currentLTV =
+        collateralUSD > 0 ? (totalDebtUSD / collateralUSD) * 100 : 0;
+
+      const liqThreshold = Number(accountData[3]) / 10000;
+      const liquidationPrice =
+        collateralAmount > 0 && liqThreshold > 0
+          ? totalDebtUSD / (collateralAmount * liqThreshold)
+          : 0;
+      const distanceToLiq =
+        btcPrice > 0 ? ((btcPrice - liquidationPrice) / btcPrice) * 100 : 0;
+
+      // Borrow rate from USDC reserve
+      const usdcReserve = await client.readContract({
+        address: AAVE_V3.pool,
+        abi: poolAbi,
+        functionName: "getReserveData",
+        args: [TOKENS.USDC],
+      });
+      const borrowRate = rayToPercent(usdcReserve.currentVariableBorrowRate);
+
+      positions.push({
+        protocol: "aave-v3",
+        market: `Aave v3 ${wrapper.symbol}`,
+        address: userAddress,
+        collateral: {
+          asset: wrapper.symbol,
+          amount: collateralAmount,
+          valueUSD: collateralUSD,
+        },
+        debt: {
+          asset: "USDC",
+          amount: totalDebtUSD,
+          valueUSD: totalDebtUSD,
+        },
+        currentLTV,
+        healthFactor,
+        liquidationPrice,
+        distanceToLiquidation: distanceToLiq,
+        borrowRate,
+        estimatedAnnualCost: totalDebtUSD * (borrowRate / 100),
+      });
+    } catch {
+      // No position in this market
+    }
+  }
+
+  return positions;
+}
