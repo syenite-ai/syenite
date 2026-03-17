@@ -1,4 +1,4 @@
-import { getAaveRates } from "../data/aave.js";
+import { getAaveRates, getSparkRates } from "../data/aave.js";
 import { getMorphoRates } from "../data/morpho.js";
 import type { ProtocolRate } from "../data/types.js";
 
@@ -27,14 +27,16 @@ export async function handleRatesQuery(params: {
   const collateral = params.collateral ?? "all";
   const borrowAsset = params.borrowAsset ?? "USDC";
 
-  const [aaveRates, morphoRates] = await Promise.allSettled([
+  const [aaveRates, morphoRates, sparkRates] = await Promise.allSettled([
     getAaveRates(collateral, borrowAsset),
     getMorphoRates(collateral, borrowAsset),
+    getSparkRates(collateral, borrowAsset),
   ]);
 
   const allRates: ProtocolRate[] = [
     ...(aaveRates.status === "fulfilled" ? aaveRates.value : []),
     ...(morphoRates.status === "fulfilled" ? morphoRates.value : []),
+    ...(sparkRates.status === "fulfilled" ? sparkRates.value : []),
   ];
 
   if (allRates.length === 0) {

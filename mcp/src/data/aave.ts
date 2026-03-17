@@ -4,11 +4,13 @@ import { cacheGet, cacheSet } from "./cache.js";
 import { getTokenPrice } from "./prices.js";
 import {
   AAVE_V3,
+  SPARK,
   TOKENS,
   TOKEN_DECIMALS,
   COLLATERAL_ASSETS,
   CACHE_TTL,
   RAY,
+  type Protocol,
   type ProtocolRate,
   type PositionData,
 } from "./types.js";
@@ -129,13 +131,16 @@ function rayToPercent(rayRate: bigint): number {
   return (Number(rayRate) / Number(RAY)) * 100;
 }
 
-// ── Public API ──────────────────────────────────────────────────────
+// ── Shared Aave-fork fetcher (used by Aave v3 and Spark) ────────────
 
-export async function getAaveRates(
+export async function getAaveForkRates(
+  protocolName: Protocol,
+  poolAddress: Address,
+  dataProviderAddress: Address,
   collateralFilter?: string,
   borrowAsset: string = "USDC"
 ): Promise<ProtocolRate[]> {
-  const cacheKey = `aave:rates:${collateralFilter ?? "all"}:${borrowAsset}`;
+  const cacheKey = `${protocolName}:rates:${collateralFilter ?? "all"}:${borrowAsset}`;
   const cached = cacheGet<ProtocolRate[]>(cacheKey);
   if (cached) return cached;
 
@@ -150,7 +155,7 @@ export async function getAaveRates(
   if (!borrowAssetAddress) return [];
 
   const borrowReserve = await client.readContract({
-    address: AAVE_V3.pool,
+    address: poolAddress,
     abi: poolAbi,
     functionName: "getReserveData",
     args: [borrowAssetAddress],
@@ -158,7 +163,7 @@ export async function getAaveRates(
   const borrowAPY = rayToPercent(borrowReserve.currentVariableBorrowRate);
 
   const borrowDpData = await client.readContract({
-    address: AAVE_V3.poolDataProvider,
+    address: dataProviderAddress,
     abi: dataProviderAbi,
     functionName: "getReserveData",
     args: [borrowAssetAddress],
@@ -178,13 +183,13 @@ export async function getAaveRates(
     try {
       const [configData, collateralReserve] = await Promise.all([
         client.readContract({
-          address: AAVE_V3.poolDataProvider,
+          address: dataProviderAddress,
           abi: dataProviderAbi,
           functionName: "getReserveConfigurationData",
           args: [asset.address],
         }),
         client.readContract({
-          address: AAVE_V3.pool,
+          address: poolAddress,
           abi: poolAbi,
           functionName: "getReserveData",
           args: [asset.address],
@@ -196,9 +201,10 @@ export async function getAaveRates(
 
       const supplyAPY = rayToPercent(collateralReserve.currentLiquidityRate);
 
+      const displayName = protocolName === "aave-v3" ? "Aave v3" : "Spark";
       results.push({
-        protocol: "aave-v3",
-        market: `Aave v3 ${asset.symbol}/${borrowAsset}`,
+        protocol: protocolName,
+        market: `${displayName} ${asset.symbol}/${borrowAsset}`,
         collateral: asset.symbol,
         borrowAsset,
         supplyAPY,
@@ -219,6 +225,14 @@ export async function getAaveRates(
 
   if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.rates);
   return results;
+}
+
+export function getAaveRates(collateralFilter?: string, borrowAsset?: string) {
+  return getAaveForkRates("aave-v3", AAVE_V3.pool, AAVE_V3.poolDataProvider, collateralFilter, borrowAsset);
+}
+
+export function getSparkRates(collateralFilter?: string, borrowAsset?: string) {
+  return getAaveForkRates("spark", SPARK.pool, SPARK.poolDataProvider, collateralFilter, borrowAsset);
 }
 
 export async function getAavePosition(

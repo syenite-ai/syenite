@@ -49,6 +49,11 @@ export const AAVE_V3 = {
   uiPoolDataProvider: getAddress("0x91c0ea31b49b69ea18607702c5d9ac360bf3de7d"),
 };
 
+export const SPARK = {
+  pool: getAddress("0xc13e21b648a5ee794902342038ff3adab66be987"),
+  poolDataProvider: getAddress("0xfc21d6d146e6086b8359705c8b28512a983db0cb"),
+};
+
 export const MORPHO = {
   blue: getAddress("0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb"),
   adaptiveCurveIrm: getAddress("0x870ac11d48b15db9a138cf899d20f13f79ba00bc"),

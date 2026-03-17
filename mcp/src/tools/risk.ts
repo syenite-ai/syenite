@@ -1,4 +1,4 @@
-import { getAaveRates } from "../data/aave.js";
+import { getAaveRates, getSparkRates } from "../data/aave.js";
 import { getMorphoRates } from "../data/morpho.js";
 import { getTokenPrice } from "../data/prices.js";
 import type { ProtocolRate, RiskAssessment } from "../data/types.js";
@@ -73,12 +73,17 @@ export async function handleRiskAssess(params: {
   const collateralUSD = collateralAmount * assetPrice;
   const borrowAmount = collateralUSD * (targetLTV / 100);
 
-  const [aaveRates, morphoRates] = await Promise.all([
+  const [aaveRates, morphoRates, sparkRates] = await Promise.allSettled([
     getAaveRates(collateral, borrowAsset),
     getMorphoRates(collateral, borrowAsset),
+    getSparkRates(collateral, borrowAsset),
   ]);
 
-  const allRates = [...aaveRates, ...morphoRates];
+  const allRates = [
+    ...(aaveRates.status === "fulfilled" ? aaveRates.value : []),
+    ...(morphoRates.status === "fulfilled" ? morphoRates.value : []),
+    ...(sparkRates.status === "fulfilled" ? sparkRates.value : []),
+  ];
 
   if (allRates.length === 0) {
     return JSON.stringify({
@@ -91,7 +96,7 @@ export async function handleRiskAssess(params: {
   if (protocolPref === "best") {
     candidates = allRates;
   } else {
-    const proto = protocolPref.includes("aave") ? "aave-v3" : "morpho-blue";
+    const proto = protocolPref.includes("aave") ? "aave-v3" : protocolPref.includes("spark") ? "spark" : "morpho-blue";
     candidates = allRates.filter((r) => r.protocol === proto);
     if (candidates.length === 0) candidates = allRates;
   }

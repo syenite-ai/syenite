@@ -86,6 +86,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
             protocols: [
               "Aave v3",
               "Morpho Blue",
+              "Spark (SparkLend)",
             ],
             assets: {
               collateral: ["wBTC", "tBTC", "cbBTC", "ETH", "WETH", "wstETH", "rETH", "cbETH"],
@@ -146,7 +147,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
     {
       address: z.string().describe("Ethereum address to check"),
       protocol: z
-        .enum(["aave-v3", "morpho", "all"])
+        .enum(["aave-v3", "morpho", "spark", "all"])
         .default("all")
         .describe("Protocol filter"),
     },
@@ -180,7 +181,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
         .max(99)
         .describe("Desired LTV percentage (1-99)"),
       protocol: z
-        .enum(["aave-v3", "morpho", "best"])
+        .enum(["aave-v3", "morpho", "spark", "best"])
         .default("best")
         .describe("Protocol preference"),
     },

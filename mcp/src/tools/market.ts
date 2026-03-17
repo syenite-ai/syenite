@@ -1,4 +1,4 @@
-import { getAaveRates } from "../data/aave.js";
+import { getAaveRates, getSparkRates } from "../data/aave.js";
 import { getMorphoRates } from "../data/morpho.js";
 import type { ProtocolRate } from "../data/types.js";
 
@@ -21,17 +21,22 @@ export async function handleMarketOverview(params: {
 }): Promise<string> {
   const collateral = params.collateral ?? "all";
 
-  const [aaveRates, morphoRates] = await Promise.all([
+  const [aaveRates, morphoRates, sparkRates] = await Promise.allSettled([
     getAaveRates(collateral),
     getMorphoRates(collateral),
+    getSparkRates(collateral),
   ]);
 
-  const allRates = [...aaveRates, ...morphoRates];
+  const allRates = [
+    ...(aaveRates.status === "fulfilled" ? aaveRates.value : []),
+    ...(morphoRates.status === "fulfilled" ? morphoRates.value : []),
+    ...(sparkRates.status === "fulfilled" ? sparkRates.value : []),
+  ];
 
   if (allRates.length === 0) {
     return JSON.stringify({
       status: "no_markets",
-      message: `No active BTC lending markets found for collateral=${collateral}`,
+      message: `No active lending markets found for collateral=${collateral}`,
     });
   }
 
