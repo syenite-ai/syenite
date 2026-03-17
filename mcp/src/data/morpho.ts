@@ -1,10 +1,11 @@
 import { type Address, formatUnits } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
-import { getBtcPrice } from "./prices.js";
+import { getTokenPrice } from "./prices.js";
 import {
   MORPHO,
   MORPHO_MARKETS,
+  TOKENS,
   TOKEN_DECIMALS,
   CACHE_TTL,
   SECONDS_PER_YEAR,
@@ -99,14 +100,7 @@ function ratePerSecondToAPY(ratePerSecond: bigint): number {
 }
 
 function getCollateralSymbol(address: Address): string {
-  for (const [symbol, addr] of Object.entries(
-    // avoid circular import
-    {
-      wBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-      tBTC: "0x18084fbA666a33d37592fA2633fD49a74DD93a88",
-      cbBTC: "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-    }
-  )) {
+  for (const [symbol, addr] of Object.entries(TOKENS)) {
     if (addr.toLowerCase() === address.toLowerCase()) return symbol;
   }
   return "unknown";
@@ -123,15 +117,17 @@ export async function getMorphoRates(
   if (cached) return cached;
 
   const client = getClient();
-  const btcPrice = await getBtcPrice();
 
   let markets = MORPHO_MARKETS;
   if (collateralFilter && collateralFilter !== "all") {
-    markets = markets.filter(
-      (m) =>
-        getCollateralSymbol(m.collateralToken).toLowerCase() ===
-        collateralFilter.toLowerCase()
-    );
+    const filter = collateralFilter.toLowerCase();
+    markets = markets.filter((m) => {
+      const sym = getCollateralSymbol(m.collateralToken);
+      if (sym.toLowerCase() === filter) return true;
+      if (filter === "btc" && ["wBTC", "tBTC", "cbBTC"].includes(sym)) return true;
+      if (filter === "eth" && ["WETH", "wstETH", "rETH", "cbETH", "weETH"].includes(sym)) return true;
+      return false;
+    });
   }
 
   const results: ProtocolRate[] = [];
@@ -192,8 +188,6 @@ export async function getMorphoRates(
       const supplyAPY = borrowAPY * utilization * (1 - feeRate);
 
       const availableLiquidityUSD = totalSupply - totalBorrow;
-      const availableLiquidityBTC =
-        btcPrice > 0 ? availableLiquidityUSD / btcPrice : 0;
 
       const lltv = Number(mkt.lltv) / 1e18;
 
@@ -204,7 +198,7 @@ export async function getMorphoRates(
         borrowAsset,
         supplyAPY,
         borrowAPY,
-        availableLiquidity: availableLiquidityBTC,
+        availableLiquidity: availableLiquidityUSD,
         availableLiquidityUSD,
         totalSupply,
         totalBorrow,
@@ -227,16 +221,15 @@ export async function getMorphoPosition(
   collateralFilter?: string
 ): Promise<PositionData[]> {
   const client = getClient();
-  const btcPrice = await getBtcPrice();
   const positions: PositionData[] = [];
 
   let markets = MORPHO_MARKETS;
   if (collateralFilter && collateralFilter !== "all") {
-    markets = markets.filter(
-      (m) =>
-        getCollateralSymbol(m.collateralToken).toLowerCase() ===
-        collateralFilter.toLowerCase()
-    );
+    const filter = collateralFilter.toLowerCase();
+    markets = markets.filter((m) => {
+      const sym = getCollateralSymbol(m.collateralToken);
+      return sym.toLowerCase() === filter;
+    });
   }
 
   for (const mkt of markets) {
@@ -263,7 +256,8 @@ export async function getMorphoPosition(
       const collDecimals = TOKEN_DECIMALS[collSymbol] ?? 8;
 
       const collateralAmount = Number(formatUnits(collateral, collDecimals));
-      const collateralUSD = collateralAmount * btcPrice;
+      const assetPrice = await getTokenPrice(collSymbol);
+      const collateralUSD = collateralAmount * assetPrice;
 
       const [totalBorrowAssets, , , totalBorrowShares] = [
         marketData[2],
@@ -288,7 +282,7 @@ export async function getMorphoPosition(
       const liquidationPrice =
         collateralAmount > 0 ? debtAmount / (collateralAmount * lltv) : 0;
       const distanceToLiq =
-        btcPrice > 0 ? ((btcPrice - liquidationPrice) / btcPrice) * 100 : 0;
+        assetPrice > 0 ? ((assetPrice - liquidationPrice) / assetPrice) * 100 : 0;
 
       const borrowRatePerSecond = await client.readContract({
         address: mkt.irm,

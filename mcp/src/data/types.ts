@@ -104,6 +104,7 @@ export interface MorphoMarketConfig {
 }
 
 export const MORPHO_MARKETS: MorphoMarketConfig[] = [
+  // BTC collateral markets
   {
     id: "0xb8fc70e82bc5bb53e773626228571b2440c3b3e7c1be5fee3c0a7e2598327cc0",
     loanToken: TOKENS.USDC,
@@ -130,6 +131,25 @@ export const MORPHO_MARKETS: MorphoMarketConfig[] = [
     irm: MORPHO.adaptiveCurveIrm,
     lltv: 860000000000000000n,
     label: "cbBTC/USDC (86% LLTV)",
+  },
+  // ETH collateral markets
+  {
+    id: "0x6d2fba32b8649d92432d036c16aa80779034b7469b63abc259b17678857f31c2",
+    loanToken: TOKENS.USDC,
+    collateralToken: TOKENS.wstETH,
+    oracle: getAddress("0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"),
+    irm: MORPHO.adaptiveCurveIrm,
+    lltv: 860000000000000000n,
+    label: "wstETH/USDC (86% LLTV)",
+  },
+  {
+    id: "0x3a85e619751152991742810df6ec69ce473daef99e28a64ab2340d7b7ccfee49",
+    loanToken: TOKENS.USDC,
+    collateralToken: TOKENS.WETH,
+    oracle: getAddress("0xfb4abcaefb08b4cee8d0a02f3f3b2b4b0f5b6d4e"),
+    irm: MORPHO.adaptiveCurveIrm,
+    lltv: 860000000000000000n,
+    label: "WETH/USDC (86% LLTV)",
   },
 ];
 
