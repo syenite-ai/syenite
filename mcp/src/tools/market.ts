@@ -4,9 +4,9 @@ import type { ProtocolRate } from "../data/types.js";
 
 export const marketToolName = "lending.market.overview";
 
-export const marketToolDescription = `Get an aggregate overview of BTC lending markets across Aave v3 and Morpho Blue on Ethereum mainnet.
+export const marketToolDescription = `Get an aggregate overview of DeFi lending markets across Aave v3 and Morpho Blue on Ethereum mainnet.
 Returns per-protocol totals: TVL, total borrowed, utilization ranges, rate ranges, and available liquidity.
-Use this for a high-level view of where BTC lending capital is deployed and what conditions look like.`;
+Supports all collateral types (BTC wrappers, ETH, LSTs). Use this for a high-level view of lending market conditions.`;
 
 export const marketToolSchema = {
   collateral: {

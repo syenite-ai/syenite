@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { getDb } from "../data/cache.js";
 
 export function logToolCall(params: {
-  apiKey: string | null;
+  clientIp: string;
   toolName: string;
   toolParams: Record<string, unknown>;
   responseTimeMs: number;
@@ -19,7 +19,7 @@ export function logToolCall(params: {
     `INSERT INTO usage_logs (api_key, tool_name, params_hash, response_time_ms, success, error_message)
      VALUES (?, ?, ?, ?, ?, ?)`
   ).run(
-    params.apiKey,
+    params.clientIp,
     params.toolName,
     paramsHash,
     params.responseTimeMs,
@@ -32,7 +32,7 @@ export interface UsageStats {
   totalCalls: number;
   todayCalls: number;
   weekCalls: number;
-  uniqueKeys: number;
+  uniqueClients: number;
   avgResponseMs: number;
   errorRate: number;
   byTool: Array<{ tool: string; count: number }>;
@@ -65,7 +65,7 @@ export function getUsageStats(): UsageStats {
         .get() as { c: number }
     ).c;
 
-  const uniqueKeys =
+  const uniqueClients =
     (
       db
         .prepare(
@@ -115,7 +115,7 @@ export function getUsageStats(): UsageStats {
     totalCalls,
     todayCalls,
     weekCalls,
-    uniqueKeys,
+    uniqueClients,
     avgResponseMs: Math.round(avgResponseMs),
     errorRate: Math.round(errorRate * 100) / 100,
     byTool,

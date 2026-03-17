@@ -1,10 +1,8 @@
 import "dotenv/config";
 import express from "express";
-import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./server.js";
-import { validateApiKey, seedApiKeyFromEnv } from "./auth/keys.js";
-import { checkRateLimit } from "./auth/rate-limit.js";
+import { checkRateLimit, getClientIp } from "./auth/rate-limit.js";
 import { getHealthStatus } from "./logging/health.js";
 import { getUsageStats } from "./logging/usage.js";
 import { landingPageHtml } from "./web/landing.js";
@@ -14,44 +12,26 @@ import { wellKnownMcp } from "./web/well-known.js";
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin";
 
-seedApiKeyFromEnv();
-
 const app = express();
+app.set("trust proxy", true);
 app.use(express.json());
 
-// ── MCP Endpoint (stateless) ────────────────────────────────────────
+// ── MCP Endpoint (stateless, open access) ────────────────────────────
 
 app.post("/mcp", async (req, res) => {
-  // Extract API key from auth header
-  const authHeader = req.headers.authorization;
-  const apiKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const clientIp = getClientIp(req);
 
-  // Validate API key (allow anonymous for now, but log it)
-  let keyName: string | undefined;
-  if (apiKey) {
-    const validation = validateApiKey(apiKey);
-    if (!validation.valid) {
-      res.status(401).json({
-        jsonrpc: "2.0",
-        error: { code: -32001, message: "Invalid API key" },
-        id: null,
-      });
-      return;
-    }
-    keyName = validation.name;
-
-    const rateCheck = checkRateLimit(apiKey);
-    if (!rateCheck.allowed) {
-      res.status(429).json({
-        jsonrpc: "2.0",
-        error: {
-          code: -32002,
-          message: `Rate limit exceeded. Resets at ${new Date(rateCheck.resetAt).toISOString()}`,
-        },
-        id: null,
-      });
-      return;
-    }
+  const rateCheck = checkRateLimit(clientIp);
+  if (!rateCheck.allowed) {
+    res.status(429).json({
+      jsonrpc: "2.0",
+      error: {
+        code: -32002,
+        message: `Rate limit exceeded (30 req/min). Resets at ${new Date(rateCheck.resetAt).toISOString()}`,
+      },
+      id: null,
+    });
+    return;
   }
 
   try {
@@ -59,7 +39,7 @@ app.post("/mcp", async (req, res) => {
       sessionIdGenerator: undefined,
     });
 
-    const server = createMcpServer(apiKey);
+    const server = createMcpServer(clientIp);
 
     res.on("close", () => {
       transport.close();

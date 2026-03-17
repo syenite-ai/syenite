@@ -39,3 +39,5 @@ services:
 domains:
   - domain: syenite.ai
     type: PRIMARY
+  - domain: www.syenite.ai
+    type: ALIAS

@@ -2,20 +2,45 @@ import { getAddress, type Address } from "viem";
 
 // ── Protocol types ──────────────────────────────────────────────────
 
-export type Protocol = "aave-v3" | "morpho-blue";
-export type BtcWrapper = "wBTC" | "tBTC" | "cbBTC";
-export type StableCoin = "USDC" | "USDT" | "DAI";
+export type Protocol = "aave-v3" | "morpho-blue" | "spark" | "compound-v3" | "euler-v2" | "liquity-v2";
 
 // ── Contract addresses (Ethereum mainnet) ───────────────────────────
 // All addresses normalized via getAddress() to ensure correct EIP-55 checksums
 
 export const TOKENS: Record<string, Address> = {
+  // BTC ecosystem
   wBTC: getAddress("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"),
   tBTC: getAddress("0x18084fba666a33d37592fa2633fd49a74dd93a88"),
   cbBTC: getAddress("0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"),
+  // ETH ecosystem
+  WETH: getAddress("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"),
+  wstETH: getAddress("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"),
+  rETH: getAddress("0xae78736cd615f374d3085123a210448e74fc6393"),
+  cbETH: getAddress("0xbe9895146f7af43049ca1c1ae358b0541ea49704"),
+  weETH: getAddress("0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee"),
+  // Stablecoins
   USDC: getAddress("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
   USDT: getAddress("0xdac17f958d2ee523a2206206994597c13d831ec7"),
   DAI: getAddress("0x6b175474e89094c44da98b954eedeac495271d0f"),
+  GHO: getAddress("0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f"),
+  sDAI: getAddress("0x83f20f44975d03b1b09e64809b757c47f942beea"),
+};
+
+/** Maps a token symbol to its Chainlink price feed pair */
+export const TOKEN_PRICE_FEED: Record<string, string> = {
+  wBTC: "BTC/USD",
+  tBTC: "BTC/USD",
+  cbBTC: "BTC/USD",
+  WETH: "ETH/USD",
+  wstETH: "ETH/USD",
+  rETH: "ETH/USD",
+  cbETH: "ETH/USD",
+  weETH: "ETH/USD",
+  USDC: "USDC/USD",
+  USDT: "USDT/USD",
+  DAI: "DAI/USD",
+  GHO: "USDC/USD",
+  sDAI: "DAI/USD",
 };
 
 export const AAVE_V3 = {
@@ -41,10 +66,29 @@ export const TOKEN_DECIMALS: Record<string, number> = {
   wBTC: 8,
   tBTC: 18,
   cbBTC: 8,
+  WETH: 18,
+  wstETH: 18,
+  rETH: 18,
+  cbETH: 18,
+  weETH: 18,
   USDC: 6,
   USDT: 6,
   DAI: 18,
+  GHO: 18,
+  sDAI: 18,
 };
+
+/** All collateral assets grouped by category */
+export const COLLATERAL_ASSETS: Array<{ symbol: string; address: Address; category: string }> = [
+  { symbol: "wBTC", address: TOKENS.wBTC, category: "BTC" },
+  { symbol: "tBTC", address: TOKENS.tBTC, category: "BTC" },
+  { symbol: "cbBTC", address: TOKENS.cbBTC, category: "BTC" },
+  { symbol: "WETH", address: TOKENS.WETH, category: "ETH" },
+  { symbol: "wstETH", address: TOKENS.wstETH, category: "ETH" },
+  { symbol: "rETH", address: TOKENS.rETH, category: "ETH" },
+  { symbol: "cbETH", address: TOKENS.cbETH, category: "ETH" },
+  { symbol: "weETH", address: TOKENS.weETH, category: "ETH" },
+];
 
 // ── Known Morpho Blue market params (Ethereum mainnet) ──────────────
 // Markets are identified by hash of (loanToken, collateralToken, oracle, irm, lltv)

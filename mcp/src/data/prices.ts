@@ -1,7 +1,7 @@
 import { type Address } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
-import { CHAINLINK_FEEDS, CACHE_TTL } from "./types.js";
+import { CHAINLINK_FEEDS, CACHE_TTL, TOKEN_PRICE_FEED } from "./types.js";
 
 const chainlinkAbi = [
   {
@@ -76,7 +76,15 @@ export async function getStablePrice(
   symbol: string
 ): Promise<number> {
   const pair = `${symbol}/USD`;
-  if (!CHAINLINK_FEEDS[pair]) return 1.0; // assume $1 for unknown stables
+  if (!CHAINLINK_FEEDS[pair]) return 1.0;
   const { price } = await getPrice(pair);
+  return price;
+}
+
+/** Get USD price for any known token via its mapped Chainlink feed */
+export async function getTokenPrice(symbol: string): Promise<number> {
+  const feedPair = TOKEN_PRICE_FEED[symbol];
+  if (!feedPair) throw new Error(`No price feed mapping for ${symbol}`);
+  const { price } = await getPrice(feedPair);
   return price;
 }

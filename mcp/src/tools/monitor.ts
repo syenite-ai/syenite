@@ -5,9 +5,9 @@ import type { PositionData } from "../data/types.js";
 
 export const monitorToolName = "lending.position.monitor";
 
-export const monitorToolDescription = `Check the health of any BTC lending position on Aave v3 or Morpho Blue (Ethereum mainnet).
+export const monitorToolDescription = `Check the health of any DeFi lending position on Aave v3 or Morpho Blue (Ethereum mainnet).
 Returns current LTV, health factor, liquidation price, distance to liquidation (% price drop needed), borrow rate, and estimated annual cost.
-Works with any wallet address — not limited to Syenite vaults. Use this to monitor positions and assess liquidation risk.`;
+Works with any wallet address. Scans all collateral types (BTC wrappers, ETH, LSTs) automatically.`;
 
 export const monitorToolSchema = {
   address: {

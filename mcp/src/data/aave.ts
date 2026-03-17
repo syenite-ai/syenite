@@ -1,11 +1,12 @@
 import { type Address, formatUnits } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
-import { getBtcPrice, getStablePrice } from "./prices.js";
+import { getTokenPrice } from "./prices.js";
 import {
   AAVE_V3,
   TOKENS,
   TOKEN_DECIMALS,
+  COLLATERAL_ASSETS,
   CACHE_TTL,
   RAY,
   type ProtocolRate,
@@ -130,12 +131,6 @@ function rayToPercent(rayRate: bigint): number {
 
 // ── Public API ──────────────────────────────────────────────────────
 
-const BTC_WRAPPERS: Array<{ symbol: string; address: Address }> = [
-  { symbol: "wBTC", address: TOKENS.wBTC },
-  { symbol: "tBTC", address: TOKENS.tBTC },
-  { symbol: "cbBTC", address: TOKENS.cbBTC },
-];
-
 export async function getAaveRates(
   collateralFilter?: string,
   borrowAsset: string = "USDC"
@@ -145,14 +140,12 @@ export async function getAaveRates(
   if (cached) return cached;
 
   const client = getClient();
-  const btcPrice = await getBtcPrice();
 
-  const wrappers =
+  const assets =
     collateralFilter && collateralFilter !== "all"
-      ? BTC_WRAPPERS.filter((w) => w.symbol === collateralFilter)
-      : BTC_WRAPPERS;
+      ? COLLATERAL_ASSETS.filter((a) => a.symbol === collateralFilter || a.category === collateralFilter)
+      : COLLATERAL_ASSETS;
 
-  // Borrow rate comes from the borrow asset's reserve (shared pool)
   const borrowAssetAddress = TOKENS[borrowAsset];
   if (!borrowAssetAddress) return [];
 
@@ -164,7 +157,6 @@ export async function getAaveRates(
   });
   const borrowAPY = rayToPercent(borrowReserve.currentVariableBorrowRate);
 
-  // Get borrow asset liquidity (available to borrow)
   const borrowDpData = await client.readContract({
     address: AAVE_V3.poolDataProvider,
     abi: dataProviderAbi,
@@ -182,20 +174,20 @@ export async function getAaveRates(
 
   const results: ProtocolRate[] = [];
 
-  for (const wrapper of wrappers) {
+  for (const asset of assets) {
     try {
       const [configData, collateralReserve] = await Promise.all([
         client.readContract({
           address: AAVE_V3.poolDataProvider,
           abi: dataProviderAbi,
           functionName: "getReserveConfigurationData",
-          args: [wrapper.address],
+          args: [asset.address],
         }),
         client.readContract({
           address: AAVE_V3.pool,
           abi: poolAbi,
           functionName: "getReserveData",
-          args: [wrapper.address],
+          args: [asset.address],
         }),
       ]);
 
@@ -206,8 +198,8 @@ export async function getAaveRates(
 
       results.push({
         protocol: "aave-v3",
-        market: `Aave v3 ${wrapper.symbol}/${borrowAsset}`,
-        collateral: wrapper.symbol,
+        market: `Aave v3 ${asset.symbol}/${borrowAsset}`,
+        collateral: asset.symbol,
         borrowAsset,
         supplyAPY,
         borrowAPY,
@@ -221,7 +213,7 @@ export async function getAaveRates(
         lastUpdated: new Date().toISOString(),
       });
     } catch {
-      // Reserve not available for this wrapper
+      // Reserve not available on Aave v3 for this asset
     }
   }
 
@@ -234,7 +226,6 @@ export async function getAavePosition(
   collateralSymbol?: string
 ): Promise<PositionData[]> {
   const client = getClient();
-  const btcPrice = await getBtcPrice();
   const positions: PositionData[] = [];
 
   const accountData = await client.readContract({
@@ -244,32 +235,32 @@ export async function getAavePosition(
     args: [userAddress],
   });
 
-  // Aave returns base currency values in 8 decimals (USD)
   const totalCollateralUSD = Number(formatUnits(accountData[0], 8));
   const totalDebtUSD = Number(formatUnits(accountData[1], 8));
   const healthFactor = Number(formatUnits(accountData[5], 18));
 
   if (totalCollateralUSD === 0 && totalDebtUSD === 0) return [];
 
-  const wrappers =
+  const assets =
     collateralSymbol && collateralSymbol !== "all"
-      ? BTC_WRAPPERS.filter((w) => w.symbol === collateralSymbol)
-      : BTC_WRAPPERS;
+      ? COLLATERAL_ASSETS.filter((a) => a.symbol === collateralSymbol)
+      : COLLATERAL_ASSETS;
 
-  for (const wrapper of wrappers) {
+  for (const asset of assets) {
     try {
       const userReserve = await client.readContract({
         address: AAVE_V3.poolDataProvider,
         abi: dataProviderAbi,
         functionName: "getUserReserveData",
-        args: [wrapper.address, userAddress],
+        args: [asset.address, userAddress],
       });
 
-      const collDecimals = TOKEN_DECIMALS[wrapper.symbol] ?? 8;
+      const collDecimals = TOKEN_DECIMALS[asset.symbol] ?? 18;
       const collateralAmount = Number(formatUnits(userReserve[0], collDecimals));
       if (collateralAmount === 0) continue;
 
-      const collateralUSD = collateralAmount * btcPrice;
+      const assetPrice = await getTokenPrice(asset.symbol);
+      const collateralUSD = collateralAmount * assetPrice;
       const currentLTV =
         collateralUSD > 0 ? (totalDebtUSD / collateralUSD) * 100 : 0;
 
@@ -279,9 +270,8 @@ export async function getAavePosition(
           ? totalDebtUSD / (collateralAmount * liqThreshold)
           : 0;
       const distanceToLiq =
-        btcPrice > 0 ? ((btcPrice - liquidationPrice) / btcPrice) * 100 : 0;
+        assetPrice > 0 ? ((assetPrice - liquidationPrice) / assetPrice) * 100 : 0;
 
-      // Borrow rate from USDC reserve
       const usdcReserve = await client.readContract({
         address: AAVE_V3.pool,
         abi: poolAbi,
@@ -292,10 +282,10 @@ export async function getAavePosition(
 
       positions.push({
         protocol: "aave-v3",
-        market: `Aave v3 ${wrapper.symbol}`,
+        market: `Aave v3 ${asset.symbol}`,
         address: userAddress,
         collateral: {
-          asset: wrapper.symbol,
+          asset: asset.symbol,
           amount: collateralAmount,
           valueUSD: collateralUSD,
         },
@@ -312,7 +302,7 @@ export async function getAavePosition(
         estimatedAnnualCost: totalDebtUSD * (borrowRate / 100),
       });
     } catch {
-      // No position in this market
+      // No position for this asset
     }
   }
 

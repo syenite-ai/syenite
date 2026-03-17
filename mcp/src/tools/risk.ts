@@ -1,53 +1,46 @@
 import { getAaveRates } from "../data/aave.js";
 import { getMorphoRates } from "../data/morpho.js";
-import { getBtcPrice } from "../data/prices.js";
+import { getTokenPrice } from "../data/prices.js";
 import type { ProtocolRate, RiskAssessment } from "../data/types.js";
 
 export const riskToolName = "lending.risk.assess";
 
-export const riskToolDescription = `Assess the risk of a proposed BTC lending position before opening it.
-Returns a risk score (1-10), recommended protocol, recommended LTV, liquidation price, pool liquidity adequacy, wrapper-specific risk notes, estimated annual cost, and whether auto-unwind protection is recommended.
-Use this before lending.position.open to evaluate whether a position is safe and which protocol offers the best risk-adjusted terms.`;
+export const riskToolDescription = `Assess the risk of a proposed DeFi lending position before opening it.
+Returns a risk score (1-10), recommended protocol, recommended LTV, liquidation price, pool liquidity adequacy, collateral risk notes, estimated annual cost, and whether auto-unwind protection is recommended.
+Supports any collateral asset (wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH) and borrow asset (USDC, USDT, DAI, GHO).`;
 
-export const riskToolSchema = {
-  collateral: {
-    type: "string" as const,
-    description: 'BTC wrapper: "wBTC", "tBTC", or "cbBTC".',
-  },
-  collateralAmount: {
-    type: "number" as const,
-    description: "Amount of BTC collateral (in BTC, not satoshis).",
-  },
-  borrowAsset: {
-    type: "string" as const,
-    description: 'Stablecoin to borrow. Default "USDC".',
-  },
-  targetLTV: {
-    type: "number" as const,
-    description: "Desired loan-to-value ratio (0-100). Higher = more leverage, more risk.",
-  },
-  protocol: {
-    type: "string" as const,
-    description:
-      'Specific protocol to assess: "aave-v3", "morpho", or "best" for recommendation (default).',
-  },
-};
-
-const WRAPPER_RISK: Record<string, { level: string; notes: string }> = {
+const COLLATERAL_RISK: Record<string, { level: string; notes: string }> = {
   wBTC: {
     level: "low",
-    notes:
-      "wBTC is the most liquid BTC wrapper with deepest DeFi integration. Centralized custody via BitGo (BiT Global). Low depeg risk but single custodian dependency.",
+    notes: "Most liquid BTC wrapper. Centralized custody via BitGo (BiT Global). Low depeg risk but single custodian dependency.",
   },
   tBTC: {
     level: "medium",
-    notes:
-      "tBTC uses decentralized minting via threshold signatures. Lower liquidity than wBTC. Institutional version uses segregated qualified custody (Anchorage). Slight depeg risk in thin markets.",
+    notes: "Decentralized minting via threshold signatures. Lower liquidity than wBTC. Slight depeg risk in thin markets.",
   },
   cbBTC: {
     level: "low-medium",
-    notes:
-      "cbBTC is Coinbase-issued. Strong institutional backing but Coinbase single-entity risk. Relatively new — liquidity still building in some DeFi markets.",
+    notes: "Coinbase-issued. Strong institutional backing but single-entity risk. Relatively new.",
+  },
+  WETH: {
+    level: "low",
+    notes: "Wrapped native ETH. No depeg risk — 1:1 redeemable. Deepest liquidity in DeFi.",
+  },
+  wstETH: {
+    level: "low",
+    notes: "Lido wrapped staked ETH. Largest LST by TVL. Slight depeg possible in extreme conditions but strong secondary market liquidity.",
+  },
+  rETH: {
+    level: "low",
+    notes: "Rocket Pool staked ETH. Decentralized staking. Slight premium/discount possible vs ETH spot.",
+  },
+  cbETH: {
+    level: "low-medium",
+    notes: "Coinbase staked ETH. Centralized staking operator. Strong institutional backing.",
+  },
+  weETH: {
+    level: "medium",
+    notes: "EtherFi wrapped eETH. Restaking token — additional smart contract risk from EigenLayer. Growing liquidity.",
   },
 };
 
@@ -76,8 +69,8 @@ export async function handleRiskAssess(params: {
     });
   }
 
-  const btcPrice = await getBtcPrice();
-  const collateralUSD = collateralAmount * btcPrice;
+  const assetPrice = await getTokenPrice(collateral);
+  const collateralUSD = collateralAmount * assetPrice;
   const borrowAmount = collateralUSD * (targetLTV / 100);
 
   const [aaveRates, morphoRates] = await Promise.all([
@@ -119,7 +112,7 @@ export async function handleRiskAssess(params: {
       ? borrowAmount / (collateralAmount * (best.liquidationThreshold / 100))
       : 0;
   const distanceToLiq =
-    btcPrice > 0 ? ((btcPrice - liquidationPrice) / btcPrice) * 100 : 0;
+    assetPrice > 0 ? ((assetPrice - liquidationPrice) / assetPrice) * 100 : 0;
 
   const poolLiquidityRatio =
     best.availableLiquidityUSD > 0
@@ -142,12 +135,12 @@ export async function handleRiskAssess(params: {
   else if (poolLiquidityRatio > 0.1) riskScore += 1;
 
   // Wrapper risk (0-2 points)
-  const wrapper = WRAPPER_RISK[collateral] ?? {
+  const collateralRisk = COLLATERAL_RISK[collateral] ?? {
     level: "unknown",
-    notes: "Unknown wrapper — exercise caution.",
+    notes: "Unknown collateral asset — exercise caution.",
   };
-  if (wrapper.level === "medium") riskScore += 1;
-  if (wrapper.level === "high" || wrapper.level === "unknown") riskScore += 2;
+  if (collateralRisk.level === "medium") riskScore += 1;
+  if (collateralRisk.level === "high" || collateralRisk.level === "unknown") riskScore += 2;
 
   riskScore = Math.min(riskScore, 10);
 
@@ -172,7 +165,7 @@ export async function handleRiskAssess(params: {
     liquidationPrice: round(liquidationPrice),
     distanceToLiquidation: round(distanceToLiq),
     poolLiquidityRatio: round(poolLiquidityRatio, 4),
-    wrapperRisk: wrapper,
+    wrapperRisk: collateralRisk,
     estimatedAnnualCost: round(annualCost),
     autoUnwindRecommended,
     summary,
@@ -186,7 +179,7 @@ export async function handleRiskAssess(params: {
       borrowAsset,
       borrowAmount: round(borrowAmount),
       targetLTV,
-      btcPrice: round(btcPrice),
+      assetPrice: round(assetPrice),
     },
     assessment,
     alternativeMarkets: viable

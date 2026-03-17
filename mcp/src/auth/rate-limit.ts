@@ -1,18 +1,18 @@
 const windows = new Map<string, { count: number; resetAt: number }>();
 
-const MAX_REQUESTS_PER_MINUTE = 100;
+const MAX_REQUESTS_PER_MINUTE = 30;
 const WINDOW_MS = 60_000;
 
-export function checkRateLimit(apiKey: string): {
+export function checkRateLimit(identifier: string): {
   allowed: boolean;
   remaining: number;
   resetAt: number;
 } {
   const now = Date.now();
-  const entry = windows.get(apiKey);
+  const entry = windows.get(identifier);
 
   if (!entry || entry.resetAt < now) {
-    windows.set(apiKey, { count: 1, resetAt: now + WINDOW_MS });
+    windows.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
     return { allowed: true, remaining: MAX_REQUESTS_PER_MINUTE - 1, resetAt: now + WINDOW_MS };
   }
 
@@ -26,7 +26,12 @@ export function checkRateLimit(apiKey: string): {
   return { allowed: true, remaining, resetAt: entry.resetAt };
 }
 
-// Purge expired entries periodically
+export function getClientIp(req: { headers: Record<string, string | string[] | undefined>; socket: { remoteAddress?: string } }): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  return req.socket.remoteAddress ?? "unknown";
+}
+
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of windows) {

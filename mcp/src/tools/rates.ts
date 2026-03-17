@@ -4,9 +4,9 @@ import type { ProtocolRate } from "../data/types.js";
 
 export const ratesToolName = "lending.rates.query";
 
-export const ratesToolDescription = `Query real-time BTC lending rates across Aave v3 and Morpho Blue on Ethereum mainnet.
+export const ratesToolDescription = `Query real-time DeFi lending rates across Aave v3 and Morpho Blue on Ethereum mainnet.
 Returns normalized borrow APY, supply APY, available liquidity, utilization, and LTV limits for each market.
-Use this to compare lending conditions across protocols and BTC wrappers (wBTC, tBTC, cbBTC) before opening a position.`;
+Supports all major collateral types: BTC wrappers (wBTC, tBTC, cbBTC), ETH and LSTs (WETH, wstETH, rETH, cbETH, weETH). Filter by specific asset, category ("BTC" or "ETH"), or use "all".`;
 
 export const ratesToolSchema = {
   collateral: {
