@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Find and assess yield opportunities with Syenite MCP</title>
+  <meta name="description" content="Use yield.opportunities and yield.assess to discover DeFi yield and risk: lending supply, liquid staking, vaults, savings rate, basis capture. MCP for agentic DeFi yield.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Find and assess yield opportunities</h1>
+  <p>Two Syenite MCP tools cover yield discovery and risk: <code>yield.opportunities</code> and <code>yield.assess</code>. Use them to find the best yield for an asset and then assess a specific strategy before allocating.</p>
+
+  <h2>yield.opportunities</h2>
+  <p>Returns the best yield for an asset across categories: lending supply, liquid staking, vaults, savings rate, and basis capture. Protocols include Aave, Morpho, Lido, Rocket Pool, Coinbase, Maker DSR, MetaMorpho, Yearn, Ethena.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>asset</code> (string): <code>"ETH"</code>, <code>"USDC"</code>, <code>"DAI"</code>, <code>"stables"</code>, or <code>"all"</code> (default)</li>
+    <li><code>category</code> (string): <code>"lending-supply"</code>, <code>"liquid-staking"</code>, <code>"vault"</code>, <code>"savings-rate"</code>, <code>"basis-capture"</code>, or <code>"all"</code> (default)</li>
+    <li><code>riskTolerance</code> (string): <code>"low"</code>, <code>"medium"</code>, or <code>"high"</code> (default)</li>
+  </ul>
+  <p>Example: "What are the best yield opportunities for ETH?" The agent calls <code>yield.opportunities</code> with <code>asset: "ETH"</code> and returns options by category and protocol.</p>
+
+  <h2>yield.assess</h2>
+  <p>Deep risk assessment for a single strategy. Covers smart contract risk, oracle dependency, governance, liquidity, depeg risk, position sizing, and comparable alternatives.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>protocol</code> (string): e.g. <code>"Aave"</code>, <code>"Lido"</code>, <code>"Morpho"</code>, <code>"Ethena"</code>, <code>"Yearn"</code>, <code>"Maker"</code></li>
+    <li><code>product</code> (string, optional): specific product within the protocol</li>
+    <li><code>amount</code> (number, optional): USD amount for sizing analysis</li>
+    <li><code>asset</code> (string, optional): asset context for finding alternatives</li>
+  </ul>
+  <p>Workflow: call <code>yield.opportunities</code> to get a shortlist, then <code>yield.assess</code> for the protocol (and product) you are considering. Use the result to compare risk and alternatives.</p>
+
+  <h2>Categories and sources</h2>
+  <p>Lending supply: Aave v3, Morpho Blue, Spark. Liquid staking: Lido (stETH), Rocket Pool (rETH), Coinbase (cbETH). Savings rate: Maker DSR (sDAI). Vaults: MetaMorpho, Yearn v3. Basis capture: Ethena (sUSDe). All data is for Ethereum mainnet.</p>
+
+  <h2>Related</h2>
+  <p><a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> focuses on lending; the same MCP setup works for yield tools. <a href="/docs/swap-and-bridge">Cross-chain swap and bridge</a> covers execution. Full tool list: <a href="/">syenite.ai</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cross-chain swap and bridge with Syenite MCP</title>
+  <meta name="description" content="Use swap.quote and swap.status to get optimal swap and bridge routes and unsigned transactions. Track cross-chain execution. Syenite MCP for DeFi swap agents. 30+ chains.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .callout{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin:1rem 0 1.5rem;font-size:0.88rem;color:#777;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cross-chain swap and bridge with Syenite MCP</h1>
+  <p>The Syenite MCP server exposes <code>swap.quote</code> and <code>swap.status</code> for same-chain swaps and cross-chain bridges. Routing aggregates 1inch, 0x, Paraswap, and bridge protocols via Li.Fi. 30+ chains. The server returns unsigned transactions; you or the agent signs and submits from your wallet.</p>
+
+  <h2>swap.quote</h2>
+  <p>Returns an optimal swap or bridge quote and unsigned transaction calldata.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>fromToken</code> (string): token to sell (symbol or address)</li>
+    <li><code>toToken</code> (string): token to buy (symbol or address)</li>
+    <li><code>fromAmount</code> (string): amount in smallest unit (e.g. 1000000 for 1 USDC)</li>
+    <li><code>fromAddress</code> (string): sender wallet address</li>
+    <li><code>fromChain</code> (string): e.g. <code>"ethereum"</code>, <code>"arbitrum"</code>, <code>"base"</code>, <code>"optimism"</code>, <code>"polygon"</code> (default <code>"ethereum"</code>)</li>
+    <li><code>toChain</code> (string, optional): destination chain; omit for same-chain</li>
+    <li><code>toAddress</code> (string, optional): recipient; defaults to fromAddress</li>
+    <li><code>slippage</code> (number): max slippage as decimal (e.g. 0.005 = 0.5%); default 0.005</li>
+    <li><code>order</code> (string): <code>"CHEAPEST"</code> or <code>"FASTEST"</code></li>
+  </ul>
+  <p>Response includes <code>transactionRequest</code> (unsigned tx), expected amount out, and route details. The agent or user signs the transaction and submits it. For cross-chain, use <code>fromChain</code> and <code>toChain</code>; the quote includes bridge steps.</p>
+
+  <h2>swap.status</h2>
+  <p>Tracks execution of a cross-chain bridge. Use after the user has submitted the transaction from <code>swap.quote</code>.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>txHash</code> (string): transaction hash of the submitted swap/bridge</li>
+    <li><code>fromChain</code> (string): chain where the tx was submitted (default <code>"ethereum"</code>)</li>
+    <li><code>toChain</code> (string, optional): destination chain for bridges</li>
+  </ul>
+  <p>Returns status, receiving transaction hash, and amount received when the bridge completes.</p>
+
+  <div class="callout">
+    <strong>Syenite never holds private keys.</strong> <code>swap.quote</code> returns an unsigned <code>transactionRequest</code>. The agent or user signs and submits from their own wallet. No custody.
+  </div>
+
+  <h2>Workflow</h2>
+  <p>1. Agent calls <code>swap.quote</code> with fromToken, toToken, fromAmount, fromAddress, and (for bridge) fromChain and toChain. 2. User (or agent with signing capability) signs and submits the returned transaction. 3. For cross-chain, agent calls <code>swap.status</code> with the tx hash and chains to poll until the bridge completes.</p>
+
+  <h2>Supported chains</h2>
+  <p>Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scroll, Gnosis, Fantom, and others (30+). Same-chain and cross-chain both supported.</p>
+
+  <h2>Related</h2>
+  <p><a href="/docs/quick-start">Quick start</a> and <a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> cover the MCP setup and lending tools. <a href="/docs/yield-opportunities">Find and assess yield opportunities</a> covers yield. Full tool reference: <a href="/">syenite.ai</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

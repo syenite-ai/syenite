@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Why agentic DeFi? MCP, on-chain agents, and AI agent DeFi</title>
+  <meta name="description" content="Why agentic DeFi and MCP matter: on-chain agent identity (ERC-8004), agent frameworks (Coinbase AgentKit), and the DeFi interface for AI agents. MCP DeFi and AI agent DeFi context.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    code{font-family:var(--mono);font-size:0.85em;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .callout{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin:1rem 0 1.5rem;font-size:0.88rem;color:#777;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Why agentic DeFi? MCP, on-chain agents, and AI agent DeFi</h1>
+  <p>Agentic DeFi means AI agents that read and act on DeFi data: rates, yield, risk, and execution. The category is growing. This page gives context: why MCP and DeFi fit together, and what ecosystem signals (on-chain identity, agent frameworks) indicate. No volume claims; the goal is credibility for the category so you can evaluate Syenite as a DeFi interface for AI agents.</p>
+
+  <h2>MCP as the tool layer for agents</h2>
+  <p>The Model Context Protocol (MCP) is an open standard for tools that AI models can call. Clients like Cursor, Claude Desktop, and ChatGPT support MCP; so do frameworks like LangChain and the OpenAI Agents SDK. A single MCP server can expose many tools under one endpoint. For DeFi, that means one URL for lending rates, yield, risk, and swap quotes so agents do not need to wire multiple APIs.</p>
+
+  <h2>Why DeFi and agents</h2>
+  <p>DeFi has structured data (rates, TVL, health factors) and clear actions (quote, sign, submit). Agents can compare rates, assess risk, and request unsigned transactions. The DeFi interface for AI agents is the set of tools that expose that data and those actions in an agent-native way. Syenite is one such interface: intelligence (yield, lending, risk) and execution (swap, bridge) in one MCP server.</p>
+
+  <h2>Ecosystem signals (proof the category exists)</h2>
+  <p>Two often-cited signals show that “AI agents + crypto” is a real category, not only narrative:</p>
+  <ul>
+    <li><strong>On-chain agent identity.</strong> ERC-8004 and similar standards give agents on-chain identities. Large counts of registered agents and deployers (e.g. on agentevm.ai) show that developers are deploying agent identities on EVM chains. That indicates demand for tooling that agents can use on-chain.</li>
+    <li><strong>Agent frameworks for crypto.</strong> Coinbase AgentKit and similar frameworks (1k+ GitHub stars, many contributors) provide SDKs and examples for building crypto-facing agents. They integrate with MCP and other tool layers. That suggests that “AI agent DeFi” and “MCP DeFi” are targets that framework authors and developers care about.</li>
+  </ul>
+  <p>We do not claim a specific share of DeFi volume or agent transaction count. The point is that the category has concrete infrastructure and adoption signals, so building a production-ready MCP server for DeFi is aligned with where the ecosystem is going.</p>
+
+  <div class="callout">
+    <strong>Syenite’s place.</strong> Syenite is the DeFi interface for AI agents: one MCP endpoint for data and execution across 30+ chains. No custody, no API key for basic use, rate-limited for production. For “agentic DeFi” and “MCP server DeFi” use cases, Syenite is built to be the tool agents call.
+  </div>
+
+  <h2>What to build with Syenite</h2>
+  <p>Use the MCP tools for lending workflows (rates, risk, position monitoring), yield discovery and assessment, and swap/bridge quotes. See <a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> and <a href="/docs/quick-start">Quick start</a>. For security and production, see <a href="/docs/security-and-production">Security and production use</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

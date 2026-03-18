@@ -273,6 +273,7 @@ export function landingPageHtml(): string {
     <span class="tag">the defi interface for ai agents \u00b7 open access \u00b7 no api key</span>
     <h1>syenite</h1>
     <p class="lead">One MCP endpoint for swaps, bridges, yield, lending, and risk across 30+ chains. Intelligence and execution in one place \u2014 agents read data, get quotes, and receive unsigned transactions ready to sign.</p>
+    <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
   </header>
 
   <section>
@@ -443,7 +444,7 @@ export function landingPageHtml(): string {
   </section>
 
   <footer class="foot">
-    syenite \u00b7 the defi interface for ai agents \u00b7 <a href="https://syenite.ai">syenite.ai</a>
+    syenite \u00b7 the defi interface for ai agents \u00b7 <a href="https://syenite.ai">syenite.ai</a> \u00b7 <a href="/docs">docs</a>
   </footer>
 
 </div>

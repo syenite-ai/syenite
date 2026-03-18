@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Build a DeFi lending agent in 30 minutes with Syenite MCP</title>
+  <meta name="description" content="Step-by-step tutorial: build a DeFi lending agent using the Syenite MCP server. Configure Cursor or Claude, call lending.rates.query, lending.risk.assess, and lending.position.monitor. MCP + DeFi.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}.prompt{color:var(--muted);user-select:none;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .callout{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin:1rem 0 1.5rem;font-size:0.88rem;color:#777;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Build a DeFi lending agent in 30 minutes</h1>
+  <p>Use the Syenite MCP server to give an AI agent real-time DeFi lending data: rates, risk, and position health. No API key. Tools return on-chain data from Aave v3, Morpho Blue, and Spark on Ethereum.</p>
+
+  <h2>Prerequisites</h2>
+  <p>Cursor or Claude Desktop with MCP enabled. Add <code>https://syenite.ai/mcp</code> as the Syenite server URL. If you have not done that, follow <a href="/docs/quick-start">Quick start: first tool call in 5 minutes</a> first.</p>
+
+  <h2>Step 1: Discover tools with syenite.help</h2>
+  <p>Call <code>syenite.help</code> (no parameters). The response lists all tools, supported chains, yield sources, and rate limits. Use this so the agent knows which tools exist.</p>
+
+  <h2>Step 2: Query lending rates</h2>
+  <p>Use <code>lending.rates.query</code> to get borrow and supply rates.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>collateral</code>: <code>"wBTC"</code>, <code>"WETH"</code>, <code>"wstETH"</code>, or <code>"all"</code></li>
+    <li><code>borrowAsset</code>: <code>"USDC"</code> (default), <code>"USDT"</code>, <code>"DAI"</code>, <code>"GHO"</code></li>
+  </ul>
+  <p>Example prompt: "What are the current USDC borrow rates for wBTC on Aave, Morpho, and Spark?" The agent calls <code>lending.rates.query</code> with <code>collateral: "wBTC"</code>, <code>borrowAsset: "USDC"</code> and returns a table of protocols and rates.</p>
+
+  <h2>Step 3: Assess risk for a proposed position</h2>
+  <p>Use <code>lending.risk.assess</code> before opening a position. Parameters:</p>
+  <ul>
+    <li><code>collateral</code>: e.g. <code>"wBTC"</code>, <code>"tBTC"</code>, <code>"WETH"</code></li>
+    <li><code>collateralAmount</code>: amount of collateral (number)</li>
+    <li><code>borrowAsset</code>: default <code>"USDC"</code></li>
+    <li><code>targetLTV</code>: 1–99 (loan-to-value)</li>
+    <li><code>protocol</code>: <code>"aave-v3"</code>, <code>"morpho"</code>, <code>"spark"</code>, or <code>"best"</code></li>
+  </ul>
+  <p>Example: "Assess risk for borrowing 50,000 USDC against 1 wBTC at 75% LTV on Morpho." The agent calls <code>lending.risk.assess</code> and returns risk score, liquidation price, and protocol risk.</p>
+
+  <h2>Step 4: Monitor an existing position</h2>
+  <p>Use <code>lending.position.monitor</code> for any Ethereum address with a lending position.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>address</code>: Ethereum address (string)</li>
+    <li><code>protocol</code>: <code>"aave-v3"</code>, <code>"morpho"</code>, <code>"spark"</code>, or <code>"all"</code></li>
+  </ul>
+  <p>The tool returns health factor, LTV, liquidation distance, and estimated annual cost. Example prompt: "Check the health of my lending position at 0x…"</p>
+
+  <div class="callout">
+    <strong>Syenite never holds private keys.</strong> All tools are read-only except swap execution, which returns unsigned transactions for you to sign. Rate limit: 30 requests per minute per IP.
+  </div>
+
+  <h2>Putting it together</h2>
+  <p>Give the agent a single prompt that chains the workflow: "I want to borrow USDC against wBTC. Show me current rates on Aave, Morpho, and Spark. Then assess risk for 1 wBTC at 70% LTV and recommend a protocol." The agent will call <code>lending.rates.query</code>, then <code>lending.risk.assess</code>, and summarize.</p>
+
+  <h2>Next steps</h2>
+  <p><a href="/docs/lending-rates-and-risk">Compare DeFi lending rates and assess risk</a> goes deeper on the lending workflow. <a href="/docs/yield-opportunities">Find and assess yield opportunities</a> covers yield.opportunities and yield.assess. <a href="/docs/swap-and-bridge">Cross-chain swap and bridge</a> covers swap.quote and swap.status.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

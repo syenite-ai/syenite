@@ -1,0 +1,38 @@
+import { readFileSync, existsSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/** Allowed doc slugs. Only these return 200; others should 404. */
+export const DOC_SLUGS = [
+  "build-defi-lending-agent-30-min",
+  "quick-start",
+  "lending-rates-and-risk",
+  "yield-opportunities",
+  "swap-and-bridge",
+  "security-and-production",
+  "mcp-defi-discovery",
+  "why-agentic-defi",
+] as const;
+
+export type DocSlug = (typeof DOC_SLUGS)[number];
+
+const DOCS_DIR = path.join(__dirname, "docs");
+
+function readDocFile(name: string): string | null {
+  const filePath = path.join(DOCS_DIR, name);
+  if (!existsSync(filePath)) return null;
+  return readFileSync(filePath, "utf-8");
+}
+
+/** Returns HTML for the docs index page, or null if not found. */
+export function getDocsIndexHtml(): string | null {
+  return readDocFile("index.html");
+}
+
+/** Returns HTML for a doc by slug, or null if slug invalid or file missing. */
+export function getDocBySlug(slug: string): string | null {
+  if (!DOC_SLUGS.includes(slug as DocSlug)) return null;
+  return readDocFile(`${slug}.html`);
+}

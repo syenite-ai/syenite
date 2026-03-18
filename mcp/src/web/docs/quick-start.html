@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Syenite MCP quick start: first tool call in 5 minutes</title>
+  <meta name="description" content="Add the Syenite DeFi MCP server in Cursor or Claude and make your first tool call. No API key. syenite.help and lending.rates.query in under 5 minutes.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}.prompt{color:var(--muted);user-select:none;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Syenite MCP quick start: first tool call in 5 minutes</h1>
+  <p>Add the Syenite MCP server and run one tool. No API key. Works in Cursor, Claude Desktop, and any MCP client.</p>
+
+  <h2>1. Add the MCP server</h2>
+  <p>Endpoint: <code>https://syenite.ai/mcp</code>. Rate limit: 30 requests per minute per IP.</p>
+  <h3>Cursor</h3>
+  <p>Settings → MCP → Add server. Use this config:</p>
+  <pre><code>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"syenite"</span>: {
+      <span class="k">"url"</span>: <span class="s">"https://syenite.ai/mcp"</span>
+    }
+  }
+}</code></pre>
+  <h3>Claude Desktop</h3>
+  <p>Same JSON in your Claude Desktop MCP config (e.g. <code>claude_desktop_config.json</code>).</p>
+
+  <h2>2. Call syenite.help</h2>
+  <p>The <code>syenite.help</code> tool takes no arguments. It returns service info, a list of tools, supported chains, and yield sources. Use it to confirm the connection and discover tools.</p>
+  <p>In Cursor or Claude, ask: "Call the syenite.help tool" or "What tools does Syenite expose?" The model will call <code>syenite.help</code> and show you the response.</p>
+
+  <h2>3. Call lending.rates.query</h2>
+  <p>Parameters:</p>
+  <ul style="color:#888;font-size:0.9rem;margin-bottom:1rem;">
+    <li><code>collateral</code> (string): e.g. <code>"wBTC"</code>, <code>"WETH"</code>, <code>"all"</code></li>
+    <li><code>borrowAsset</code> (string): default <code>"USDC"</code></li>
+  </ul>
+  <p>Example: ask "What are current USDC borrow rates for wBTC collateral on Aave, Morpho, and Spark?" The agent will call <code>lending.rates.query</code> with <code>collateral: "wBTC"</code>, <code>borrowAsset: "USDC"</code> and return real-time rates.</p>
+
+  <h2>Next steps</h2>
+  <p><a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> extends this with risk assessment and position monitoring. <a href="/docs/lending-rates-and-risk">Compare DeFi lending rates and assess risk</a> details the full lending workflow.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

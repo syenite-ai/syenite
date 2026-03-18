@@ -8,6 +8,11 @@ import { getUsageStats } from "./logging/usage.js";
 import { landingPageHtml } from "./web/landing.js";
 import { dashboardHtml } from "./web/dashboard.js";
 import { wellKnownMcp } from "./web/well-known.js";
+import {
+  getDocsIndexHtml,
+  getDocBySlug,
+  DOC_SLUGS,
+} from "./web/docs.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin";
@@ -86,6 +91,43 @@ app.get("/.well-known/mcp.json", (_req, res) => {
   res.json(wellKnownMcp());
 });
 
+// ── Docs ────────────────────────────────────────────────────────────
+
+app.get("/docs", (_req, res) => {
+  const html = getDocsIndexHtml();
+  if (!html) {
+    res.status(404).send("Docs not found");
+    return;
+  }
+  res.type("html").send(html);
+});
+
+app.get("/docs/:slug", (req, res) => {
+  const html = getDocBySlug(req.params.slug);
+  if (!html) {
+    res.status(404).send("Not found");
+    return;
+  }
+  res.type("html").send(html);
+});
+
+// ── Sitemap ──────────────────────────────────────────────────────────
+
+app.get("/sitemap.xml", (_req, res) => {
+  const base = "https://syenite.ai";
+  const urls = [
+    base + "/",
+    base + "/docs",
+    ...DOC_SLUGS.map((slug) => base + "/docs/" + slug),
+  ];
+  const xml =
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    urls.map((url) => `  <url><loc>${url}</loc></url>`).join("\n") +
+    "\n</urlset>";
+  res.type("application/xml").send(xml);
+});
+
 // ── Dashboard (password-protected) ──────────────────────────────────
 
 app.get("/dashboard", (req, res) => {
@@ -127,6 +169,8 @@ app.listen(PORT, () => {
   console.log(`Syenite MCP Server running on http://localhost:${PORT}`);
   console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
   console.log(`  Landing page:  http://localhost:${PORT}/`);
+  console.log(`  Docs:         http://localhost:${PORT}/docs`);
+  console.log(`  Sitemap:      http://localhost:${PORT}/sitemap.xml`);
   console.log(`  Health check:  http://localhost:${PORT}/health`);
   console.log(`  Dashboard:     http://localhost:${PORT}/dashboard`);
 });

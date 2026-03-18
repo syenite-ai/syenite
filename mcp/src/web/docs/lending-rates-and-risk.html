@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compare DeFi lending rates and assess risk with Syenite MCP</title>
+  <meta name="description" content="Workflow for DeFi lending rates and risk: lending.rates.query, lending.market.overview, lending.risk.assess. Aave v3, Morpho Blue, Spark on Ethereum. MCP server for agentic DeFi.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Compare DeFi lending rates and assess risk</h1>
+  <p>Syenite MCP exposes three lending tools for Ethereum: <code>lending.rates.query</code>, <code>lending.market.overview</code>, and <code>lending.risk.assess</code>. Data is read from on-chain contracts (Aave v3, Morpho Blue, Spark). Prices use Chainlink. Cached 15–60 seconds.</p>
+
+  <h2>lending.rates.query</h2>
+  <p>Returns real-time borrow and supply rates for a collateral and borrow asset.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>collateral</code> (string): <code>"wBTC"</code>, <code>"tBTC"</code>, <code>"cbBTC"</code>, <code>"WETH"</code>, <code>"wstETH"</code>, <code>"rETH"</code>, <code>"cbETH"</code>, <code>"weETH"</code>, or <code>"all"</code></li>
+    <li><code>borrowAsset</code> (string): <code>"USDC"</code> (default), <code>"USDT"</code>, <code>"DAI"</code>, <code>"GHO"</code></li>
+  </ul>
+  <p>Use it to compare which protocol offers the best borrow rate for a given collateral. Example: collateral <code>"wBTC"</code>, borrowAsset <code>"USDC"</code> returns rates per protocol.</p>
+
+  <h2>lending.market.overview</h2>
+  <p>Returns an aggregate view: TVL, utilization, rate ranges, and available liquidity per protocol. Parameter <code>collateral</code> filters by asset or <code>"all"</code>. Use it to see market depth before choosing a protocol.</p>
+
+  <h2>lending.risk.assess</h2>
+  <p>Assesses a proposed lending position before you open it. Returns risk score, liquidation price, safety margin, and annual cost.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>collateral</code>: same asset list as lending.rates.query</li>
+    <li><code>collateralAmount</code> (number): amount of collateral</li>
+    <li><code>borrowAsset</code>: default <code>"USDC"</code></li>
+    <li><code>targetLTV</code> (number): 1–99 (desired loan-to-value)</li>
+    <li><code>protocol</code>: <code>"aave-v3"</code>, <code>"morpho"</code>, <code>"spark"</code>, or <code>"best"</code></li>
+  </ul>
+  <p>Workflow: call <code>lending.rates.query</code> to compare rates, then <code>lending.risk.assess</code> for the chosen protocol and LTV. The agent can recommend a protocol and LTV based on both rate and risk.</p>
+
+  <h2>Supported protocols and collateral</h2>
+  <p>Aave v3: wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH. Morpho Blue: wBTC, tBTC, cbBTC, wstETH, WETH. Spark: wBTC, tBTC, WETH, wstETH, rETH, weETH. All on Ethereum mainnet.</p>
+
+  <h2>Related</h2>
+  <p><a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> uses these tools in a full tutorial. <a href="/docs/quick-start">Quick start</a> shows how to call <code>lending.rates.query</code> from Cursor or Claude. For monitoring existing positions, use <code>lending.position.monitor</code> (see the <a href="/">tool list</a> on the homepage).</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>
