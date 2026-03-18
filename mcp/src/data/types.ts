@@ -233,6 +233,7 @@ export interface ProtocolRate {
   collateral: string;
   borrowAsset: string;
   supplyAPY: number;
+  borrowAssetSupplyAPY: number;
   borrowAPY: number;
   availableLiquidity: number;
   availableLiquidityUSD: number;

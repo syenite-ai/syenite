@@ -205,6 +205,7 @@ export async function getMorphoRates(
         collateral: collSymbol,
         borrowAsset,
         supplyAPY,
+        borrowAssetSupplyAPY: supplyAPY,
         borrowAPY,
         availableLiquidity: availableLiquidityUSD,
         availableLiquidityUSD,

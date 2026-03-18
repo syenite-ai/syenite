@@ -11,11 +11,13 @@ function rateToYield(r: ProtocolRate): YieldOpportunity {
         ? "Aave v3 fork operated by Maker/Sky ecosystem. DAO governed with timelock."
         : "Largest DeFi lending protocol. DAO governed, battle-tested since 2020.";
 
+  const protocolLabel = r.protocol === "aave-v3" ? "Aave v3" : r.protocol === "morpho-blue" ? "Morpho Blue" : "Spark";
+
   return {
-    protocol: r.protocol === "aave-v3" ? "Aave v3" : r.protocol === "morpho-blue" ? "Morpho Blue" : "Spark",
-    product: `${r.market} Supply`,
+    protocol: protocolLabel,
+    product: `${protocolLabel} ${r.borrowAsset} Supply`,
     asset: r.borrowAsset,
-    apy: r.supplyAPY,
+    apy: r.borrowAssetSupplyAPY,
     apyType: "variable",
     tvlUSD: r.totalSupply,
     category: "lending-supply",

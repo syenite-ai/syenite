@@ -161,6 +161,7 @@ export async function getAaveForkRates(
     args: [borrowAssetAddress],
   });
   const borrowAPY = rayToPercent(borrowReserve.currentVariableBorrowRate);
+  const borrowAssetSupplyAPY = rayToPercent(borrowReserve.currentLiquidityRate);
 
   const borrowDpData = await client.readContract({
     address: dataProviderAddress,
@@ -209,6 +210,7 @@ export async function getAaveForkRates(
         collateral: asset.symbol,
         borrowAsset,
         supplyAPY,
+        borrowAssetSupplyAPY,
         borrowAPY,
         availableLiquidity: borrowAvailableLiquidity,
         availableLiquidityUSD: borrowAvailableLiquidity,
