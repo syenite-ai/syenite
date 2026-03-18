@@ -200,6 +200,7 @@ export async function getAaveForkRates(
       if (!configData[5]) continue; // usageAsCollateralEnabled
 
       const supplyAPY = rayToPercent(collateralReserve.currentLiquidityRate);
+      const liquidationPenalty = (Number(configData[3]) - 10000) / 100;
 
       const displayName = protocolName === "aave-v3" ? "Aave v3" : "Spark";
       results.push({
@@ -216,6 +217,7 @@ export async function getAaveForkRates(
         utilization: borrowUtilization,
         maxLTV: Number(configData[1]) / 100,
         liquidationThreshold: Number(configData[2]) / 100,
+        liquidationPenalty,
         lastUpdated: new Date().toISOString(),
       });
     } catch {

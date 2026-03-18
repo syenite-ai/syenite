@@ -183,6 +183,7 @@ export interface ProtocolRate {
   utilization: number;
   maxLTV: number;
   liquidationThreshold: number;
+  liquidationPenalty: number;
   lastUpdated: string;
 }
 
@@ -216,9 +217,15 @@ export interface RiskAssessment {
   recommendedProtocol: string;
   recommendedLTV: number;
   liquidationPrice: number;
+  liquidationPenalty: number;
   distanceToLiquidation: number;
-  poolLiquidityRatio: number;
-  wrapperRisk: { level: string; notes: string };
+  positionSizing: {
+    poolLiquidityRatio: number;
+    borrowAsPoolPercent: number;
+    warning: string | null;
+  };
+  collateralRisk: { level: string; notes: string };
+  protocolRisk: { oracleType: string; liquidationMechanism: string; governance: string; notes: string };
   estimatedAnnualCost: number;
   autoUnwindRecommended: boolean;
   summary: string;

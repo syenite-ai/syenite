@@ -77,6 +77,7 @@ export async function handleMarketOverview(params: {
         supplyAPY: round(m.supplyAPY),
         utilization: round(m.utilization),
         availableLiquidityUSD: round(m.availableLiquidityUSD),
+        liquidationPenalty: round(m.liquidationPenalty),
       })),
     };
   });

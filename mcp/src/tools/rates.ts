@@ -67,6 +67,7 @@ export async function handleRatesQuery(params: {
       utilization: round(r.utilization),
       maxLTV: round(r.maxLTV),
       liquidationThreshold: round(r.liquidationThreshold),
+      liquidationPenalty: round(r.liquidationPenalty),
     })),
     timestamp: new Date().toISOString(),
     note: "Rates are real-time from on-chain data. APYs include compounding. Liquidity figures are current available amounts, not TVL.",

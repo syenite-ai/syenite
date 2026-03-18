@@ -99,6 +99,14 @@ function ratePerSecondToAPY(ratePerSecond: bigint): number {
   return (Math.pow(1 + rate, SECONDS_PER_YEAR) - 1) * 100;
 }
 
+/** Morpho Blue liquidation incentive: min(15%, 1/(1 - cursor*(1-lltv)) - 1) where cursor=0.3 */
+function morphoLiquidationPenalty(lltv: number): number {
+  const cursor = 0.3;
+  const maxPenalty = 15;
+  const penalty = (1 / (1 - cursor * (1 - lltv)) - 1) * 100;
+  return Math.min(penalty, maxPenalty);
+}
+
 function getCollateralSymbol(address: Address): string {
   for (const [symbol, addr] of Object.entries(TOKENS)) {
     if (addr.toLowerCase() === address.toLowerCase()) return symbol;
@@ -205,6 +213,7 @@ export async function getMorphoRates(
         utilization: utilization * 100,
         maxLTV: lltv * 100,
         liquidationThreshold: lltv * 100,
+        liquidationPenalty: morphoLiquidationPenalty(lltv),
         lastUpdated: new Date().toISOString(),
       });
     } catch {

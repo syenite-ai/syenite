@@ -6,8 +6,29 @@ import type { ProtocolRate, RiskAssessment } from "../data/types.js";
 export const riskToolName = "lending.risk.assess";
 
 export const riskToolDescription = `Assess the risk of a proposed DeFi lending position before opening it.
-Returns a risk score (1-10), recommended protocol, recommended LTV, liquidation price, pool liquidity adequacy, collateral risk notes, estimated annual cost, and whether auto-unwind protection is recommended.
+Returns risk score (1-10), recommended protocol, liquidation price and penalty, position sizing analysis, collateral risk profile, protocol risk notes (oracle, liquidation mechanics, governance), estimated annual cost, and actionable summary.
 Supports any collateral asset (wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH) and borrow asset (USDC, USDT, DAI, GHO).`;
+
+const PROTOCOL_RISK: Record<string, { oracleType: string; liquidationMechanism: string; governance: string; notes: string }> = {
+  "aave-v3": {
+    oracleType: "Chainlink price feeds with fallback",
+    liquidationMechanism: "Partial liquidation — up to 50% of debt repaid per liquidation call. Penalty applied to collateral seized. Third-party liquidators compete on-chain.",
+    governance: "Aave DAO with 24hr+ timelock on parameter changes. Emergency admin can pause markets.",
+    notes: "Battle-tested since 2020. $10B+ TVL. Largest DeFi lending protocol.",
+  },
+  "morpho-blue": {
+    oracleType: "Market-specific oracles (Chainlink, Morpho oracles, or custom). Set at market creation and immutable.",
+    liquidationMechanism: "Full liquidation — entire position can be liquidated in one call once LTV exceeds LLTV. Penalty is lower than Aave but exposure is binary.",
+    governance: "Immutable core contracts — no admin keys, no upgrades. Market parameters fixed at creation. Risk is per-market, not protocol-wide.",
+    notes: "Newer protocol (2024). Simpler design with isolated markets. No cross-collateral risk.",
+  },
+  spark: {
+    oracleType: "Chainlink price feeds (same model as Aave v3)",
+    liquidationMechanism: "Identical to Aave v3 — partial liquidation with bonus to liquidators.",
+    governance: "Spark DAO (MakerDAO ecosystem). Separate governance from Aave with similar timelock mechanisms.",
+    notes: "Aave v3 fork operated by Maker/Sky ecosystem. Focused on DAI/sDAI markets. Lower TVL than Aave but institutional backing.",
+  },
+};
 
 const COLLATERAL_RISK: Record<string, { level: string; notes: string }> = {
   wBTC: {
@@ -123,23 +144,30 @@ export async function handleRiskAssess(params: {
     best.availableLiquidityUSD > 0
       ? borrowAmount / best.availableLiquidityUSD
       : Infinity;
+  const borrowAsPoolPercent = poolLiquidityRatio * 100;
+
+  let positionSizingWarning: string | null = null;
+  if (borrowAsPoolPercent > 50) {
+    positionSizingWarning = `Your borrow (${round(borrowAmount)} ${borrowAsset}) is ${round(borrowAsPoolPercent)}% of the pool's available liquidity. This will significantly move the borrow rate higher and may be difficult to exit in stressed conditions.`;
+  } else if (borrowAsPoolPercent > 25) {
+    positionSizingWarning = `Your borrow is ${round(borrowAsPoolPercent)}% of available pool liquidity. Large enough to noticeably impact the borrow rate.`;
+  } else if (borrowAsPoolPercent > 10) {
+    positionSizingWarning = `Your borrow is ${round(borrowAsPoolPercent)}% of available pool liquidity — within normal range but worth monitoring.`;
+  }
 
   // ── Risk scoring (1 = lowest risk, 10 = highest) ─────────────
   let riskScore = 1;
 
-  // LTV contribution (0-4 points)
   const ltvRatio = targetLTV / best.liquidationThreshold;
   if (ltvRatio > 0.9) riskScore += 4;
   else if (ltvRatio > 0.8) riskScore += 3;
   else if (ltvRatio > 0.7) riskScore += 2;
   else if (ltvRatio > 0.5) riskScore += 1;
 
-  // Liquidity contribution (0-3 points)
   if (poolLiquidityRatio > 0.5) riskScore += 3;
   else if (poolLiquidityRatio > 0.25) riskScore += 2;
   else if (poolLiquidityRatio > 0.1) riskScore += 1;
 
-  // Wrapper risk (0-2 points)
   const collateralRisk = COLLATERAL_RISK[collateral] ?? {
     level: "unknown",
     notes: "Unknown collateral asset — exercise caution.",
@@ -151,16 +179,25 @@ export async function handleRiskAssess(params: {
 
   const annualCost = borrowAmount * (best.borrowAPY / 100);
   const autoUnwindRecommended = ltvRatio > 0.6 || riskScore > 5;
-
   const recommendedLTV = Math.min(targetLTV, best.liquidationThreshold * 0.65);
+
+  const protocolKey = best.protocol as string;
+  const protocolRisk = PROTOCOL_RISK[protocolKey] ?? {
+    oracleType: "Unknown",
+    liquidationMechanism: "Unknown",
+    governance: "Unknown",
+    notes: "No protocol risk data available.",
+  };
+
+  const liqPenaltyUSD = round((collateralUSD * targetLTV / 100) * (best.liquidationPenalty / 100));
 
   let summary: string;
   if (riskScore <= 3) {
-    summary = `Low risk. ${collateral} position at ${targetLTV}% LTV on ${best.market} is well within safety margins. Distance to liquidation: ${round(distanceToLiq)}%.`;
+    summary = `Low risk. ${collateral} at ${targetLTV}% LTV on ${best.market}. ${round(distanceToLiq)}% price drop to liquidation. If liquidated, ~$${liqPenaltyUSD} penalty (${round(best.liquidationPenalty)}%).`;
   } else if (riskScore <= 6) {
-    summary = `Moderate risk. ${collateral} position at ${targetLTV}% LTV on ${best.market}. Consider reducing LTV to ${round(recommendedLTV)}% or enabling auto-unwind protection.`;
+    summary = `Moderate risk. ${collateral} at ${targetLTV}% LTV on ${best.market}. Consider reducing to ${round(recommendedLTV)}% LTV. Liquidation penalty: ${round(best.liquidationPenalty)}% ($${liqPenaltyUSD}).`;
   } else {
-    summary = `High risk. ${collateral} position at ${targetLTV}% LTV on ${best.market} is close to liquidation threshold. Strongly recommend reducing LTV or enabling auto-unwind. A ${round(distanceToLiq)}% price drop triggers liquidation.`;
+    summary = `High risk. ${collateral} at ${targetLTV}% LTV on ${best.market} — only ${round(distanceToLiq)}% from liquidation. Penalty on liquidation: ${round(best.liquidationPenalty)}% ($${liqPenaltyUSD}). Strongly recommend reducing LTV.`;
   }
 
   const assessment: RiskAssessment = {
@@ -168,9 +205,15 @@ export async function handleRiskAssess(params: {
     recommendedProtocol: best.market,
     recommendedLTV: round(recommendedLTV),
     liquidationPrice: round(liquidationPrice),
+    liquidationPenalty: round(best.liquidationPenalty),
     distanceToLiquidation: round(distanceToLiq),
-    poolLiquidityRatio: round(poolLiquidityRatio, 4),
-    wrapperRisk: collateralRisk,
+    positionSizing: {
+      poolLiquidityRatio: round(poolLiquidityRatio, 4),
+      borrowAsPoolPercent: round(borrowAsPoolPercent),
+      warning: positionSizingWarning,
+    },
+    collateralRisk,
+    protocolRisk,
     estimatedAnnualCost: round(annualCost),
     autoUnwindRecommended,
     summary,
@@ -192,6 +235,7 @@ export async function handleRiskAssess(params: {
       .map((r) => ({
         market: r.market,
         borrowAPY: round(r.borrowAPY),
+        liquidationPenalty: round(r.liquidationPenalty),
         availableLiquidityUSD: round(r.availableLiquidityUSD),
       })),
     timestamp: new Date().toISOString(),
