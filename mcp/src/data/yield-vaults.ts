@@ -1,6 +1,7 @@
 import { formatUnits } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
+import { recordSnapshot, getTrailingAPY } from "./snapshots.js";
 import { getTokenPrice } from "./prices.js";
 import {
   METAMORPHO_VAULTS,
@@ -41,118 +42,106 @@ const yearnAprOracleAbi = [
   },
 ] as const;
 
-async function getMetaMorphoYields(): Promise<YieldOpportunity[]> {
-  const client = getClient();
-  const results: YieldOpportunity[] = [];
+async function fetchMetaMorphoVault(
+  vault: (typeof METAMORPHO_VAULTS)[number],
+  client: ReturnType<typeof getClient>
+): Promise<YieldOpportunity> {
+  const decimals = TOKEN_DECIMALS[vault.asset] ?? 6;
 
-  for (const vault of METAMORPHO_VAULTS) {
-    try {
-      const decimals = TOKEN_DECIMALS[vault.asset] ?? 6;
+  const [totalAssets, assetsPerShare] = await Promise.all([
+    client.readContract({ address: vault.address, abi: erc4626Abi, functionName: "totalAssets" }),
+    client.readContract({
+      address: vault.address,
+      abi: erc4626Abi,
+      functionName: "convertToAssets",
+      args: [10n ** BigInt(decimals)],
+    }),
+  ]);
 
-      const [totalAssets, assetsPerShare] = await Promise.all([
-        client.readContract({ address: vault.address, abi: erc4626Abi, functionName: "totalAssets" }),
-        client.readContract({
-          address: vault.address,
-          abi: erc4626Abi,
-          functionName: "convertToAssets",
-          args: [10n ** BigInt(decimals)],
-        }),
-      ]);
+  const tvl = Number(formatUnits(totalAssets, decimals));
+  const pricePerAsset = vault.asset === "WETH" ? await getTokenPrice("WETH") : 1;
+  const tvlUSD = tvl * pricePerAsset;
 
-      const tvl = Number(formatUnits(totalAssets, decimals));
-      const pricePerAsset = vault.asset === "WETH"
-        ? await getTokenPrice("WETH")
-        : 1;
-      const tvlUSD = tvl * pricePerAsset;
+  const sharePrice = Number(formatUnits(assetsPerShare, decimals));
+  const snapshotKey = `share:metamorpho:${vault.address.toLowerCase()}`;
+  recordSnapshot(snapshotKey, sharePrice);
+  const trailingAPY = getTrailingAPY(snapshotKey, 7);
 
-      // ERC4626 share price reflects accumulated yield.
-      // Without historical data, we derive APY from the share premium.
-      // MetaMorpho vaults typically earn 2-8% from Morpho Blue market allocation.
-      const sharePrice = Number(formatUnits(assetsPerShare, decimals));
-      const impliedYield = (sharePrice - 1) * 100;
-      const apy = Math.max(impliedYield, 0);
+  const apy = trailingAPY ?? 0;
+  const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
 
-      results.push({
-        protocol: "Morpho",
-        product: `MetaMorpho ${vault.label}`,
-        asset: vault.asset,
-        apy,
-        apyType: "trailing-7d",
-        tvlUSD,
-        category: "vault",
-        risk: "low",
-        riskNotes: "Curated vault allocating across Morpho Blue markets. Immutable core contracts. Risk curator manages market selection. ERC4626 standard — instant withdrawals subject to available liquidity.",
-        lockup: "none",
-        lastUpdated: new Date().toISOString(),
-      });
-    } catch {
-      // Vault may not be active
-    }
-  }
-
-  return results;
+  return {
+    protocol: "Morpho",
+    product: `MetaMorpho ${vault.label}`,
+    asset: vault.asset,
+    apy,
+    apyType,
+    tvlUSD,
+    category: "vault",
+    risk: "low",
+    riskNotes: "Curated vault allocating across Morpho Blue markets. Immutable core contracts. Risk curator manages market selection. ERC4626 standard — instant withdrawals subject to available liquidity.",
+    lockup: "none",
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
-async function getYearnYields(): Promise<YieldOpportunity[]> {
-  const client = getClient();
-  const results: YieldOpportunity[] = [];
+async function fetchYearnVault(
+  vault: (typeof YEARN_VAULTS)[number],
+  client: ReturnType<typeof getClient>
+): Promise<YieldOpportunity> {
+  const decimals = TOKEN_DECIMALS[vault.asset] ?? 6;
 
-  for (const vault of YEARN_VAULTS) {
-    try {
-      const decimals = TOKEN_DECIMALS[vault.asset] ?? 6;
+  const totalAssets = await client.readContract({
+    address: vault.address,
+    abi: erc4626Abi,
+    functionName: "totalAssets",
+  });
 
-      const totalAssets = await client.readContract({
-        address: vault.address,
-        abi: erc4626Abi,
-        functionName: "totalAssets",
-      });
+  const tvl = Number(formatUnits(totalAssets, decimals));
+  const pricePerAsset = vault.asset === "WETH" ? await getTokenPrice("WETH") : 1;
+  const tvlUSD = tvl * pricePerAsset;
 
-      const tvl = Number(formatUnits(totalAssets, decimals));
-      const pricePerAsset = vault.asset === "WETH"
-        ? await getTokenPrice("WETH")
-        : 1;
-      const tvlUSD = tvl * pricePerAsset;
+  let apy = 0;
+  let apyType: "variable" | "trailing-7d" | "estimated" = "estimated";
 
-      let apy = 0;
-      try {
-        const apr = await client.readContract({
-          address: YEARN.aprOracle,
-          abi: yearnAprOracleAbi,
-          functionName: "getStrategyApr",
-          args: [vault.address, 0n],
-        });
-        apy = Number(apr) / 1e18 * 100;
-      } catch {
-        // AprOracle may not support this vault; fall back to share price method
-        const assetsPerShare = await client.readContract({
-          address: vault.address,
-          abi: erc4626Abi,
-          functionName: "convertToAssets",
-          args: [10n ** BigInt(decimals)],
-        });
-        const sharePrice = Number(formatUnits(assetsPerShare, decimals));
-        apy = Math.max((sharePrice - 1) * 100, 0);
-      }
-
-      results.push({
-        protocol: "Yearn",
-        product: vault.label,
-        asset: vault.asset,
-        apy,
-        apyType: "trailing-7d",
-        tvlUSD,
-        category: "vault",
-        risk: "medium",
-        riskNotes: "Automated yield strategy vault. Multi-strategy with smart contract risk stacking across underlying protocols. Audited and battle-tested but higher complexity than single-protocol deposits.",
-        lockup: "none",
-        lastUpdated: new Date().toISOString(),
-      });
-    } catch {
-      // Vault may not be available
-    }
+  try {
+    const apr = await client.readContract({
+      address: YEARN.aprOracle,
+      abi: yearnAprOracleAbi,
+      functionName: "getStrategyApr",
+      args: [vault.address, 0n],
+    });
+    apy = Number(apr) / 1e18 * 100;
+    apyType = "variable";
+  } catch (e) {
+    console.warn(`[syenite] Yearn AprOracle for ${vault.label} failed, falling back to share price:`, e instanceof Error ? e.message : e);
+    const assetsPerShare = await client.readContract({
+      address: vault.address,
+      abi: erc4626Abi,
+      functionName: "convertToAssets",
+      args: [10n ** BigInt(decimals)],
+    });
+    const sharePrice = Number(formatUnits(assetsPerShare, decimals));
+    const snapshotKey = `share:yearn:${vault.address.toLowerCase()}`;
+    recordSnapshot(snapshotKey, sharePrice);
+    const trailingAPY = getTrailingAPY(snapshotKey, 7);
+    apy = trailingAPY ?? 0;
+    apyType = trailingAPY !== null ? "trailing-7d" : "estimated";
   }
 
-  return results;
+  return {
+    protocol: "Yearn",
+    product: vault.label,
+    asset: vault.asset,
+    apy,
+    apyType,
+    tvlUSD,
+    category: "vault",
+    risk: "medium",
+    riskNotes: "Automated yield strategy vault. Multi-strategy with smart contract risk stacking across underlying protocols. Audited and battle-tested but higher complexity than single-protocol deposits.",
+    lockup: "none",
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 export async function getVaultYields(): Promise<YieldOpportunity[]> {
@@ -160,14 +149,16 @@ export async function getVaultYields(): Promise<YieldOpportunity[]> {
   const cached = cacheGet<YieldOpportunity[]>(cacheKey);
   if (cached) return cached;
 
-  const [morpho, yearn] = await Promise.allSettled([
-    getMetaMorphoYields(),
-    getYearnYields(),
+  const client = getClient();
+
+  const [morphoResults, yearnResults] = await Promise.all([
+    Promise.allSettled(METAMORPHO_VAULTS.map((v) => fetchMetaMorphoVault(v, client))),
+    Promise.allSettled(YEARN_VAULTS.map((v) => fetchYearnVault(v, client))),
   ]);
 
   const results: YieldOpportunity[] = [
-    ...(morpho.status === "fulfilled" ? morpho.value : []),
-    ...(yearn.status === "fulfilled" ? yearn.value : []),
+    ...morphoResults.filter((r): r is PromiseFulfilledResult<YieldOpportunity> => r.status === "fulfilled").map((r) => r.value),
+    ...yearnResults.filter((r): r is PromiseFulfilledResult<YieldOpportunity> => r.status === "fulfilled").map((r) => r.value),
   ];
 
   if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.yield);

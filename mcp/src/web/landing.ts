@@ -5,7 +5,7 @@ export function landingPageHtml(): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>syenite — DeFi intelligence for AI agents</title>
-  <meta name="description" content="DeFi intelligence for AI agents. Yield opportunities, lending rates, position monitoring, and risk assessment via MCP. On-chain data from 10+ protocols on Ethereum.">
+  <meta name="description" content="DeFi intelligence for AI agents. Yield opportunities, lending rates, position monitoring, and risk assessment via MCP. On-chain data from blue-chip DeFi protocols on Ethereum.">
   <style>
     :root {
       --bg: #101010;
@@ -266,7 +266,7 @@ export function landingPageHtml(): string {
   <header class="hero">
     <span class="tag">mcp server · open access · no api key required</span>
     <h1>syenite</h1>
-    <p class="lead">DeFi intelligence for AI agents. Yield opportunities, lending rates, risk assessment, and position monitoring across 10+ protocols on Ethereum \u2014 all from on-chain data.</p>
+    <p class="lead">DeFi intelligence for AI agents. Yield opportunities, lending rates, risk assessment, and position monitoring across blue-chip DeFi protocols on Ethereum \u2014 all from on-chain data.</p>
   </header>
 
   <section>
@@ -305,10 +305,10 @@ export function landingPageHtml(): string {
 
     <div class="tool">
       <div class="tool-name">yield.opportunities</div>
-      <p class="tool-desc">Find the best DeFi yield for any asset. Aggregates lending supply, liquid staking, vaults, savings rates, basis capture, and fixed yield across blue-chip protocols.</p>
+      <p class="tool-desc">Find the best DeFi yield for any asset. Aggregates lending supply, liquid staking, vaults, savings rates, and basis capture across blue-chip protocols.</p>
       <div class="params">
         <span class="pn">asset</span><span class="pt">string</span><span class="pd">"ETH", "USDC", "DAI", "stables", or "all"</span>
-        <span class="pn">category</span><span class="pt">string</span><span class="pd">"lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", "fixed-yield", or "all"</span>
+        <span class="pn">category</span><span class="pt">string</span><span class="pd">"lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", or "all"</span>
         <span class="pn">riskTolerance</span><span class="pt">string</span><span class="pd">"low", "medium", or "high" (default)</span>
       </div>
     </div>
@@ -317,7 +317,7 @@ export function landingPageHtml(): string {
       <div class="tool-name">yield.assess</div>
       <p class="tool-desc">Deep risk assessment for a specific yield strategy. Smart contract risk, oracle dependency, governance, liquidity, depeg risk, position sizing, and comparable alternatives.</p>
       <div class="params">
-        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"Aave", "Lido", "Morpho", "Ethena", "Pendle", "Yearn", "Maker", etc.</span>
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"Aave", "Lido", "Morpho", "Ethena", "Yearn", "Maker", etc.</span>
         <span class="pn">amount</span><span class="pt">number</span><span class="pd">USD amount to deposit (optional, enables sizing analysis)</span>
         <span class="pn">asset</span><span class="pt">string</span><span class="pd">Asset context for finding alternatives</span>
       </div>
@@ -378,7 +378,6 @@ export function landingPageHtml(): string {
         <tr><td>Savings Rate</td><td>Maker DSR</td><td>DAI \u2192 sDAI</td></tr>
         <tr><td>Vaults</td><td>MetaMorpho, Yearn v3</td><td>USDC, USDT, WETH</td></tr>
         <tr><td>Basis Capture</td><td>Ethena</td><td>USDe \u2192 sUSDe</td></tr>
-        <tr><td>Fixed Yield</td><td>Pendle</td><td>PT tokens (various)</td></tr>
       </table>
     </div>
   </section>

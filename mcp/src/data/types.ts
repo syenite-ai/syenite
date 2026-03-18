@@ -147,15 +147,9 @@ export const MORPHO_MARKETS: MorphoMarketConfig[] = [
     lltv: 860000000000000000n,
     label: "wstETH/USDC (86% LLTV)",
   },
-  {
-    id: "0x3a85e619751152991742810df6ec69ce473daef99e28a64ab2340d7b7ccfee49",
-    loanToken: TOKENS.USDC,
-    collateralToken: TOKENS.WETH,
-    oracle: getAddress("0xfb4abcaefb08b4cee8d0a02f3f3b2b4b0f5b6d4e"),
-    irm: MORPHO.adaptiveCurveIrm,
-    lltv: 860000000000000000n,
-    label: "WETH/USDC (86% LLTV)",
-  },
+  // WETH/USDC removed — market ID and oracle were incorrect.
+  // Canonical market: 0x94b823e6bd8ea533b4e33fbc307faea0b307301bc48763acc4d4aa4def7636cd
+  // Re-add after verifying oracle address via idToMarketParams on-chain.
 ];
 
 // ── Yield source contracts (Ethereum mainnet) ───────────────────────
@@ -204,16 +198,7 @@ export const YEARN_VAULTS: Array<{ address: Address; label: string; asset: strin
   { address: getAddress("0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0"), label: "Yearn WETH", asset: "WETH" },
 ];
 
-/** Pendle PT markets (Ethereum mainnet, current active maturities) */
-export const PENDLE_MARKETS: Array<{ market: Address; pt: Address; label: string; asset: string; maturity: string }> = [
-  {
-    market: getAddress("0x08bf93c8f85977c64069dd34c5da7b1c636e104f"),
-    pt: getAddress("0xe8483517077afa11a9b07f849cee2552f040d7b2"),
-    label: "PT sUSDe Feb 2026",
-    asset: "USDe",
-    maturity: "2026-02-05",
-  },
-];
+// Pendle PT markets deprecated — expired maturities, pending update.
 
 // ── Cache TTL configuration (seconds) ───────────────────────────────
 
@@ -297,15 +282,14 @@ export type YieldCategory =
   | "liquid-staking"
   | "vault"
   | "savings-rate"
-  | "basis-capture"
-  | "fixed-yield";
+  | "basis-capture";
 
 export interface YieldOpportunity {
   protocol: string;
   product: string;
   asset: string;
   apy: number;
-  apyType: "variable" | "fixed" | "trailing-7d";
+  apyType: "variable" | "fixed" | "trailing-7d" | "estimated";
   tvlUSD: number;
   category: YieldCategory;
   risk: "low" | "medium" | "high";

@@ -222,8 +222,8 @@ export async function getAaveForkRates(
         liquidationPenalty,
         lastUpdated: new Date().toISOString(),
       });
-    } catch {
-      // Reserve not available on Aave v3 for this asset
+    } catch (e) {
+      console.warn(`[syenite] ${protocolName} reserve fetch for ${asset.symbol} failed:`, e instanceof Error ? e.message : e);
     }
   }
 
@@ -239,7 +239,10 @@ export function getSparkRates(collateralFilter?: string, borrowAsset?: string) {
   return getAaveForkRates("spark", SPARK.pool, SPARK.poolDataProvider, collateralFilter, borrowAsset);
 }
 
-export async function getAavePosition(
+async function getAaveForkPosition(
+  protocol: Protocol,
+  poolAddress: Address,
+  dataProviderAddress: Address,
   userAddress: Address,
   collateralSymbol?: string
 ): Promise<PositionData[]> {
@@ -247,7 +250,7 @@ export async function getAavePosition(
   const positions: PositionData[] = [];
 
   const accountData = await client.readContract({
-    address: AAVE_V3.pool,
+    address: poolAddress,
     abi: poolAbi,
     functionName: "getUserAccountData",
     args: [userAddress],
@@ -264,10 +267,12 @@ export async function getAavePosition(
       ? COLLATERAL_ASSETS.filter((a) => a.symbol === collateralSymbol)
       : COLLATERAL_ASSETS;
 
+  const displayName = protocol === "aave-v3" ? "Aave v3" : "Spark";
+
   for (const asset of assets) {
     try {
       const userReserve = await client.readContract({
-        address: AAVE_V3.poolDataProvider,
+        address: dataProviderAddress,
         abi: dataProviderAbi,
         functionName: "getUserReserveData",
         args: [asset.address, userAddress],
@@ -291,7 +296,7 @@ export async function getAavePosition(
         assetPrice > 0 ? ((assetPrice - liquidationPrice) / assetPrice) * 100 : 0;
 
       const usdcReserve = await client.readContract({
-        address: AAVE_V3.pool,
+        address: poolAddress,
         abi: poolAbi,
         functionName: "getReserveData",
         args: [TOKENS.USDC],
@@ -299,8 +304,8 @@ export async function getAavePosition(
       const borrowRate = rayToPercent(usdcReserve.currentVariableBorrowRate);
 
       positions.push({
-        protocol: "aave-v3",
-        market: `Aave v3 ${asset.symbol}`,
+        protocol,
+        market: `${displayName} ${asset.symbol}`,
         address: userAddress,
         collateral: {
           asset: asset.symbol,
@@ -319,10 +324,18 @@ export async function getAavePosition(
         borrowRate,
         estimatedAnnualCost: totalDebtUSD * (borrowRate / 100),
       });
-    } catch {
-      // No position for this asset
+    } catch (e) {
+      console.warn(`[syenite] ${displayName} position for ${asset.symbol} failed:`, e instanceof Error ? e.message : e);
     }
   }
 
   return positions;
+}
+
+export function getAavePosition(userAddress: Address, collateralSymbol?: string) {
+  return getAaveForkPosition("aave-v3", AAVE_V3.pool, AAVE_V3.poolDataProvider, userAddress, collateralSymbol);
+}
+
+export function getSparkPosition(userAddress: Address, collateralSymbol?: string) {
+  return getAaveForkPosition("spark", SPARK.pool, SPARK.poolDataProvider, userAddress, collateralSymbol);
 }

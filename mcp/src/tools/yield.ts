@@ -8,7 +8,7 @@ import type { YieldOpportunity, YieldCategory } from "../data/types.js";
 export const yieldToolName = "yield.opportunities";
 
 export const yieldToolDescription = `Find the best DeFi yield opportunities for any asset across blue-chip protocols on Ethereum.
-Aggregates yields from lending supply (Aave, Morpho, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), vaults (MetaMorpho, Yearn), basis capture (Ethena sUSDe), and fixed yield (Pendle PT).
+Aggregates yields from lending supply (Aave, Morpho, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), vaults (MetaMorpho, Yearn), and basis capture (Ethena sUSDe).
 Returns opportunities ranked by APY with risk level, TVL, lockup period, and protocol details. Filter by asset, category, or risk tolerance.`;
 
 export const yieldToolSchema = {
@@ -20,7 +20,7 @@ export const yieldToolSchema = {
   category: {
     type: "string" as const,
     description:
-      'Filter by yield category: "lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", "fixed-yield", or "all" (default).',
+      'Filter by yield category: "lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", or "all" (default).',
   },
   riskTolerance: {
     type: "string" as const,
@@ -105,7 +105,6 @@ export async function handleYieldOpportunities(params: {
         vault: allYields.filter((y) => y.category === "vault").length,
         "savings-rate": allYields.filter((y) => y.category === "savings-rate").length,
         "basis-capture": allYields.filter((y) => y.category === "basis-capture").length,
-        "fixed-yield": allYields.filter((y) => y.category === "fixed-yield").length,
       },
     },
     opportunities: allYields.map((y) => ({
@@ -121,7 +120,7 @@ export async function handleYieldOpportunities(params: {
       lockup: y.lockup,
     })),
     timestamp: new Date().toISOString(),
-    note: "All yields sourced from on-chain data. Variable rates change with market conditions. Past performance does not indicate future returns. Higher APY generally correlates with higher risk.",
+    note: "All yields sourced from on-chain data. Yields marked 'estimated' will improve to trailing-7d accuracy as historical data accumulates (typically 24-48h after deployment). Variable rates change with market conditions. Higher APY generally correlates with higher risk.",
   });
 }
 

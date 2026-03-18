@@ -48,7 +48,7 @@ export function createMcpServer(clientIp: string): McpServer {
   const server = new McpServer(
     {
       name: "syenite",
-      version: "0.3.0",
+      version: "0.3.1",
     },
     { capabilities: { tools: {} } }
   );
@@ -99,7 +99,6 @@ Call this tool to learn what data is available and how to use it effectively.`,
               "savings-rate": ["Maker DSR (sDAI)"],
               vault: ["MetaMorpho (Steakhouse, Gauntlet)", "Yearn v3"],
               "basis-capture": ["Ethena (sUSDe)"],
-              "fixed-yield": ["Pendle PT"],
             },
             lendingProtocols: ["Aave v3", "Morpho Blue", "Spark"],
             assets: {
@@ -224,7 +223,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
       category: z
         .string()
         .default("all")
-        .describe('Yield category filter: "lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", "fixed-yield", or "all"'),
+        .describe('Yield category filter: "lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", or "all"'),
       riskTolerance: z
         .enum(["low", "medium", "high"])
         .default("high")
@@ -242,7 +241,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
     {
       protocol: z
         .string()
-        .describe('Protocol to assess: "Aave", "Lido", "Morpho", "Ethena", "Pendle", "Yearn", "Maker", "Rocket Pool", "Coinbase"'),
+        .describe('Protocol to assess: "Aave", "Lido", "Morpho", "Ethena", "Yearn", "Maker", "Rocket Pool", "Coinbase"'),
       product: z
         .string()
         .optional()

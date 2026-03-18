@@ -217,8 +217,8 @@ export async function getMorphoRates(
         liquidationPenalty: morphoLiquidationPenalty(lltv),
         lastUpdated: new Date().toISOString(),
       });
-    } catch {
-      // Market may not be active — skip
+    } catch (e) {
+      console.warn(`[syenite] Morpho market ${mkt.label} failed:`, e instanceof Error ? e.message : e);
     }
   }
 
@@ -336,8 +336,8 @@ export async function getMorphoPosition(
         borrowRate,
         estimatedAnnualCost: debtAmount * (borrowRate / 100),
       });
-    } catch {
-      // Skip markets where user has no position
+    } catch (e) {
+      console.warn(`[syenite] Morpho position for ${mkt.label} failed:`, e instanceof Error ? e.message : e);
     }
   }
 

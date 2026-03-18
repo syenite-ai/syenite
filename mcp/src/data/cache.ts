@@ -60,6 +60,15 @@ function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_usage_tool    ON usage_logs(tool_name);
     CREATE INDEX IF NOT EXISTS idx_usage_key     ON usage_logs(api_key);
     CREATE INDEX IF NOT EXISTS idx_cache_expires ON cache(expires_at);
+
+    CREATE TABLE IF NOT EXISTS snapshots (
+      key         TEXT NOT NULL,
+      value       REAL NOT NULL,
+      recorded_at INTEGER NOT NULL,
+      PRIMARY KEY (key, recorded_at)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_snapshots_key ON snapshots(key, recorded_at);
   `);
 }
 

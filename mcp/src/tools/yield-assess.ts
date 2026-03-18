@@ -88,13 +88,7 @@ const PROTOCOL_DEEP_RISK: Record<string, {
     liquidity: "7-day cooldown for sUSDe unstaking. USDe itself is liquid on DEXs but can depeg under stress.",
     depeg: "USDe peg depends on delta-neutral position maintenance. Negative funding rates, exchange insolvency, or custodian failure could break the peg. Highest risk category in the yield stack.",
   },
-  Pendle: {
-    smartContract: "Yield tokenization protocol. Audited. PT is a simple claim on underlying at maturity.",
-    oracle: "Market-based pricing. PT price reflects implied yield via AMM. No external oracle dependency.",
-    governance: "Pendle governance for protocol parameters. Market-specific parameters are set at creation.",
-    liquidity: "Liquid before maturity via Pendle AMM. Slippage increases as maturity approaches and liquidity migrates. No liquidity risk if held to maturity.",
-    depeg: "PT risk = underlying protocol risk. If the underlying yield source fails, PT may not redeem at full value.",
-  },
+  // Pendle: deprecated pending updated market addresses — see yield-structured.ts
 };
 
 export async function handleYieldAssess(params: {

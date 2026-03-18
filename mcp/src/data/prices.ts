@@ -53,9 +53,22 @@ export async function getPrice(pair: string): Promise<PriceResult> {
     }),
   ]);
 
+  const answer = Number(roundData[1]);
+  if (answer <= 0) {
+    throw new Error(`Chainlink feed ${pair} returned non-positive price: ${answer}`);
+  }
+
+  const updatedAt = Number(roundData[3]);
+  const now = Math.floor(Date.now() / 1000);
+  const ageSeconds = now - updatedAt;
+  const MAX_STALENESS_S = 3600;
+  if (ageSeconds > MAX_STALENESS_S) {
+    console.warn(`[syenite] Chainlink feed ${pair} stale: last updated ${ageSeconds}s ago`);
+  }
+
   const result: PriceResult = {
-    price: Number(roundData[1]) / 10 ** decimals,
-    updatedAt: Number(roundData[3]),
+    price: answer / 10 ** decimals,
+    updatedAt,
   };
 
   cacheSet(cacheKey, result, CACHE_TTL.prices);

@@ -1,5 +1,5 @@
 import { type Address, isAddress } from "viem";
-import { getAavePosition } from "../data/aave.js";
+import { getAavePosition, getSparkPosition } from "../data/aave.js";
 import { getMorphoPosition } from "../data/morpho.js";
 import type { PositionData } from "../data/types.js";
 
@@ -42,6 +42,9 @@ export async function handlePositionMonitor(params: {
   }
   if (!protocol || protocol === "morpho-blue" || protocol === "morpho") {
     positionPromises.push(getMorphoPosition(address));
+  }
+  if (!protocol || protocol === "spark") {
+    positionPromises.push(getSparkPosition(address));
   }
 
   const results = (await Promise.all(positionPromises)).flat();

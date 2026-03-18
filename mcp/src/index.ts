@@ -49,6 +49,7 @@ app.post("/mcp", async (req, res) => {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (e) {
+    console.warn("[syenite] MCP request handler error:", e instanceof Error ? e.message : e);
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: "2.0",

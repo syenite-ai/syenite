@@ -1,6 +1,7 @@
 import { formatUnits } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
+import { recordSnapshot, getTrailingAPY } from "./snapshots.js";
 import { getTokenPrice } from "./prices.js";
 import { LIDO, ROCKET_POOL, COINBASE, CACHE_TTL, type YieldOpportunity } from "./types.js";
 
@@ -72,18 +73,12 @@ const cbETHAbi = [
   },
 ] as const;
 
-/**
- * Lido stETH staking APR.
- * Uses total pooled ether and shares to derive the staking rate.
- * Lido reports ~3-3.5% APR for ETH consensus + execution rewards minus protocol fee.
- * Since on-chain APR requires historical data, we approximate from the known
- * Ethereum staking baseline (~3.5%) minus Lido's 10% fee.
- */
 async function getLidoYield(client: ReturnType<typeof getClient>): Promise<YieldOpportunity> {
-  const [totalPooledEther, totalShares, fee] = await Promise.all([
+  const [totalPooledEther, , fee, stEthPerWstETH] = await Promise.all([
     client.readContract({ address: LIDO.stETH, abi: stETHAbi, functionName: "getTotalPooledEther" }),
     client.readContract({ address: LIDO.stETH, abi: stETHAbi, functionName: "getTotalShares" }),
     client.readContract({ address: LIDO.stETH, abi: stETHAbi, functionName: "getFee" }),
+    client.readContract({ address: LIDO.wstETH, abi: wstETHAbi, functionName: "stEthPerToken" }),
   ]);
 
   const tvlETH = Number(formatUnits(totalPooledEther, 18));
@@ -91,16 +86,19 @@ async function getLidoYield(client: ReturnType<typeof getClient>): Promise<Yield
   const tvlUSD = tvlETH * ethPrice;
   const feePercent = Number(fee) / 10000;
 
-  // Ethereum consensus yield baseline ~3.5% APR, Lido takes 10% of rewards
-  const baseStakingAPR = 3.5;
-  const apy = baseStakingAPR * (1 - feePercent);
+  const rate = Number(formatUnits(stEthPerWstETH, 18));
+  recordSnapshot("rate:lido:wsteth", rate);
+  const trailingAPY = getTrailingAPY("rate:lido:wsteth", 7);
+
+  const apy = trailingAPY ?? 3.2 * (1 - feePercent);
+  const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
 
   return {
     protocol: "Lido",
     product: "ETH Staking (stETH / wstETH)",
     asset: "ETH",
     apy,
-    apyType: "variable",
+    apyType,
     tvlUSD,
     category: "liquid-staking",
     risk: "low",
@@ -122,16 +120,18 @@ async function getRocketPoolYield(client: ReturnType<typeof getClient>): Promise
   const ethPrice = await getTokenPrice("WETH");
   const tvlUSD = tvlETH * ethPrice;
 
-  // Rocket Pool takes 14% commission (5% node operator, 9% protocol/node)
-  const baseStakingAPR = 3.5;
-  const apy = baseStakingAPR * 0.86;
+  recordSnapshot("rate:rocketpool:reth", rate);
+  const trailingAPY = getTrailingAPY("rate:rocketpool:reth", 7);
+
+  const apy = trailingAPY ?? 2.8;
+  const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
 
   return {
     protocol: "Rocket Pool",
     product: "ETH Staking (rETH)",
     asset: "ETH",
     apy,
-    apyType: "variable",
+    apyType,
     tvlUSD,
     category: "liquid-staking",
     risk: "low",
@@ -153,16 +153,18 @@ async function getCbETHYield(client: ReturnType<typeof getClient>): Promise<Yiel
   const ethPrice = await getTokenPrice("WETH");
   const tvlUSD = tvlETH * ethPrice;
 
-  // Coinbase takes ~25% commission
-  const baseStakingAPR = 3.5;
-  const apy = baseStakingAPR * 0.75;
+  recordSnapshot("rate:coinbase:cbeth", rate);
+  const trailingAPY = getTrailingAPY("rate:coinbase:cbeth", 7);
+
+  const apy = trailingAPY ?? 2.5;
+  const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
 
   return {
     protocol: "Coinbase",
     product: "ETH Staking (cbETH)",
     asset: "ETH",
     apy,
-    apyType: "variable",
+    apyType,
     tvlUSD,
     category: "liquid-staking",
     risk: "low",
