@@ -89,7 +89,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
               "Spark (SparkLend)",
             ],
             assets: {
-              collateral: ["wBTC", "tBTC", "cbBTC", "ETH", "WETH", "wstETH", "rETH", "cbETH"],
+              collateral: ["wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH"],
               borrow: ["USDC", "USDT", "DAI", "GHO"],
             },
             access: {
@@ -114,7 +114,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
       collateral: z
         .string()
         .default("all")
-        .describe('Asset to use as collateral: "wBTC", "tBTC", "cbBTC", "ETH", "wstETH", "rETH", "cbETH", or "all"'),
+        .describe('Collateral asset or category: "wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH", "BTC", "ETH", or "all"'),
       borrowAsset: z
         .string()
         .default("USDC")
@@ -166,7 +166,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
     {
       collateral: z
         .string()
-        .describe('Collateral asset: "wBTC", "tBTC", "cbBTC", "ETH", "wstETH", "rETH", "cbETH"'),
+        .describe('Collateral asset: "wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH"'),
       collateralAmount: z
         .number()
         .positive()

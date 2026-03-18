@@ -5,7 +5,7 @@ import type { PositionData } from "../data/types.js";
 
 export const monitorToolName = "lending.position.monitor";
 
-export const monitorToolDescription = `Check the health of any DeFi lending position on Aave v3 or Morpho Blue (Ethereum mainnet).
+export const monitorToolDescription = `Check the health of any DeFi lending position on Aave v3, Morpho Blue, or Spark (Ethereum mainnet).
 Returns current LTV, health factor, liquidation price, distance to liquidation (% price drop needed), borrow rate, and estimated annual cost.
 Works with any wallet address. Scans all collateral types (BTC wrappers, ETH, LSTs) automatically.`;
 
@@ -17,7 +17,7 @@ export const monitorToolSchema = {
   protocol: {
     type: "string" as const,
     description:
-      'Filter to a specific protocol: "aave-v3", "morpho", or check both (default).',
+      'Filter to a specific protocol: "aave-v3", "morpho", "spark", or check all (default).',
   },
 };
 
@@ -51,7 +51,7 @@ export async function handlePositionMonitor(params: {
       status: "no_positions",
       address,
       message:
-        "No active BTC lending positions found for this address on Aave v3 or Morpho Blue. The address may have positions with non-BTC collateral (not covered by this tool) or no lending positions at all.",
+        "No active lending positions found for this address on Aave v3, Morpho Blue, or Spark. The address may have positions on unsupported protocols or no lending positions at all.",
     });
   }
 

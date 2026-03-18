@@ -5,7 +5,7 @@ export function landingPageHtml(): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>syenite — DeFi lending intelligence for AI agents</title>
-  <meta name="description" content="Cross-protocol BTC lending rates, position monitoring, and risk assessment via MCP. Aave v3 + Morpho Blue on Ethereum mainnet.">
+  <meta name="description" content="DeFi lending intelligence for AI agents. Cross-protocol rates, position monitoring, and risk assessment via MCP. Aave v3, Morpho Blue, Spark on Ethereum.">
   <style>
     :root {
       --bg: #101010;
@@ -264,9 +264,9 @@ export function landingPageHtml(): string {
 <div class="wrap">
 
   <header class="hero">
-    <span class="tag">mcp server · free tier</span>
+    <span class="tag">mcp server · open access · no api key required</span>
     <h1>syenite</h1>
-    <p class="lead">Cross-protocol BTC lending rates, position monitoring, and risk assessment for AI agents. Aave v3 + Morpho Blue on Ethereum mainnet.</p>
+    <p class="lead">DeFi lending intelligence for AI agents. Real-time rates, position monitoring, and risk assessment across Aave v3, Morpho Blue, and Spark on Ethereum.</p>
   </header>
 
   <section>
@@ -276,87 +276,103 @@ export function landingPageHtml(): string {
     <pre><code>{
   <span class="k">"mcpServers"</span>: {
     <span class="k">"syenite-lending"</span>: {
-      <span class="k">"url"</span>: <span class="s">"YOUR_SERVER_URL/mcp"</span>,
-      <span class="k">"headers"</span>: {
-        <span class="k">"Authorization"</span>: <span class="s">"Bearer YOUR_API_KEY"</span>
-      }
+      <span class="k">"url"</span>: <span class="s">"https://syenite.ai/mcp"</span>
     }
   }
 }</code></pre>
 
     <h3>cURL</h3>
-    <pre><code><span class="prompt">$ </span>curl -X POST YOUR_SERVER_URL/mcp \\
+    <pre><code><span class="prompt">$ </span>curl -X POST https://syenite.ai/mcp \\
   -H <span class="s">"Content-Type: application/json"</span> \\
-  -H <span class="s">"Authorization: Bearer YOUR_API_KEY"</span> \\
+  -H <span class="s">"Accept: application/json, text/event-stream"</span> \\
   -d '{
     <span class="k">"jsonrpc"</span>: <span class="s">"2.0"</span>,
     <span class="k">"method"</span>: <span class="s">"tools/list"</span>,
     <span class="k">"id"</span>: 1
   }'</code></pre>
+    <p style="font-size:0.82rem;color:#555;margin-top:0.5rem">No API key needed. Just add the URL and start querying.</p>
   </section>
 
   <section>
     <h2>tools</h2>
 
     <div class="tool">
+      <div class="tool-name">syenite.help</div>
+      <p class="tool-desc">Service info, available tools, supported protocols and assets, and how to get started.</p>
+    </div>
+
+    <div class="tool">
       <div class="tool-name">lending.rates.query</div>
-      <p class="tool-desc">Real-time BTC lending rates across Aave v3 and Morpho Blue. Compare borrow APY, supply APY, liquidity, and utilization across protocols and BTC wrappers.</p>
+      <p class="tool-desc">Real-time lending rates across Aave v3, Morpho Blue, and Spark. Compare borrow APY, supply APY, liquidity, and utilization across protocols for any collateral type.</p>
       <div class="params">
-        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", "cbBTC", or "all"</span>
-        <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", or "DAI"</span>
+        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH", "BTC", "ETH", or "all"</span>
+        <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", "DAI", or "GHO"</span>
       </div>
     </div>
 
     <div class="tool">
       <div class="tool-name">lending.market.overview</div>
-      <p class="tool-desc">Aggregate view of BTC lending markets. Protocol-level totals for TVL, utilization, rate ranges, and available liquidity.</p>
+      <p class="tool-desc">Aggregate market view. Per-protocol totals for TVL, utilization, rate ranges, and available liquidity.</p>
       <div class="params">
-        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", "cbBTC", or "all"</span>
+        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">Filter by asset, category ("BTC", "ETH"), or "all"</span>
       </div>
     </div>
 
     <div class="tool">
       <div class="tool-name">lending.position.monitor</div>
-      <p class="tool-desc">Health check for any existing BTC lending position. Returns LTV, health factor, liquidation price, distance to liquidation, and estimated annual cost.</p>
+      <p class="tool-desc">Health check for any DeFi lending position. Returns LTV, health factor, liquidation price, distance to liquidation, and estimated annual cost. Scans all collateral types.</p>
       <div class="params">
         <span class="pn">address</span><span class="pt">string</span><span class="pd">Ethereum address to check</span>
-        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", or "all"</span>
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "all"</span>
       </div>
     </div>
 
     <div class="tool">
       <div class="tool-name">lending.risk.assess</div>
-      <p class="tool-desc">Risk assessment for a proposed lending position. Returns risk score, recommended protocol, liquidation analysis, wrapper risk, and whether auto-unwind protection is recommended.</p>
+      <p class="tool-desc">Risk assessment for a proposed position. Returns risk score, recommended protocol, liquidation analysis, collateral risk profile, and estimated annual cost.</p>
       <div class="params">
-        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", or "cbBTC"</span>
-        <span class="pn">collateralAmount</span><span class="pt">number</span><span class="pd">Amount in BTC</span>
-        <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", or "DAI"</span>
+        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH"</span>
+        <span class="pn">collateralAmount</span><span class="pt">number</span><span class="pd">Amount of collateral asset</span>
+        <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", "DAI", or "GHO"</span>
         <span class="pn">targetLTV</span><span class="pt">number</span><span class="pd">Desired LTV (1\u201399)</span>
-        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", or "best"</span>
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "best"</span>
       </div>
     </div>
   </section>
 
   <section>
-    <h2>api key</h2>
-    <p>All tools are free. An API key is required for rate limiting and usage tracking. Contact the Syenite team or check the <a href="https://github.com">GitHub repo</a> for key request instructions.</p>
+    <h2>access</h2>
+    <p>Open access \u2014 no API key required. Rate limited to 30 requests/minute per IP. Just point your agent at the endpoint and start querying.</p>
+  </section>
+
+  <section>
+    <h2>supported assets</h2>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Category</th><th>Assets</th></tr>
+        <tr><td>BTC</td><td>wBTC, tBTC, cbBTC</td></tr>
+        <tr><td>ETH</td><td>WETH, wstETH, rETH, cbETH, weETH</td></tr>
+        <tr><td>Stables</td><td>USDC, USDT, DAI, GHO</td></tr>
+      </table>
+    </div>
   </section>
 
   <section>
     <h2>data sources</h2>
-    <p>All data is read directly from on-chain contracts via Ethereum RPC \u2014 no intermediary APIs or off-chain oracles. Rates and positions are real-time. Prices use Chainlink feeds. Data is cached briefly (15\u201360s) for performance.</p>
+    <p>All data read directly from on-chain contracts via Ethereum RPC \u2014 no intermediary APIs or off-chain oracles. Prices use Chainlink feeds. Cached briefly (15\u201360s) for performance.</p>
     <div class="table-wrap">
       <table>
-        <tr><th>Protocol</th><th>Contracts</th><th>Markets</th></tr>
-        <tr><td>Aave v3</td><td>Pool, PoolDataProvider</td><td>wBTC, tBTC, cbBTC</td></tr>
-        <tr><td>Morpho Blue</td><td>Morpho, AdaptiveCurveIRM</td><td>wBTC/USDC, tBTC/USDC, cbBTC/USDC</td></tr>
+        <tr><th>Protocol</th><th>Contracts</th><th>Collateral</th></tr>
+        <tr><td>Aave v3</td><td>Pool, PoolDataProvider</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
+        <tr><td>Morpho Blue</td><td>Morpho, AdaptiveCurveIRM</td><td>wBTC/USDC, tBTC/USDC, cbBTC/USDC, wstETH/USDC, WETH/USDC</td></tr>
+        <tr><td>Spark</td><td>Pool, PoolDataProvider</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
         <tr><td>Chainlink</td><td>Price Feeds</td><td>BTC/USD, ETH/USD, USDC/USD</td></tr>
       </table>
     </div>
   </section>
 
   <footer class="foot">
-    syenite \u00b7 institutional btc lending infrastructure \u00b7 <a href="https://github.com">github</a>
+    syenite \u00b7 defi lending intelligence \u00b7 <a href="https://syenite.ai">syenite.ai</a>
   </footer>
 
 </div>

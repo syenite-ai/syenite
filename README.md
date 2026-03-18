@@ -38,7 +38,7 @@ Interest spread. Syenite captures the delta between protocol rates and client ra
 ## Distribution Channels
 
 1. **AC Smart Accounts** — whitelisted adaptor on the Threshold institutional UI. tBTC minted via Account Control flows through Syenite's managed lending layer. Primary distribution for institutional BTC.
-2. **MCP Lending Server** — the canonical tool interface for AI agents interacting with on-chain lending. Free read tools (rates, monitoring, risk) drive developer adoption; paid execution tools (position open, unwind, rebalance) generate vault activity. Parallel primary channel.
+2. **MCP Lending Server** — the canonical tool interface for AI agents interacting with on-chain lending. Free read tools (rates, monitoring, risk) across Aave v3, Morpho Blue, Spark and 8+ collateral types drive developer adoption; paid execution tools (position open, unwind, rebalance) generate vault activity. Live at [syenite.ai/mcp](https://syenite.ai/mcp). Parallel primary channel.
 3. **Direct Platform** — institutions use Syenite vaults directly via the Syenite dapp (LISA/MLISA). Any BTC wrapper.
 4. **B2B Infra / White-Label** — lending desks and platforms integrate vault API + risk framework. Phase 9+.
 
