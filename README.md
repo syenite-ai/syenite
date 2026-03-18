@@ -38,7 +38,7 @@ Interest spread. Syenite captures the delta between protocol rates and client ra
 ## Distribution Channels
 
 1. **AC Smart Accounts** — whitelisted adaptor on the Threshold institutional UI. tBTC minted via Account Control flows through Syenite's managed lending layer. Primary distribution for institutional BTC.
-2. **MCP Lending Server** — the canonical tool interface for AI agents interacting with on-chain lending. Free read tools (rates, monitoring, risk) across Aave v3, Morpho Blue, Spark and 8+ collateral types drive developer adoption; paid execution tools (position open, unwind, rebalance) generate vault activity. Live at [syenite.ai/mcp](https://syenite.ai/mcp). Parallel primary channel.
+2. **MCP DeFi Intelligence Server** — the canonical tool interface for AI agents interacting with DeFi. Free yield intelligence (yield.opportunities, yield.assess) and lending tools (rates, monitoring, risk) across 10+ protocols drive developer adoption; paid execution tools generate vault activity. Live at [syenite.ai/mcp](https://syenite.ai/mcp). Parallel primary channel.
 3. **Direct Platform** — institutions use Syenite vaults directly via the Syenite dapp (LISA/MLISA). Any BTC wrapper.
 4. **B2B Infra / White-Label** — lending desks and platforms integrate vault API + risk framework. Phase 9+.
 
@@ -61,10 +61,10 @@ syenite/
 │   └── competitive/      # Competitive landscape, market map
 ├── contracts/            # Solidity (when build starts)
 ├── keeper/               # Keeper agent infrastructure
-├── mcp/                  # MCP lending server (parallel build track)
+├── mcp/                  # MCP DeFi intelligence server (parallel build track)
 └── frontend/             # Minimal UI
 ```
 
 ## Status
 
-Pre-build. Documentation, planning, and research complete. MCP lending server and vault contracts are parallel build tracks.
+MCP DeFi intelligence server is live at [syenite.ai](https://syenite.ai) with yield intelligence (Lido, Rocket Pool, Maker DSR, MetaMorpho, Yearn, Ethena, Pendle) and lending tools (Aave v3, Morpho Blue, Spark). Vault contracts are a parallel build track.

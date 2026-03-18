@@ -4,8 +4,8 @@ export function landingPageHtml(): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>syenite — DeFi lending intelligence for AI agents</title>
-  <meta name="description" content="DeFi lending intelligence for AI agents. Cross-protocol rates, position monitoring, and risk assessment via MCP. Aave v3, Morpho Blue, Spark on Ethereum.">
+  <title>syenite — DeFi intelligence for AI agents</title>
+  <meta name="description" content="DeFi intelligence for AI agents. Yield opportunities, lending rates, position monitoring, and risk assessment via MCP. On-chain data from 10+ protocols on Ethereum.">
   <style>
     :root {
       --bg: #101010;
@@ -266,7 +266,7 @@ export function landingPageHtml(): string {
   <header class="hero">
     <span class="tag">mcp server · open access · no api key required</span>
     <h1>syenite</h1>
-    <p class="lead">DeFi lending intelligence for AI agents. Real-time rates, position monitoring, and risk assessment across Aave v3, Morpho Blue, and Spark on Ethereum.</p>
+    <p class="lead">DeFi intelligence for AI agents. Yield opportunities, lending rates, risk assessment, and position monitoring across 10+ protocols on Ethereum \u2014 all from on-chain data.</p>
   </header>
 
   <section>
@@ -275,7 +275,7 @@ export function landingPageHtml(): string {
     <h3>Claude Desktop / Cursor</h3>
     <pre><code>{
   <span class="k">"mcpServers"</span>: {
-    <span class="k">"syenite-lending"</span>: {
+    <span class="k">"syenite"</span>: {
       <span class="k">"url"</span>: <span class="s">"https://syenite.ai/mcp"</span>
     }
   }
@@ -298,29 +298,53 @@ export function landingPageHtml(): string {
 
     <div class="tool">
       <div class="tool-name">syenite.help</div>
-      <p class="tool-desc">Service info, available tools, supported protocols and assets, and how to get started.</p>
+      <p class="tool-desc">Service info, available tools, supported protocols, yield sources, and how to get started.</p>
+    </div>
+
+    <h3 style="margin-top:2rem;color:var(--muted);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.08em">yield</h3>
+
+    <div class="tool">
+      <div class="tool-name">yield.opportunities</div>
+      <p class="tool-desc">Find the best DeFi yield for any asset. Aggregates lending supply, liquid staking, vaults, savings rates, basis capture, and fixed yield across blue-chip protocols.</p>
+      <div class="params">
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">"ETH", "USDC", "DAI", "stables", or "all"</span>
+        <span class="pn">category</span><span class="pt">string</span><span class="pd">"lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", "fixed-yield", or "all"</span>
+        <span class="pn">riskTolerance</span><span class="pt">string</span><span class="pd">"low", "medium", or "high" (default)</span>
+      </div>
     </div>
 
     <div class="tool">
-      <div class="tool-name">lending.rates.query</div>
-      <p class="tool-desc">Real-time lending rates across Aave v3, Morpho Blue, and Spark. Compare borrow APY, supply APY, liquidity, and utilization across protocols for any collateral type.</p>
+      <div class="tool-name">yield.assess</div>
+      <p class="tool-desc">Deep risk assessment for a specific yield strategy. Smart contract risk, oracle dependency, governance, liquidity, depeg risk, position sizing, and comparable alternatives.</p>
       <div class="params">
-        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH", "BTC", "ETH", or "all"</span>
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"Aave", "Lido", "Morpho", "Ethena", "Pendle", "Yearn", "Maker", etc.</span>
+        <span class="pn">amount</span><span class="pt">number</span><span class="pd">USD amount to deposit (optional, enables sizing analysis)</span>
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">Asset context for finding alternatives</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2rem;color:var(--muted);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.08em">lending</h3>
+
+    <div class="tool">
+      <div class="tool-name">lending.rates.query</div>
+      <p class="tool-desc">Real-time borrow and supply rates across Aave v3, Morpho Blue, and Spark for any collateral type.</p>
+      <div class="params">
+        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "WETH", "wstETH", "BTC", "ETH", or "all"</span>
         <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", "DAI", or "GHO"</span>
       </div>
     </div>
 
     <div class="tool">
       <div class="tool-name">lending.market.overview</div>
-      <p class="tool-desc">Aggregate market view. Per-protocol totals for TVL, utilization, rate ranges, and available liquidity.</p>
+      <p class="tool-desc">Aggregate market view. Per-protocol TVL, utilization, rate ranges, and available liquidity.</p>
       <div class="params">
-        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">Filter by asset, category ("BTC", "ETH"), or "all"</span>
+        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">Filter by asset, category, or "all"</span>
       </div>
     </div>
 
     <div class="tool">
       <div class="tool-name">lending.position.monitor</div>
-      <p class="tool-desc">Health check for any DeFi lending position. Returns LTV, health factor, liquidation price, distance to liquidation, and estimated annual cost. Scans all collateral types.</p>
+      <p class="tool-desc">Health check for any DeFi lending position. LTV, health factor, liquidation price, and estimated annual cost.</p>
       <div class="params">
         <span class="pn">address</span><span class="pt">string</span><span class="pd">Ethereum address to check</span>
         <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "all"</span>
@@ -329,11 +353,10 @@ export function landingPageHtml(): string {
 
     <div class="tool">
       <div class="tool-name">lending.risk.assess</div>
-      <p class="tool-desc">Risk assessment for a proposed position. Returns risk score, recommended protocol, liquidation analysis, collateral risk profile, and estimated annual cost.</p>
+      <p class="tool-desc">Risk assessment for a proposed lending position. Risk score, liquidation analysis, protocol risk, and position sizing.</p>
       <div class="params">
         <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH"</span>
         <span class="pn">collateralAmount</span><span class="pt">number</span><span class="pd">Amount of collateral asset</span>
-        <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", "DAI", or "GHO"</span>
         <span class="pn">targetLTV</span><span class="pt">number</span><span class="pd">Desired LTV (1\u201399)</span>
         <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "best"</span>
       </div>
@@ -346,33 +369,35 @@ export function landingPageHtml(): string {
   </section>
 
   <section>
-    <h2>supported assets</h2>
+    <h2>yield sources</h2>
     <div class="table-wrap">
       <table>
-        <tr><th>Category</th><th>Assets</th></tr>
-        <tr><td>BTC</td><td>wBTC, tBTC, cbBTC</td></tr>
-        <tr><td>ETH</td><td>WETH, wstETH, rETH, cbETH, weETH</td></tr>
-        <tr><td>Stables</td><td>USDC, USDT, DAI, GHO</td></tr>
+        <tr><th>Category</th><th>Protocols</th><th>Assets</th></tr>
+        <tr><td>Lending Supply</td><td>Aave v3, Morpho Blue, Spark</td><td>USDC, USDT, DAI, GHO</td></tr>
+        <tr><td>Liquid Staking</td><td>Lido, Rocket Pool, Coinbase</td><td>ETH \u2192 stETH, rETH, cbETH</td></tr>
+        <tr><td>Savings Rate</td><td>Maker DSR</td><td>DAI \u2192 sDAI</td></tr>
+        <tr><td>Vaults</td><td>MetaMorpho, Yearn v3</td><td>USDC, USDT, WETH</td></tr>
+        <tr><td>Basis Capture</td><td>Ethena</td><td>USDe \u2192 sUSDe</td></tr>
+        <tr><td>Fixed Yield</td><td>Pendle</td><td>PT tokens (various)</td></tr>
       </table>
     </div>
   </section>
 
   <section>
-    <h2>data sources</h2>
-    <p>All data read directly from on-chain contracts via Ethereum RPC \u2014 no intermediary APIs or off-chain oracles. Prices use Chainlink feeds. Cached briefly (15\u201360s) for performance.</p>
+    <h2>lending protocols</h2>
+    <p>All lending data read directly from on-chain contracts via Ethereum RPC. Prices use Chainlink feeds. Cached briefly (15\u201360s).</p>
     <div class="table-wrap">
       <table>
-        <tr><th>Protocol</th><th>Contracts</th><th>Collateral</th></tr>
-        <tr><td>Aave v3</td><td>Pool, PoolDataProvider</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
-        <tr><td>Morpho Blue</td><td>Morpho, AdaptiveCurveIRM</td><td>wBTC/USDC, tBTC/USDC, cbBTC/USDC, wstETH/USDC, WETH/USDC</td></tr>
-        <tr><td>Spark</td><td>Pool, PoolDataProvider</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
-        <tr><td>Chainlink</td><td>Price Feeds</td><td>BTC/USD, ETH/USD, USDC/USD</td></tr>
+        <tr><th>Protocol</th><th>Collateral</th></tr>
+        <tr><td>Aave v3</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
+        <tr><td>Morpho Blue</td><td>wBTC, tBTC, cbBTC, wstETH, WETH</td></tr>
+        <tr><td>Spark</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
       </table>
     </div>
   </section>
 
   <footer class="foot">
-    syenite \u00b7 defi lending intelligence \u00b7 <a href="https://syenite.ai">syenite.ai</a>
+    syenite \u00b7 defi intelligence \u00b7 <a href="https://syenite.ai">syenite.ai</a>
   </footer>
 
 </div>

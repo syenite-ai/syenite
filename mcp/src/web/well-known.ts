@@ -1,14 +1,16 @@
 export function wellKnownMcp() {
   return {
-    name: "syenite-lending",
-    version: "0.2.0",
+    name: "syenite",
+    version: "0.3.0",
     description:
-      "DeFi lending intelligence for AI agents — cross-protocol rates, position monitoring, and risk assessment across Aave v3, Morpho Blue, and more on Ethereum",
+      "DeFi intelligence for AI agents — yield opportunities, lending rates, risk assessment, and position monitoring across 10+ protocols on Ethereum",
     transport: "streamable-http",
     endpoint: "/mcp",
     authentication: "none",
     tools: [
       "syenite.help",
+      "yield.opportunities",
+      "yield.assess",
       "lending.rates.query",
       "lending.market.overview",
       "lending.position.monitor",

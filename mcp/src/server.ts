@@ -4,6 +4,8 @@ import { handleRatesQuery, ratesToolDescription } from "./tools/rates.js";
 import { handleMarketOverview, marketToolDescription } from "./tools/market.js";
 import { handlePositionMonitor, monitorToolDescription } from "./tools/monitor.js";
 import { handleRiskAssess, riskToolDescription } from "./tools/risk.js";
+import { handleYieldOpportunities, yieldToolDescription } from "./tools/yield.js";
+import { handleYieldAssess, yieldAssessToolDescription } from "./tools/yield-assess.js";
 import { logToolCall } from "./logging/usage.js";
 
 function withLogging(
@@ -45,8 +47,8 @@ function withLogging(
 export function createMcpServer(clientIp: string): McpServer {
   const server = new McpServer(
     {
-      name: "syenite-lending",
-      version: "0.2.0",
+      name: "syenite",
+      version: "0.3.0",
     },
     { capabilities: { tools: {} } }
   );
@@ -54,7 +56,7 @@ export function createMcpServer(clientIp: string): McpServer {
   // ── syenite.help ──────────────────────────────────────────────────
   server.tool(
     "syenite.help",
-    `Get information about Syenite's DeFi lending intelligence tools, supported protocols, assets, and how to get started.
+    `Get information about Syenite's DeFi intelligence tools, supported protocols, assets, yield sources, and how to get started.
 Call this tool to learn what data is available and how to use it effectively.`,
     {},
     async () => ({
@@ -62,10 +64,18 @@ Call this tool to learn what data is available and how to use it effectively.`,
         {
           type: "text",
           text: JSON.stringify({
-            service: "Syenite — DeFi Lending Intelligence",
+            service: "Syenite — DeFi Intelligence",
             description:
-              "Real-time lending market data across major DeFi protocols on Ethereum. Rates, positions, risk assessment, and market overviews — all from on-chain data.",
+              "Yield, lending, and risk data for AI agents. Cross-protocol rates, yield opportunities, position monitoring, and risk assessment — all from on-chain data on Ethereum.",
             tools: [
+              {
+                name: "yield.opportunities",
+                use: "Find the best yield for any asset across lending, staking, vaults, savings, basis capture, and fixed yield",
+              },
+              {
+                name: "yield.assess",
+                use: "Deep risk assessment for a specific yield strategy — smart contract, oracle, governance, liquidity, and depeg risk",
+              },
               {
                 name: "lending.rates.query",
                 use: "Compare borrow/supply rates across protocols for any collateral and borrow asset pair",
@@ -80,14 +90,18 @@ Call this tool to learn what data is available and how to use it effectively.`,
               },
               {
                 name: "lending.risk.assess",
-                use: "Risk assessment for a proposed position — liquidation price, safety margin, annual cost",
+                use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost",
               },
             ],
-            protocols: [
-              "Aave v3",
-              "Morpho Blue",
-              "Spark (SparkLend)",
-            ],
+            yieldSources: {
+              "lending-supply": ["Aave v3", "Morpho Blue", "Spark"],
+              "liquid-staking": ["Lido (stETH/wstETH)", "Rocket Pool (rETH)", "Coinbase (cbETH)"],
+              "savings-rate": ["Maker DSR (sDAI)"],
+              vault: ["MetaMorpho (Steakhouse, Gauntlet)", "Yearn v3"],
+              "basis-capture": ["Ethena (sUSDe)"],
+              "fixed-yield": ["Pendle PT"],
+            },
+            lendingProtocols: ["Aave v3", "Morpho Blue", "Spark"],
             assets: {
               collateral: ["wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH"],
               borrow: ["USDC", "USDT", "DAI", "GHO"],
@@ -99,7 +113,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
             },
             website: "https://syenite.ai",
             signUp:
-              "Visit https://syenite.ai to sign up for alerts, managed lending positions, and premium features.",
+              "Visit https://syenite.ai to sign up for alerts, managed positions, and premium features.",
           }),
         },
       ],
@@ -195,6 +209,55 @@ Call this tool to learn what data is available and how to use it effectively.`,
           protocol?: string;
         }
       )
+    )
+  );
+
+  // ── yield.opportunities ──────────────────────────────────────────
+  server.tool(
+    "yield.opportunities",
+    yieldToolDescription,
+    {
+      asset: z
+        .string()
+        .default("all")
+        .describe('Asset to find yield for: "ETH", "USDC", "DAI", "WETH", "USDe", "stables", or "all"'),
+      category: z
+        .string()
+        .default("all")
+        .describe('Yield category filter: "lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture", "fixed-yield", or "all"'),
+      riskTolerance: z
+        .enum(["low", "medium", "high"])
+        .default("high")
+        .describe('Maximum risk level to show: "low", "medium", or "high" (default, shows all)'),
+    },
+    withLogging(clientIp, "yield.opportunities", (p) =>
+      handleYieldOpportunities(p as { asset?: string; category?: string; riskTolerance?: string })
+    )
+  );
+
+  // ── yield.assess ────────────────────────────────────────────────
+  server.tool(
+    "yield.assess",
+    yieldAssessToolDescription,
+    {
+      protocol: z
+        .string()
+        .describe('Protocol to assess: "Aave", "Lido", "Morpho", "Ethena", "Pendle", "Yearn", "Maker", "Rocket Pool", "Coinbase"'),
+      product: z
+        .string()
+        .optional()
+        .describe("Specific product name (optional, helps match the right source)"),
+      amount: z
+        .number()
+        .optional()
+        .describe("Amount in USD to deposit (optional, enables position sizing analysis)"),
+      asset: z
+        .string()
+        .default("all")
+        .describe("Asset context for finding alternatives"),
+    },
+    withLogging(clientIp, "yield.assess", (p) =>
+      handleYieldAssess(p as { protocol: string; product?: string; amount?: number; asset?: string })
     )
   );
 

@@ -158,6 +158,63 @@ export const MORPHO_MARKETS: MorphoMarketConfig[] = [
   },
 ];
 
+// ── Yield source contracts (Ethereum mainnet) ───────────────────────
+
+export const MAKER = {
+  pot: getAddress("0x197e90f9fad81970ba7976f33cbd77088e5d7cf7"),
+  sDAI: TOKENS.sDAI,
+};
+
+export const LIDO = {
+  stETH: getAddress("0xae7ab96520de3a18e5e111b5eaab095312d7fe84"),
+  wstETH: TOKENS.wstETH,
+  accountingOracle: getAddress("0x852ded011285fe67063a08005c71a85690503cee"),
+};
+
+export const ROCKET_POOL = {
+  rETH: TOKENS.rETH,
+  storage: getAddress("0x1d8f8f00cfa6758d7be78336684788fb0ee0fa46"),
+};
+
+export const COINBASE = {
+  cbETH: TOKENS.cbETH,
+};
+
+export const ETHENA = {
+  USDe: getAddress("0x4c9edd5852cd905f086c759e8383e09bff1e68b3"),
+  sUSDe: getAddress("0x9d39a5de30e57443bff2a8307a4256c8797a3497"),
+};
+
+export const YEARN = {
+  aprOracle: getAddress("0x27ab1d3bfa3801551e9e4dbc34e5e1d6096fc00d"),
+};
+
+/** Blue-chip Morpho MetaMorpho vault addresses */
+export const METAMORPHO_VAULTS: Array<{ address: Address; label: string; asset: string }> = [
+  { address: getAddress("0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB"), label: "Steakhouse USDC", asset: "USDC" },
+  { address: getAddress("0x78Fc2c2eD71dAb0491d268e004e5c6aDFaf11300"), label: "Gauntlet USDC Prime", asset: "USDC" },
+  { address: getAddress("0x2371e134e3455e0593363cBF89d3b6cf53740618"), label: "Steakhouse USDT", asset: "USDT" },
+  { address: getAddress("0xA0E430870c4604CcfC7B38Ca7845B1FF653D0ff1"), label: "Gauntlet WETH Prime", asset: "WETH" },
+];
+
+/** Blue-chip Yearn v3 vault addresses */
+export const YEARN_VAULTS: Array<{ address: Address; label: string; asset: string }> = [
+  { address: getAddress("0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204"), label: "Yearn USDC", asset: "USDC" },
+  { address: getAddress("0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE"), label: "Yearn USDT", asset: "USDT" },
+  { address: getAddress("0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0"), label: "Yearn WETH", asset: "WETH" },
+];
+
+/** Pendle PT markets (Ethereum mainnet, current active maturities) */
+export const PENDLE_MARKETS: Array<{ market: Address; pt: Address; label: string; asset: string; maturity: string }> = [
+  {
+    market: getAddress("0x08bf93c8f85977c64069dd34c5da7b1c636e104f"),
+    pt: getAddress("0xe8483517077afa11a9b07f849cee2552f040d7b2"),
+    label: "PT sUSDe Feb 2026",
+    asset: "USDe",
+    maturity: "2026-02-05",
+  },
+];
+
 // ── Cache TTL configuration (seconds) ───────────────────────────────
 
 export const CACHE_TTL = {
@@ -165,6 +222,7 @@ export const CACHE_TTL = {
   marketOverview: 60,
   position: 15,
   prices: 30,
+  yield: 60,
 };
 
 // ── Return types ────────────────────────────────────────────────────
@@ -229,6 +287,30 @@ export interface RiskAssessment {
   estimatedAnnualCost: number;
   autoUnwindRecommended: boolean;
   summary: string;
+}
+
+// ── Yield types ─────────────────────────────────────────────────────
+
+export type YieldCategory =
+  | "lending-supply"
+  | "liquid-staking"
+  | "vault"
+  | "savings-rate"
+  | "basis-capture"
+  | "fixed-yield";
+
+export interface YieldOpportunity {
+  protocol: string;
+  product: string;
+  asset: string;
+  apy: number;
+  apyType: "variable" | "fixed" | "trailing-7d";
+  tvlUSD: number;
+  category: YieldCategory;
+  risk: "low" | "medium" | "high";
+  riskNotes: string;
+  lockup: string;
+  lastUpdated: string;
 }
 
 export const SECONDS_PER_YEAR = 365.25 * 24 * 60 * 60;
