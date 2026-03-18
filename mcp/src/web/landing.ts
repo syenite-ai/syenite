@@ -4,8 +4,8 @@ export function landingPageHtml(): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>syenite — DeFi intelligence for AI agents</title>
-  <meta name="description" content="DeFi intelligence for AI agents. Yield opportunities, lending rates, position monitoring, and risk assessment via MCP. On-chain data from blue-chip DeFi protocols on Ethereum.">
+  <title>syenite — the DeFi interface for AI agents</title>
+  <meta name="description" content="The DeFi interface for AI agents. Swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP. One endpoint for reading and writing to DeFi across 30+ chains.">
   <style>
     :root {
       --bg: #101010;
@@ -40,8 +40,6 @@ export function landingPageHtml(): string {
       margin: 0 auto;
       padding: 4rem 0 3rem;
     }
-
-    /* ── typography ───────────────────────────── */
 
     h1, h2, h3 {
       font-family: var(--mono);
@@ -81,8 +79,6 @@ export function landingPageHtml(): string {
 
     a:hover { color: var(--accent-hover); }
 
-    /* ── hero ─────────────────────────────────── */
-
     .hero { margin-bottom: 0.5rem; }
 
     .tag {
@@ -101,8 +97,6 @@ export function landingPageHtml(): string {
       line-height: 1.7;
       margin-top: 0.75rem;
     }
-
-    /* ── code ─────────────────────────────────── */
 
     pre {
       background: var(--surface);
@@ -135,8 +129,6 @@ export function landingPageHtml(): string {
       font-size: 0.82em;
       color: #aaa;
     }
-
-    /* ── tools ────────────────────────────────── */
 
     .tool {
       margin-bottom: 2.25rem;
@@ -186,8 +178,6 @@ export function landingPageHtml(): string {
       border-bottom: 1px solid #151515;
     }
 
-    /* ── tables ───────────────────────────────── */
-
     .table-wrap {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -214,7 +204,16 @@ export function landingPageHtml(): string {
 
     td { color: #888; }
 
-    /* ── footer ───────────────────────────────── */
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #777;
+    }
 
     .foot {
       margin-top: 4rem;
@@ -228,7 +227,14 @@ export function landingPageHtml(): string {
     .foot a { color: var(--muted); }
     .foot a:hover { color: var(--accent); }
 
-    /* ── responsive ───────────────────────────── */
+    .section-label {
+      margin-top: 2rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+    }
 
     @media (max-width: 600px) {
       body { padding: 0 1rem; }
@@ -264,9 +270,9 @@ export function landingPageHtml(): string {
 <div class="wrap">
 
   <header class="hero">
-    <span class="tag">mcp server · open access · no api key required</span>
+    <span class="tag">the defi interface for ai agents \u00b7 open access \u00b7 no api key</span>
     <h1>syenite</h1>
-    <p class="lead">DeFi intelligence for AI agents. Yield opportunities, lending rates, risk assessment, and position monitoring across blue-chip DeFi protocols on Ethereum \u2014 all from on-chain data.</p>
+    <p class="lead">One MCP endpoint for swaps, bridges, yield, lending, and risk across 30+ chains. Intelligence and execution in one place \u2014 agents read data, get quotes, and receive unsigned transactions ready to sign.</p>
   </header>
 
   <section>
@@ -298,10 +304,37 @@ export function landingPageHtml(): string {
 
     <div class="tool">
       <div class="tool-name">syenite.help</div>
-      <p class="tool-desc">Service info, available tools, supported protocols, yield sources, and how to get started.</p>
+      <p class="tool-desc">Service info, available tools, supported chains, and how to get started.</p>
     </div>
 
-    <h3 style="margin-top:2rem;color:var(--muted);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.08em">yield</h3>
+    <p class="section-label">swap & bridge</p>
+
+    <div class="tool">
+      <div class="tool-name">swap.quote</div>
+      <p class="tool-desc">Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, and more). 30+ chains.</p>
+      <div class="params">
+        <span class="pn">fromToken</span><span class="pt">string</span><span class="pd">Token to sell \u2014 symbol or address</span>
+        <span class="pn">toToken</span><span class="pt">string</span><span class="pd">Token to buy \u2014 symbol or address</span>
+        <span class="pn">fromAmount</span><span class="pt">string</span><span class="pd">Amount in smallest unit (e.g. 1000000 for 1 USDC)</span>
+        <span class="pn">fromAddress</span><span class="pt">string</span><span class="pd">Sender wallet address</span>
+        <span class="pn">fromChain</span><span class="pt">string</span><span class="pd">"ethereum", "arbitrum", "base", "optimism", "polygon", etc.</span>
+        <span class="pn">toChain</span><span class="pt">string</span><span class="pd">Destination chain (defaults to fromChain)</span>
+        <span class="pn">slippage</span><span class="pt">number</span><span class="pd">Max slippage as decimal (0.005 = 0.5%)</span>
+        <span class="pn">order</span><span class="pt">string</span><span class="pd">"CHEAPEST" or "FASTEST"</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">swap.status</div>
+      <p class="tool-desc">Track execution status of a cross-chain bridge. Returns status, receiving tx hash, and amount received.</p>
+      <div class="params">
+        <span class="pn">txHash</span><span class="pt">string</span><span class="pd">Transaction hash of the submitted swap/bridge</span>
+        <span class="pn">fromChain</span><span class="pt">string</span><span class="pd">Chain where tx was submitted</span>
+        <span class="pn">toChain</span><span class="pt">string</span><span class="pd">Destination chain</span>
+      </div>
+    </div>
+
+    <p class="section-label">yield</p>
 
     <div class="tool">
       <div class="tool-name">yield.opportunities</div>
@@ -323,7 +356,7 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
-    <h3 style="margin-top:2rem;color:var(--muted);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.08em">lending</h3>
+    <p class="section-label">lending</p>
 
     <div class="tool">
       <div class="tool-name">lending.rates.query</div>
@@ -364,8 +397,17 @@ export function landingPageHtml(): string {
   </section>
 
   <section>
-    <h2>access</h2>
-    <p>Open access \u2014 no API key required. Rate limited to 30 requests/minute per IP. Just point your agent at the endpoint and start querying.</p>
+    <h2>how execution works</h2>
+    <div class="callout">
+      <strong>Syenite never holds private keys.</strong> The <code>swap.quote</code> tool returns an unsigned <code>transactionRequest</code> containing the optimal route calldata. The agent or user signs and submits the transaction from their own wallet. For cross-chain bridges, use <code>swap.status</code> to track execution progress.
+    </div>
+    <p>Routing is aggregated across 1inch, 0x, Paraswap, and bridge protocols via Li.Fi. Quotes are optimised for best price or fastest execution.</p>
+  </section>
+
+  <section>
+    <h2>supported chains</h2>
+    <p>Swap and bridge routing supports 30+ chains including Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scroll, Gnosis, and Fantom.</p>
+    <p>Yield intelligence and lending data cover Ethereum mainnet protocols.</p>
   </section>
 
   <section>
@@ -389,14 +431,19 @@ export function landingPageHtml(): string {
       <table>
         <tr><th>Protocol</th><th>Collateral</th></tr>
         <tr><td>Aave v3</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
-        <tr><td>Morpho Blue</td><td>wBTC, tBTC, cbBTC, wstETH</td></tr>
+        <tr><td>Morpho Blue</td><td>wBTC, tBTC, cbBTC, wstETH, WETH</td></tr>
         <tr><td>Spark</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
       </table>
     </div>
   </section>
 
+  <section>
+    <h2>access</h2>
+    <p>Open access \u2014 no API key required. Rate limited to 30 requests/minute per IP. Just point your agent at the endpoint and start querying.</p>
+  </section>
+
   <footer class="foot">
-    syenite \u00b7 defi intelligence \u00b7 <a href="https://syenite.ai">syenite.ai</a>
+    syenite \u00b7 the defi interface for ai agents \u00b7 <a href="https://syenite.ai">syenite.ai</a>
   </footer>
 
 </div>

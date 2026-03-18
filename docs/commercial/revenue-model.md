@@ -120,40 +120,60 @@ Deferred to Phase 9. Directional model:
 
 ---
 
-## MCP Lending Server Revenue
+## MCP DeFi Router Revenue
 
-The MCP server is a distribution channel, not a revenue center. Revenue comes from the vault infrastructure underneath — agents that open positions through the MCP server create Syenite vaults and generate interest spread revenue.
+The MCP server generates revenue through two channels: near-term integrator fees on swap/bridge routing volume, and medium-term vault interest spreads on managed positions.
 
-### Open Core Model
+### Two-Layer Model
 
-| Tier | Tools | Price | Purpose |
+| Layer | Tools | Price | Purpose |
 |---|---|---|---|
-| Free | rates.query, position.monitor, risk.assess, market.overview | $0 | Adoption layer — best DeFi lending data source for agents |
-| Paid (execution) | position.open, position.unwind, position.rebalance, vault.create | Vault-level interest spread | Revenue layer — vault creation drives spread revenue |
+| **Data** (free) | yield.*, lending.*, syenite.help | $0 | Adoption — best DeFi data source for agents. Captures category. |
+| **Execution** (fee-bearing) | swap.quote, swap.status | Integrator fee on volume (~15bp) | Revenue — every agent swap/bridge generates a small fee |
+| **Managed** (future) | yield.deposit, yield.withdraw, position.* | Vault interest spread | Higher-margin revenue on managed positions |
+
+### Swap/Bridge Routing Revenue (Live)
+
+Swap and bridge routing uses Li.Fi as the aggregation backend (1inch, 0x, Paraswap, bridges across 30+ chains). Syenite adds an integrator fee (configurable, starting at 15bp) on top of Li.Fi's base fee.
+
+| Monthly Agent Swap Volume | Integrator Fee (15bp) | Annual Revenue |
+|---|---|---|
+| $1M | $1,500/mo | $18K |
+| $10M | $15,000/mo | $180K |
+| $50M | $75,000/mo | $900K |
+| $100M | $150,000/mo | $1.8M |
+
+**Volume thesis:** Agent-driven swap volume will scale with autonomous agent adoption. If Syenite becomes the canonical MCP DeFi interface, it captures a share of every agent-initiated trade. Volume compounds with each new agent integration.
+
+**Why agents route via Syenite:** Convenience. One MCP server provides yield data + swap execution + lending intelligence. Agents don't need to integrate three separate protocols. The data layer creates stickiness; the execution layer monetises it.
+
+**Competitive positioning:** Symbiosis MCP, deBridge MCP, and y0exchange offer swap-only MCP servers but no intelligence layer. Syenite is the only server combining data (yield, lending, risk) with execution (swaps, bridges) in one endpoint.
 
 ### Why Free Tier Matters
 
-The DeFi MCP niche has ~27 servers (March 2026). Zero target institutional lending. The free tier captures the category before competition materializes. Agent developers integrate the read tools because they're genuinely useful. When their agents graduate from read to write, the Syenite vault is the obvious next step.
+85M+ weekly MCP SDK downloads across 33K+ dependents. All major agent frameworks (CrewAI, LangChain, OpenAI Agents SDK) support MCP natively. Cross-vendor client support (Claude, ChatGPT, Cursor, VS Code, Windsurf, Cline). The free data layer captures developers before competition materialises. When their agents need to execute, Syenite is already integrated.
 
-85M+ weekly MCP SDK downloads across 33K+ dependents. All major agent frameworks (CrewAI, LangChain, OpenAI Agents SDK) support MCP natively. Cross-vendor client support (Claude, ChatGPT, Cursor, VS Code, Windsurf, Cline). The addressable developer audience is large and growing.
+### Revenue Mechanics (Routing)
 
-### Revenue Mechanics
+1. Agent queries `yield.opportunities` or `lending.rates.query` (free) → finds opportunity
+2. Agent calls `swap.quote` → gets optimal route with unsigned calldata (integrator fee embedded)
+3. Agent signs and submits transaction → swap executes on-chain
+4. Li.Fi collects and distributes fees → Syenite claims integrator share via portal
+5. For cross-chain: agent tracks via `swap.status` (free)
 
-1. Agent calls `lending.position.open` via MCP → Syenite vault is created (Safe proxy)
-2. Vault executes lending position on Aave/Morpho with auto-unwind configured
-3. Syenite captures interest spread on the managed position
-4. Agent monitors via `lending.position.monitor` (free)
-5. Agent adjusts/rebalances via paid tools → vault activity continues → spread revenue continues
+### Revenue Mechanics (Managed — Future)
 
-The MCP server generates the same vault-level revenue as institutional clients. An agent managing a $5M BTC lending position produces the same spread as an institution managing $5M through the AC SA adaptor. The distribution channel is different; the revenue model is identical.
+1. Agent calls `yield.deposit` via MCP → Syenite vault deposits into optimal yield source
+2. Vault auto-rebalances as rates shift → Syenite captures management fee + performance fee
+3. Agent monitors via data tools (free) → adjusts via managed tools → vault activity continues
 
 ### Agent Volume Thesis
 
-Human traders interact with DeFi once or twice a day. Agents interact every block. The frequency and volume of agent-driven lending operations will dwarf human operations. An MCP server that becomes the canonical lending interface for agents captures volume that scales with agent adoption, not headcount.
+Human traders interact with DeFi once or twice a day. Agents interact continuously. The frequency and volume of agent-driven operations will dwarf human operations. An MCP server that becomes the canonical DeFi interface for agents captures volume that scales with agent adoption, not headcount.
 
 ### AC SA + MCP Compound
 
-Institutions using AC Smart Accounts can designate an AI agent as their SA operator. The agent operates tBTC lending positions through the MCP interface, constrained by the SA whitelist (Threshold's gate), the Syenite vault parameters (risk framework), and the protocol's own constraints. Three layers of protection, each enforced by a different party, none of which the agent can override. This is an institutional compliance story for agentic DeFi that doesn't exist anywhere else.
+Institutions using AC Smart Accounts can designate an AI agent as their SA operator. The agent operates tBTC lending positions through the MCP interface, constrained by the SA whitelist (Threshold's gate), the Syenite vault parameters (risk framework), and the protocol's own constraints. Three layers of protection, each enforced by a different party, none of which the agent can override.
 
 ---
 

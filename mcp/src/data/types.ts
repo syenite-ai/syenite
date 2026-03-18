@@ -275,6 +275,68 @@ export interface RiskAssessment {
   summary: string;
 }
 
+// ── Chain constants ──────────────────────────────────────────────────
+
+export const CHAIN_IDS: Record<string, number> = {
+  ethereum: 1,
+  optimism: 10,
+  bsc: 56,
+  gnosis: 100,
+  polygon: 137,
+  fantom: 250,
+  zksync: 324,
+  base: 8453,
+  arbitrum: 42161,
+  avalanche: 43114,
+  linea: 59144,
+  scroll: 534352,
+};
+
+export const CHAIN_NAMES: Record<number, string> = Object.fromEntries(
+  Object.entries(CHAIN_IDS).map(([name, id]) => [id, name])
+);
+
+// ── Swap/Bridge types ───────────────────────────────────────────────
+
+export interface SwapQuote {
+  id: string;
+  fromChain: string;
+  toChain: string;
+  fromToken: { symbol: string; address: string; decimals: number };
+  toToken: { symbol: string; address: string; decimals: number };
+  fromAmount: string;
+  toAmount: string;
+  toAmountMin: string;
+  route: Array<{ type: string; tool: string; fromChain: string; toChain: string }>;
+  feeCosts: Array<{ name: string; percentage: string; amountUSD: string }>;
+  gasCostUSD: string;
+  executionDurationSeconds: number;
+  transactionRequest: {
+    to: string;
+    data: string;
+    value: string;
+    gasLimit: string;
+    chainId: number;
+  };
+  approvalNeeded: {
+    tokenAddress: string;
+    spender: string;
+    amount: string;
+  } | null;
+}
+
+export interface SwapStatus {
+  status: "NOT_FOUND" | "PENDING" | "DONE" | "FAILED";
+  substatus?: string;
+  fromChain: string;
+  toChain: string;
+  bridgeName?: string;
+  sendingTxHash?: string;
+  receivingTxHash?: string;
+  fromAmount?: string;
+  toAmount?: string;
+}
+
 // ── Yield types ─────────────────────────────────────────────────────
 
 export type YieldCategory =

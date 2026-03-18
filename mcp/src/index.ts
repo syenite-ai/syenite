@@ -124,7 +124,7 @@ app.get("/dashboard/stats", (req, res) => {
 // ── Start ───────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
-  console.log(`Syenite MCP Lending Server running on http://localhost:${PORT}`);
+  console.log(`Syenite MCP Server running on http://localhost:${PORT}`);
   console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
   console.log(`  Landing page:  http://localhost:${PORT}/`);
   console.log(`  Health check:  http://localhost:${PORT}/health`);

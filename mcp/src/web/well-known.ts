@@ -1,14 +1,16 @@
 export function wellKnownMcp() {
   return {
     name: "syenite",
-    version: "0.3.1",
+    version: "0.4.0",
     description:
-      "DeFi intelligence for AI agents — yield opportunities, lending rates, risk assessment, and position monitoring across blue-chip DeFi protocols on Ethereum",
+      "The DeFi interface for AI agents — swap routing, bridge execution, yield intelligence, lending rates, risk assessment, and position monitoring across 30+ chains via MCP",
     transport: "streamable-http",
     endpoint: "/mcp",
     authentication: "none",
     tools: [
       "syenite.help",
+      "swap.quote",
+      "swap.status",
       "yield.opportunities",
       "yield.assess",
       "lending.rates.query",

@@ -29,6 +29,10 @@ services:
         value: "3000"
       - key: NODE_ENV
         value: production
+      - key: LIFI_INTEGRATOR
+        value: syenite
+      - key: LIFI_FEE
+        value: "0.0015"
     health_check:
       http_path: /health
       initial_delay_seconds: 10

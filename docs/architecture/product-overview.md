@@ -79,26 +79,32 @@ MLISA where Syenite also handles custody and BTC tokenisation. Same vault infras
 ### Infrastructure Layers
 
 ```
-Layer 4 — Institutional Service    [MLISA, ML]           ← Syenite builds
+Layer 5 — Institutional Service    [MLISA, ML]           ← Syenite builds
   Reporting, compliance, client comms, onboarding, SLA
 
-Layer 3 — Risk Framework           [LISA, MLISA, ML]     ← Syenite builds (Core IP)
+Layer 4 — Risk Framework           [LISA, MLISA, ML]     ← Syenite builds (Core IP)
   LTV calibration, liquidation buffers, cross-protocol risk,
   position sizing vs pool liquidity, correlation risk
 
-Layer 2 — Position Management      [LISA, MLISA, ML]     ← DeFi Saver fork + Syenite extensions
+Layer 3 — Position Management      [LISA, MLISA, ML]     ← DeFi Saver fork + Syenite extensions
   Real-time LTV monitoring, margin alerts, liquidation protection
   (flash-loan auto-unwind), rate monitoring, refinancing signals,
   cross-protocol rebalancing via Loan Shifter
 
-Layer 1 — Transaction Execution    [LISA, MLISA, ML]     ← DeFi Saver fork
+Layer 2 — Transaction Execution    [LISA, MLISA, ML]     ← DeFi Saver fork
   Recipe engine: atomic multi-step flows (deposit → borrow,
   repay → withdraw, cross-protocol migration via flash loans).
   Supports Aave, Morpho, Compound.
 
-Layer 0 — Rate Aggregation         [LISA, MLISA, ML]     ← DeFi Saver fork
-  Fetch/compare rates across supported protocols.
-  Positions SDK for cross-protocol monitoring.
+Layer 1 — Swap/Bridge Routing      [MCP Router]          ← Li.Fi aggregation (LIVE)
+  Cross-chain swap and bridge routing via 1inch, 0x, Paraswap,
+  and bridge protocols. 30+ chains. Unsigned calldata returned to
+  agent for signing. Integrator fee on volume. Primary revenue
+  channel for agent-driven DeFi interactions.
+
+Layer 0 — Rate & Yield Aggregation [LISA, MLISA, ML]     ← On-chain data (LIVE)
+  Fetch/compare lending rates, yield opportunities across
+  supported protocols. Positions SDK for cross-protocol monitoring.
 ```
 
 ### IP Map
@@ -123,20 +129,22 @@ Syenite is a whitelisted adaptor on the Threshold AC Smart Account system. Insti
 
 **Why this is primary:** AC SAs provide institutional distribution with per-client ACA legal protections, segregated QC custody, and automated onboarding. Syenite adds differentiation to the AC SA offering that passive Morpho vault access can't match — per-client vault isolation, auto-unwind, cross-protocol rebalancing, and real-time position management. Without a managed lending layer, tBTC's SA offering is functionally identical to Lombard's.
 
-### MCP Lending Server (Primary — Parallel Track)
-The canonical MCP interface for AI agents interacting with on-chain lending markets. Any agent framework (CrewAI, LangChain, OpenAI Agents SDK) can connect via standardised MCP tools.
+### MCP DeFi Router (Primary — Live)
+The canonical MCP interface for AI agents interacting with DeFi. Any agent framework (CrewAI, LangChain, OpenAI Agents SDK) can connect via standardised MCP tools. Live at syenite.ai/mcp.
 
-**Free tier** (adoption layer): `lending.rates.query`, `lending.position.monitor`, `lending.risk.assess` — read-only tools that make the MCP server the best DeFi lending data source available. Drives developer adoption.
+**Data layer** (adoption): `yield.opportunities`, `yield.assess`, `lending.rates.query`, `lending.market.overview`, `lending.position.monitor`, `lending.risk.assess` — read-only tools that make Syenite the best DeFi data source for agents. Free. Drives adoption.
 
-**Paid tier** (revenue layer): `lending.position.open`, `lending.position.unwind`, `lending.position.rebalance`, `lending.vault.create` — execution tools that create Syenite vaults. Revenue comes from vault infrastructure (interest spreads), not MCP tool fees.
+**Execution layer** (revenue): `swap.quote`, `swap.status` — swap and bridge routing across 30+ chains via Li.Fi aggregation (1inch, 0x, Paraswap, bridges). Returns unsigned calldata; agent signs. Revenue via integrator fee on swap/bridge volume. No private keys held.
 
-**LISA for agents:** The agent (or owner's EOA) signs transactions. The agent calls MCP tools, reasons about rates and risk, makes decisions — the Syenite vault enforces hard guardrails (max LTV, whitelisted protocols, authorized withdrawals). The vault is a sandbox with teeth.
+**Future execution**: `yield.deposit`, `yield.withdraw`, `position.open`, `position.rebalance` — vault management tools that create Syenite vaults. Revenue from vault infrastructure (interest spreads).
 
-**MLISA for agents:** The agent owner deposits capital, sets preferences (target LTV, rebalancing threshold, unwind trigger). Syenite's keepers execute within those preferences. The MCP interface becomes a monitoring and preference-setting layer.
+**Competitive positioning**: Symbiosis MCP, deBridge MCP, and y0exchange offer swap-only MCP servers. Syenite is the only server combining intelligence (yield data, risk assessment, lending) with execution (swap routing, bridges) in one endpoint. Agents choose one server, not three.
+
+**LISA for agents:** The agent calls MCP tools, reasons about rates and risk, executes swaps, and manages positions — the Syenite vault enforces hard guardrails (max LTV, whitelisted protocols, authorized withdrawals).
 
 **Why agents need this more than humans:** Agents lack instinct, context, and panic buttons. Auto-unwind, vault isolation, and on-chain risk parameter constraints are existentially necessary for agents — hard guardrails that model weights can't override.
 
-Revenue: interest spread on agent-managed vault positions.
+Revenue: integrator fees on swap/bridge volume (near-term) + interest spread on vault positions (medium-term).
 
 ### Direct Platform (LISA / MLISA)
 Institutions use Syenite vaults directly through the Syenite dapp with any BTC wrapper (tBTC, LBTC, cbBTC, wBTC). Revenue: interest spread on managed positions.
