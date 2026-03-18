@@ -389,7 +389,7 @@ export function landingPageHtml(): string {
       <table>
         <tr><th>Protocol</th><th>Collateral</th></tr>
         <tr><td>Aave v3</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
-        <tr><td>Morpho Blue</td><td>wBTC, tBTC, cbBTC, wstETH, WETH</td></tr>
+        <tr><td>Morpho Blue</td><td>wBTC, tBTC, cbBTC, wstETH</td></tr>
         <tr><td>Spark</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
       </table>
     </div>

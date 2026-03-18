@@ -70,7 +70,7 @@ Call this tool to learn what data is available and how to use it effectively.`,
             tools: [
               {
                 name: "yield.opportunities",
-                use: "Find the best yield for any asset across lending, staking, vaults, savings, basis capture, and fixed yield",
+                use: "Find the best yield for any asset across lending supply, liquid staking, vaults, savings rates, and basis capture",
               },
               {
                 name: "yield.assess",
