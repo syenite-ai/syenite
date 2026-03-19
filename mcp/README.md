@@ -1,6 +1,6 @@
 # @syenite/mcp
 
-Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield and lending, prediction markets, carry and strategy search, alerts, wallet and gas tools, and a **trust layer** (`tx.verify`, `tx.simulate`, `tx.guard`) for verification before signing — via the [Model Context Protocol](https://modelcontextprotocol.io).
+Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield and lending with execution (supply, borrow, withdraw, repay), prediction markets, carry and strategy search, alerts with webhooks, wallet and gas tools, and a **trust layer** (`tx.verify`, `tx.simulate`, `tx.guard`, `tx.receipt`) for verification before and after signing — via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 **One endpoint. 30+ chains. No API key required.**
 
@@ -72,6 +72,7 @@ curl -X POST https://syenite.ai/mcp \
 | `tx.verify` | Etherscan + Sourcify + Syenite protocol registry; risk flags |
 | `tx.simulate` | `eth_call` simulation: revert detection, gas estimate, native value effects |
 | `tx.guard` | Your rules: value caps, allowlists, blocklists, registry requirement |
+| `tx.receipt` | Post-signing confirmation: status, gas cost, decoded events, token transfers |
 
 ### Yield
 
@@ -104,14 +105,14 @@ curl -X POST https://syenite.ai/mcp \
 
 | Tool | Description |
 |------|-------------|
-| `alerts.watch` | Register an address for health factor monitoring |
+| `alerts.watch` | Register an address for health factor monitoring. Optional `webhookUrl` for push alerts |
 | `alerts.check` | Poll for active alerts |
 | `alerts.list` | List all active watches |
 | `alerts.remove` | Remove a watch |
 
 ## How Execution Works
 
-Syenite never holds private keys. `swap.quote` (and similar) returns an unsigned `transactionRequest`. Before signing, use `tx.verify`, `tx.simulate`, and `tx.guard` on that payload. The agent or user signs and submits from their own wallet. For cross-chain bridges, use `swap.status` to track delivery.
+Syenite never holds private keys. `swap.quote`, `lending.supply`, `lending.borrow`, `lending.withdraw`, and `lending.repay` return unsigned `transactionRequest` objects. Before signing, use `tx.verify`, `tx.simulate`, and `tx.guard` on that payload. The agent or user signs and submits from their own wallet. After signing, confirm with `tx.receipt`. For cross-chain bridges, use `swap.status` to track delivery.
 
 ## Supported Chains
 

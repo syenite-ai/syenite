@@ -4,7 +4,7 @@ The DeFi interface for AI agents. One MCP endpoint for swaps, bridges, yield, le
 
 ## What This Is
 
-Syenite is an MCP server for agentic DeFi: swap and bridge routing, yield and multi-chain lending intelligence, Polymarket-style prediction data and signals, carry screening and `find.strategy`, position alerts, balances and gas estimates, plus `tx.verify`, `tx.simulate`, and `tx.guard` so agents can check calldata before a key is used. **Intelligence and execution in one place** (unsigned only).
+Syenite is an MCP server for agentic DeFi: swap and bridge routing, yield and multi-chain lending intelligence with execution (supply, borrow, withdraw, repay), Polymarket prediction data and signals, carry screening and `find.strategy`, position alerts with webhooks, balances and gas estimates, plus a trust layer (`tx.verify`, `tx.simulate`, `tx.guard`, `tx.receipt`) so agents can check calldata before signing and confirm results after. **Intelligence and execution in one place** (unsigned only).
 
 Agents read data, get quotes, and receive unsigned transactions ready to sign. **Syenite never holds private keys** — no custody, no API key required, rate-limited for production use. [Docs](https://syenite.ai/docs) · [Tool reference](https://syenite.ai/) (homepage lists all tools).
 
@@ -29,7 +29,7 @@ No API key needed. 30 requests/minute per IP.
 | Area | Examples |
 |------|----------|
 | **Swap & bridge** | `swap.quote`, `swap.multi`, `swap.status` |
-| **Trust layer** | `tx.verify`, `tx.simulate`, `tx.guard` |
+| **Trust layer** | `tx.verify`, `tx.simulate`, `tx.guard`, `tx.receipt` |
 | **Wallet & gas** | `wallet.balances`, `gas.estimate` |
 | **Yield & lending** | `yield.opportunities`, `yield.assess`, `lending.rates.query`, `lending.position.monitor`, `lending.risk.assess`, … |
 | **Strategy & prediction** | `strategy.carry.screen`, `find.strategy`, `prediction.trending`, `prediction.search`, `prediction.book`, `prediction.signals` |
@@ -65,7 +65,7 @@ Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scro
 
 ## How Execution Works
 
-`swap.quote` (and similar) returns an unsigned `transactionRequest`. Use `tx.verify`, `tx.simulate`, and `tx.guard` before signing when you need independent checks. The agent or user signs and submits from their own wallet. For cross-chain bridges, `swap.status` tracks progress. Syenite never holds keys.
+`swap.quote`, `lending.supply`, `lending.borrow`, `lending.withdraw`, and `lending.repay` return unsigned `transactionRequest` objects. Use `tx.verify`, `tx.simulate`, and `tx.guard` before signing. After signing, confirm with `tx.receipt`. The agent or user signs and submits from their own wallet. For cross-chain bridges, `swap.status` tracks progress. Syenite never holds keys.
 
 ## Product Tiers
 

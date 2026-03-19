@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Security and production use with Syenite MCP</title>
   <meta name="description" content="Syenite MCP is production-ready: no key custody, unsigned transactions only, rate limits, stateless. DeFi interface for AI agents without custody risk. MCP server DeFi security.">
+  <link rel="canonical" href="https://syenite.ai/docs/security-and-production">
   <style>
     :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -31,10 +32,10 @@
   <p>Syenite is built for production use. The MCP server never holds private keys, returns only unsigned transactions for execution tools, and is rate-limited and stateless. This page states the security model clearly so you can evaluate it for your agent or application.</p>
 
   <h2>No key custody</h2>
-  <p>Syenite never has access to user or agent wallets. Data tools (lending.rates.query, yield.opportunities, lending.position.monitor, and similar) return read-only data. The only execution tool is <code>swap.quote</code>, which returns an unsigned <code>transactionRequest</code>. The agent or user signs and submits the transaction from their own wallet. No custody, no withdrawal permissions, no key storage.</p>
+  <p>Syenite never has access to user or agent wallets. Data tools (lending.rates.query, yield.opportunities, lending.position.monitor, and similar) return read-only data. Execution tools (<code>swap.quote</code>, <code>swap.multi</code>, <code>lending.supply</code>, <code>lending.borrow</code>, <code>lending.withdraw</code>, <code>lending.repay</code>) return unsigned <code>transactionRequest</code> objects. The agent or user signs and submits from their own wallet. No custody, no withdrawal permissions, no key storage.</p>
 
   <h2>Unsigned transactions only</h2>
-  <p>Execution is intent-only. The server computes the optimal route and calldata; the client holds the key and signs. For cross-chain bridges, <code>swap.status</code> tracks progress but does not move funds. This keeps Syenite in the role of a router and data provider, not a custodian or executor.</p>
+  <p>Execution is intent-only. The server computes optimal routes (swaps) or encodes protocol calldata (lending) and returns unsigned transactions; the client holds the key and signs. For cross-chain bridges, <code>swap.status</code> tracks progress but does not move funds. This keeps Syenite in the role of a router and data provider, not a custodian or executor.</p>
   <p>Before signing, you can run <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code> on any unsigned transaction (including quotes from Syenite or elsewhere). After signing, confirm with <code>tx.receipt</code>. See <a href="/docs/tx-trust-layer">Transaction trust layer</a>.</p>
 
   <h2>Rate limits and availability</h2>
