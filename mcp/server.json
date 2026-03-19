@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.syenite-ai/syenite",
+  "title": "Syenite",
+  "description": "DeFi interface for AI agents: swap, bridge, yield, lending. Live at syenite.ai.",
+  "repository": {
+    "url": "https://github.com/syenite-ai/syenite",
+    "source": "github"
+  },
+  "version": "0.4.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://syenite.ai/mcp"
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@syenite/mcp",
+      "version": "0.4.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

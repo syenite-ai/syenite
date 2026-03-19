@@ -18,7 +18,16 @@ export const DOC_SLUGS = [
 
 export type DocSlug = (typeof DOC_SLUGS)[number];
 
-const DOCS_DIR = path.join(__dirname, "docs");
+/** Docs dir: next to this file (dist/web/docs) or cwd-relative for production. */
+function getDocsDir(): string {
+  const nextToModule = path.join(__dirname, "docs");
+  if (existsSync(path.join(nextToModule, "index.html"))) return nextToModule;
+  const fromCwd = path.join(process.cwd(), "dist", "web", "docs");
+  if (existsSync(path.join(fromCwd, "index.html"))) return fromCwd;
+  return nextToModule;
+}
+
+const DOCS_DIR = getDocsDir();
 
 function readDocFile(name: string): string | null {
   const filePath = path.join(DOCS_DIR, name);

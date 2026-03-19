@@ -8,7 +8,7 @@ dist/
 .cursor/
 .DS_Store
 .npmrc
-
-# Internal docs: strategy, commercial, competitive, planning, research, ops runbooks.
-# Only pure product information (e.g. docs/architecture/) lives in the public repo.
 docs/internal/
+.obsidian/
+.mcpregistry_github_token
+.mcpregistry_registry_token

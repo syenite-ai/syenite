@@ -1,4 +1,4 @@
-# @syenite/mcp-lending
+# @syenite/mcp
 
 DeFi lending intelligence for AI agents — cross-protocol BTC rates, position monitoring, and risk assessment via the [Model Context Protocol](https://modelcontextprotocol.io).
 

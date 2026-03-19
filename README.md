@@ -4,9 +4,9 @@ The DeFi interface for AI agents. One MCP endpoint for swaps, bridges, yield, le
 
 ## What This Is
 
-Syenite is an MCP server that gives AI agents everything they need to interact with DeFi — swap routing, cross-chain bridges, yield intelligence, lending rates, risk assessment, and position monitoring. Intelligence and execution in one place.
+Syenite is an MCP server that gives AI agents everything they need to interact with DeFi — swap routing, cross-chain bridges, yield intelligence, lending rates, risk assessment, and position monitoring. **Intelligence and execution in one place** (not swap-only).
 
-Agents read data, get quotes, and receive unsigned transactions ready to sign. Syenite never holds private keys.
+Agents read data, get quotes, and receive unsigned transactions ready to sign. **Syenite never holds private keys** — no custody, no API key required, rate-limited for production use.
 
 **Live at [syenite.ai/mcp](https://syenite.ai/mcp)**
 
@@ -115,3 +115,5 @@ syenite/
 ## Status
 
 MCP server is live at [syenite.ai](https://syenite.ai) with swap/bridge routing (30+ chains), yield intelligence (10+ protocols), and lending tools (Aave v3, Morpho Blue, Spark). Vault contracts are a parallel build track.
+
+**Source:** [github.com/syenite-ai/syenite](https://github.com/syenite-ai/syenite)
