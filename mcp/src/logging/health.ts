@@ -1,4 +1,4 @@
-import { getDb } from "../data/cache.js";
+import { getPool } from "../data/db.js";
 import { getClient } from "../data/client.js";
 
 export async function getHealthStatus(): Promise<{
@@ -11,13 +11,12 @@ export async function getHealthStatus(): Promise<{
 
   // Database check
   try {
-    const db = getDb();
-    db.prepare("SELECT 1").get();
-    checks.database = { ok: true, message: "SQLite connected" };
+    await getPool().query("SELECT 1");
+    checks.database = { ok: true, message: "Postgres connected" };
   } catch (e) {
     checks.database = {
       ok: false,
-      message: `SQLite error: ${e instanceof Error ? e.message : "unknown"}`,
+      message: `Postgres error: ${e instanceof Error ? e.message : "unknown"}`,
     };
   }
 

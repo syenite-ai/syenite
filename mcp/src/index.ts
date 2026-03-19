@@ -10,6 +10,8 @@ import { getUsageStats } from "./logging/usage.js";
 import { landingPageHtml } from "./web/landing.js";
 import { dashboardHtml } from "./web/dashboard.js";
 import { wellKnownMcp } from "./web/well-known.js";
+import { initSchema } from "./data/db.js";
+import { seedApiKeyFromEnv } from "./auth/keys.js";
 import {
   getDocsIndexHtml,
   getDocBySlug,
@@ -144,7 +146,7 @@ app.get("/sitemap.xml", (_req, res) => {
 
 // ── Dashboard (password-protected) ──────────────────────────────────
 
-app.get("/dashboard", (req, res) => {
+app.get("/dashboard", async (req, res) => {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Basic ")) {
     res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
@@ -160,11 +162,11 @@ app.get("/dashboard", (req, res) => {
     res.status(401).send("Invalid credentials");
     return;
   }
-  const stats = getUsageStats();
+  const stats = await getUsageStats();
   res.type("html").send(dashboardHtml(stats));
 });
 
-app.get("/dashboard/stats", (req, res) => {
+app.get("/dashboard/stats", async (req, res) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Basic ")) {
     res.status(401).json({ error: "Unauthorized" });
@@ -178,7 +180,7 @@ app.get("/dashboard/stats", (req, res) => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  res.json(getUsageStats());
+  res.json(await getUsageStats());
 });
 
 // Temporary: verify what the app sees for ADMIN_PASSWORD (remove after debugging)
@@ -195,12 +197,22 @@ app.get("/dashboard/debug", (_req, res) => {
 
 // ── Start ───────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`Syenite MCP Server running on http://localhost:${PORT}`);
+const start = async () => {
+  try {
+    await initSchema();
+    await seedApiKeyFromEnv();
+  } catch (e) {
+    console.error("[syenite] DB init failed:", e instanceof Error ? e.message : e);
+    process.exit(1);
+  }
+  app.listen(PORT, () => {
+    console.log(`Syenite MCP Server running on http://localhost:${PORT}`);
   console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
   console.log(`  Landing page:  http://localhost:${PORT}/`);
   console.log(`  Docs:         http://localhost:${PORT}/docs`);
   console.log(`  Sitemap:      http://localhost:${PORT}/sitemap.xml`);
   console.log(`  Health check:  http://localhost:${PORT}/health`);
   console.log(`  Dashboard:     http://localhost:${PORT}/dashboard`);
-});
+  });
+};
+start();

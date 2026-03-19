@@ -34,8 +34,8 @@ async function getEthenaYield(): Promise<YieldOpportunity> {
   const sharePrice = supply > 0 ? assets / supply : 1;
 
   const snapshotKey = "share:ethena:susde";
-  recordSnapshot(snapshotKey, sharePrice);
-  const trailingAPY = getTrailingAPY(snapshotKey, 7);
+  await recordSnapshot(snapshotKey, sharePrice);
+  const trailingAPY = await getTrailingAPY(snapshotKey, 7);
 
   const apy = trailingAPY ?? 0;
   const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
@@ -60,7 +60,7 @@ async function getEthenaYield(): Promise<YieldOpportunity> {
 
 export async function getStructuredYields(): Promise<YieldOpportunity[]> {
   const cacheKey = "yield:structured";
-  const cached = cacheGet<YieldOpportunity[]>(cacheKey);
+  const cached = await cacheGet<YieldOpportunity[]>(cacheKey);
   if (cached) return cached;
 
   const [ethena] = await Promise.allSettled([getEthenaYield()]);
@@ -69,6 +69,6 @@ export async function getStructuredYields(): Promise<YieldOpportunity[]> {
     ...(ethena.status === "fulfilled" ? [ethena.value] : []),
   ];
 
-  if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.yield);
+  if (results.length > 0) await cacheSet(cacheKey, results, CACHE_TTL.yield);
   return results;
 }

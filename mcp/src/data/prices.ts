@@ -33,7 +33,7 @@ interface PriceResult {
 
 export async function getPrice(pair: string): Promise<PriceResult> {
   const cacheKey = `price:${pair}`;
-  const cached = cacheGet<PriceResult>(cacheKey);
+  const cached = await cacheGet<PriceResult>(cacheKey);
   if (cached) return cached;
 
   const feed = CHAINLINK_FEEDS[pair];
@@ -71,7 +71,7 @@ export async function getPrice(pair: string): Promise<PriceResult> {
     updatedAt,
   };
 
-  cacheSet(cacheKey, result, CACHE_TTL.prices);
+  await cacheSet(cacheKey, result, CACHE_TTL.prices);
   return result;
 }
 

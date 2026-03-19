@@ -4,7 +4,7 @@ import { createApiKey, listApiKeys } from "../auth/keys.js";
 const args = process.argv.slice(2);
 
 if (args[0] === "list") {
-  const keys = listApiKeys();
+  const keys = await listApiKeys();
   if (keys.length === 0) {
     console.log("No API keys found.");
   } else {
@@ -30,7 +30,7 @@ if (!name) {
   process.exit(1);
 }
 
-const { key, id } = createApiKey(name, email);
+const { key, id } = await createApiKey(name, email);
 console.log(`\nAPI key created for "${name}":\n`);
 console.log(`  ${key}\n`);
 console.log("Store this key securely — it won't be shown again.\n");

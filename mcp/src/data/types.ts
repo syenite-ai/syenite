@@ -203,11 +203,11 @@ export const YEARN_VAULTS: Array<{ address: Address; label: string; asset: strin
 // ── Cache TTL configuration (seconds) ───────────────────────────────
 
 export const CACHE_TTL = {
-  rates: 30,
-  marketOverview: 60,
-  position: 15,
-  prices: 30,
-  yield: 60,
+  rates: 120,
+  marketOverview: 120,
+  position: 30,
+  prices: 60,
+  yield: 600,
 };
 
 // ── Return types ────────────────────────────────────────────────────

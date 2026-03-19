@@ -87,8 +87,8 @@ async function getLidoYield(client: ReturnType<typeof getClient>): Promise<Yield
   const feePercent = Number(fee) / 10000;
 
   const rate = Number(formatUnits(stEthPerWstETH, 18));
-  recordSnapshot("rate:lido:wsteth", rate);
-  const trailingAPY = getTrailingAPY("rate:lido:wsteth", 7);
+  await recordSnapshot("rate:lido:wsteth", rate);
+  const trailingAPY = await getTrailingAPY("rate:lido:wsteth", 7);
 
   const apy = trailingAPY ?? 3.2 * (1 - feePercent);
   const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
@@ -120,8 +120,8 @@ async function getRocketPoolYield(client: ReturnType<typeof getClient>): Promise
   const ethPrice = await getTokenPrice("WETH");
   const tvlUSD = tvlETH * ethPrice;
 
-  recordSnapshot("rate:rocketpool:reth", rate);
-  const trailingAPY = getTrailingAPY("rate:rocketpool:reth", 7);
+  await recordSnapshot("rate:rocketpool:reth", rate);
+  const trailingAPY = await getTrailingAPY("rate:rocketpool:reth", 7);
 
   const apy = trailingAPY ?? 2.8;
   const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
@@ -153,8 +153,8 @@ async function getCbETHYield(client: ReturnType<typeof getClient>): Promise<Yiel
   const ethPrice = await getTokenPrice("WETH");
   const tvlUSD = tvlETH * ethPrice;
 
-  recordSnapshot("rate:coinbase:cbeth", rate);
-  const trailingAPY = getTrailingAPY("rate:coinbase:cbeth", 7);
+  await recordSnapshot("rate:coinbase:cbeth", rate);
+  const trailingAPY = await getTrailingAPY("rate:coinbase:cbeth", 7);
 
   const apy = trailingAPY ?? 2.5;
   const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
@@ -176,7 +176,7 @@ async function getCbETHYield(client: ReturnType<typeof getClient>): Promise<Yiel
 
 export async function getStakingYields(): Promise<YieldOpportunity[]> {
   const cacheKey = "yield:staking";
-  const cached = cacheGet<YieldOpportunity[]>(cacheKey);
+  const cached = await cacheGet<YieldOpportunity[]>(cacheKey);
   if (cached) return cached;
 
   const client = getClient();
@@ -193,6 +193,6 @@ export async function getStakingYields(): Promise<YieldOpportunity[]> {
     ...(cbETH.status === "fulfilled" ? [cbETH.value] : []),
   ];
 
-  if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.yield);
+  if (results.length > 0) await cacheSet(cacheKey, results, CACHE_TTL.yield);
   return results;
 }

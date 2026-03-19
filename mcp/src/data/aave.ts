@@ -141,7 +141,7 @@ export async function getAaveForkRates(
   borrowAsset: string = "USDC"
 ): Promise<ProtocolRate[]> {
   const cacheKey = `${protocolName}:rates:${collateralFilter ?? "all"}:${borrowAsset}`;
-  const cached = cacheGet<ProtocolRate[]>(cacheKey);
+  const cached = await cacheGet<ProtocolRate[]>(cacheKey);
   if (cached) return cached;
 
   const client = getClient();
@@ -227,7 +227,7 @@ export async function getAaveForkRates(
     }
   }
 
-  if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.rates);
+  if (results.length > 0) await cacheSet(cacheKey, results, CACHE_TTL.rates);
   return results;
 }
 

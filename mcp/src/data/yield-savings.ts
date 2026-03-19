@@ -46,7 +46,7 @@ function dsrToAPY(dsrRay: bigint): number {
 
 export async function getMakerDSRYield(): Promise<YieldOpportunity[]> {
   const cacheKey = "yield:maker-dsr";
-  const cached = cacheGet<YieldOpportunity[]>(cacheKey);
+  const cached = await cacheGet<YieldOpportunity[]>(cacheKey);
   if (cached) return cached;
 
   const client = getClient();
@@ -78,6 +78,6 @@ export async function getMakerDSRYield(): Promise<YieldOpportunity[]> {
     },
   ];
 
-  cacheSet(cacheKey, results, CACHE_TTL.yield);
+  await cacheSet(cacheKey, results, CACHE_TTL.yield);
   return results;
 }

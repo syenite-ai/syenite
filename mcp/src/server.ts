@@ -19,7 +19,7 @@ function withLogging(
     const start = Date.now();
     try {
       const result = await handler(params);
-      logToolCall({
+      await logToolCall({
         clientIp,
         toolName,
         toolParams: redactParams ? redactParams(params) : params,
@@ -29,7 +29,7 @@ function withLogging(
       return { content: [{ type: "text" as const, text: result }] };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
-      logToolCall({
+      await logToolCall({
         clientIp,
         toolName,
         toolParams: redactParams ? redactParams(params) : params,

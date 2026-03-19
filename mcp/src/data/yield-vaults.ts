@@ -64,8 +64,8 @@ async function fetchMetaMorphoVault(
 
   const sharePrice = Number(formatUnits(assetsPerShare, decimals));
   const snapshotKey = `share:metamorpho:${vault.address.toLowerCase()}`;
-  recordSnapshot(snapshotKey, sharePrice);
-  const trailingAPY = getTrailingAPY(snapshotKey, 7);
+  await recordSnapshot(snapshotKey, sharePrice);
+  const trailingAPY = await getTrailingAPY(snapshotKey, 7);
 
   const apy = trailingAPY ?? 0;
   const apyType = trailingAPY !== null ? "trailing-7d" as const : "estimated" as const;
@@ -123,8 +123,8 @@ async function fetchYearnVault(
     });
     const sharePrice = Number(formatUnits(assetsPerShare, decimals));
     const snapshotKey = `share:yearn:${vault.address.toLowerCase()}`;
-    recordSnapshot(snapshotKey, sharePrice);
-    const trailingAPY = getTrailingAPY(snapshotKey, 7);
+    await recordSnapshot(snapshotKey, sharePrice);
+    const trailingAPY = await getTrailingAPY(snapshotKey, 7);
     apy = trailingAPY ?? 0;
     apyType = trailingAPY !== null ? "trailing-7d" : "estimated";
   }
@@ -146,7 +146,7 @@ async function fetchYearnVault(
 
 export async function getVaultYields(): Promise<YieldOpportunity[]> {
   const cacheKey = "yield:vaults";
-  const cached = cacheGet<YieldOpportunity[]>(cacheKey);
+  const cached = await cacheGet<YieldOpportunity[]>(cacheKey);
   if (cached) return cached;
 
   const client = getClient();
@@ -161,6 +161,6 @@ export async function getVaultYields(): Promise<YieldOpportunity[]> {
     ...yearnResults.filter((r): r is PromiseFulfilledResult<YieldOpportunity> => r.status === "fulfilled").map((r) => r.value),
   ];
 
-  if (results.length > 0) cacheSet(cacheKey, results, CACHE_TTL.yield);
+  if (results.length > 0) await cacheSet(cacheKey, results, CACHE_TTL.yield);
   return results;
 }

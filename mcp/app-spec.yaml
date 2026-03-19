@@ -1,5 +1,12 @@
 name: syenite-mcp
 region: nyc
+databases:
+  - name: postgres
+    engine: PG
+    production: true
+    cluster_name: syenite-db
+    db_name: defaultdb
+    db_user: doadmin
 services:
   - name: mcp-server
     github:
@@ -13,11 +20,11 @@ services:
     instance_size_slug: apps-s-1vcpu-0.5gb
     routes:
       - path: /
-    # Secrets: set at App-Level in DO only. Use DASHBOARD_PASSWORD (not ADMIN_PASSWORD) for
-    # the dashboard so component-level literal "${ADMIN_PASSWORD}" doesn't override.
+    # App-Level env (set in DO Control Panel only): ALCHEMY_API_KEY, DASHBOARD_PASSWORD, SEED_API_KEY
     envs:
-      - key: DATABASE_PATH
-        value: /data/syenite.db
+      - key: DATABASE_URL
+        value: ${postgres.DATABASE_URL}
+        scope: RUN_TIME
       - key: PORT
         value: "3000"
       - key: NODE_ENV
