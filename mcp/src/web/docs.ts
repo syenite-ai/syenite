@@ -14,6 +14,11 @@ export const DOC_SLUGS = [
   "security-and-production",
   "mcp-defi-discovery",
   "why-agentic-defi",
+  "erc-8004-agent-registration",
+  "x402-agent-payments",
+  "wallet-balances-and-gas",
+  "batch-swaps-multi-chain",
+  "position-alerts-and-carry",
 ] as const;
 
 export type DocSlug = (typeof DOC_SLUGS)[number];

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wallet balances and gas estimates with Syenite MCP</title>
+  <meta name="description" content="Check multi-chain wallet balances and gas costs with wallet.balances and gas.estimate. Verify funds and estimate swap, bridge, and contract_register costs before transacting. DeFi MCP.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Wallet balances and gas estimates</h1>
+  <p>Before building or signing a transaction, agents need to know whether an address has enough funds and what the operation will cost. Syenite exposes <code>wallet.balances</code> and <code>gas.estimate</code> so you can check native and token balances across chains and get current gas cost estimates for common operations.</p>
+
+  <h2>wallet.balances</h2>
+  <p>Returns native gas token and common stablecoin balances for any EVM address on Ethereum, Arbitrum, Base, and BNB Chain.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>address</code> (string): EVM address (0x...). Required.</li>
+    <li><code>chains</code> (array, optional): <code>["ethereum", "arbitrum", "base", "bsc"]</code>. Defaults to all four.</li>
+  </ul>
+  <p>Response includes per chain: native balance (symbol and raw), token balances (e.g. USDC, USDT, DAI), and optional USD totals. Use it to confirm an address has sufficient gas and stablecoins before calling <code>swap.quote</code> or submitting a registration tx.</p>
+
+  <h2>gas.estimate</h2>
+  <p>Returns current gas prices and estimated costs for common operations on the same four chains.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>chains</code> (array, optional): <code>["ethereum", "arbitrum", "base", "bsc"]</code>. Defaults to all.</li>
+    <li><code>operations</code> (array, optional): Types to estimate. Options: <code>transfer</code>, <code>erc20_transfer</code>, <code>swap</code>, <code>bridge</code>, <code>erc20_approve</code>, <code>lending_supply</code>, <code>lending_borrow</code>, <code>contract_register</code>. Defaults to a useful set including <code>contract_register</code> for ERC-8004 registration.</li>
+  </ul>
+  <p>Response includes gas price (gwei, wei) and per-operation cost in native token and approximate USD. Use it to choose the cheapest chain for a given operation or to ensure the wallet has enough native token.</p>
+
+  <h2>Demo: before you swap or register</h2>
+  <p>1. Call <code>wallet.balances</code> with the sender address. Check native balance on the chain you will use. 2. Call <code>gas.estimate</code> with <code>operations: ["swap"]</code> or <code>["contract_register"]</code> to see cost. 3. If the address is short on gas, use <code>swap.quote</code> to bridge gas from another chain or top up before proceeding. 4. Run your swap or registration; the agent or user signs the tx.</p>
+
+  <h2>Example prompts</h2>
+  <p>"Check wallet 0x... balances on Base and Ethereum." "What is the gas cost for a swap on Arbitrum vs Base?" "Estimate gas for contract_register on all chains." The agent calls <code>wallet.balances</code> and <code>gas.estimate</code> with the right parameters and summarizes.</p>
+
+  <h2>Related</h2>
+  <p><a href="/docs/erc-8004-agent-registration">ERC-8004 agent registration</a> (uses <code>contract_register</code> gas). <a href="/docs/swap-and-bridge">Cross-chain swap and bridge</a>. <a href="/docs/batch-swaps-multi-chain">Batch swaps</a>. <a href="/">Tool list</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

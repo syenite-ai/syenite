@@ -35,6 +35,14 @@ services:
         value: syenite
       - key: LIFI_FEE
         value: "0.0015"
+      - key: AGENT_ID_BASE
+        value: "34489"
+      - key: AGENT_ID_ETH
+        value: "29082"
+      - key: AGENT_ID_ARB
+        value: "717"
+      - key: AGENT_ID_BNB
+        value: "46501"
     health_check:
       http_path: /health
       initial_delay_seconds: 10

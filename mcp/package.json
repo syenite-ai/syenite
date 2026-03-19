@@ -2,7 +2,7 @@
   "name": "@syenite/mcp",
   "version": "0.5.0",
   "mcpName": "io.github.syenite-ai/syenite",
-  "description": "The DeFi interface for AI agents — swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP",
+  "description": "Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield, lending, prediction markets, wallet ops, and gas estimation across 30+ chains via MCP",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -54,7 +54,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "server.json"
   ],
   "engines": {
     "node": ">=20"
