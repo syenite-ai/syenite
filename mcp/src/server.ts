@@ -127,7 +127,7 @@ export function createMcpServer(clientIp: string): McpServer {
   const helpData = {
     service: "Syenite — The DeFi interface for AI agents",
     description:
-      "Swap routing, bridge execution, yield intelligence, lending rates, risk assessment, and position monitoring — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
+      "Swap routing, bridge execution, yield and lending intelligence, prediction markets, carry and strategy search, position alerts, wallet and gas tools, and a trust layer (tx.verify, tx.simulate, tx.guard) — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
     tools: [
       { name: "wallet.balances", use: "Check native and token balances across chains for any EVM address. Verify funds before transacting." },
       { name: "gas.estimate", use: "Current gas prices and operation costs across chains. Find the cheapest chain for any operation." },
@@ -176,7 +176,7 @@ export function createMcpServer(clientIp: string): McpServer {
   };
 
   server.registerTool("syenite.help", {
-    description: `Get information about Syenite — the DeFi interface for AI agents. Swap/bridge routing, yield intelligence, lending data, risk assessment, and position monitoring.
+    description: `Get information about Syenite — the DeFi interface for AI agents. Swap/bridge routing, yield and lending, prediction markets, strategy search, alerts, wallet/gas, and trust-layer verification before signing.
 Call this tool to learn what tools are available and how to use them.`,
     outputSchema: helpOutput,
   }, async () => ({

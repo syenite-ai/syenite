@@ -10,7 +10,7 @@ export function landingPageHtml(): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">${gscMeta}
   <title>syenite — the DeFi interface for AI agents</title>
-  <meta name="description" content="The DeFi interface for AI agents. Swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP. One endpoint for reading and writing to DeFi across 30+ chains.">
+  <meta name="description" content="DeFi MCP for AI agents: swaps and bridges (30+ chains), yield and lending, prediction markets, carry screening, wallet balances, gas estimates, tx.verify and tx.simulate before you sign. Open access, no API key.">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
   <style>
     :root {
@@ -295,7 +295,7 @@ export function landingPageHtml(): string {
       <img src="/assets/icon-32.png" alt="" class="logo" width="32" height="32">
       <h1>syenite</h1>
     </div>
-    <p class="lead">One MCP endpoint for swaps, bridges, yield, lending, and risk across 30+ chains. Intelligence and execution in one place \u2014 agents read data, get quotes, and receive unsigned transactions ready to sign.</p>
+    <p class="lead">One MCP endpoint for swaps and bridges (30+ chains), yield, multi-chain lending, prediction markets, carry and strategy search, position alerts, and a trust layer: verify contracts, simulate before sign, and enforce your own guard rules. Syenite never holds keys \u2014 you get unsigned transactions and independent checks.</p>
     <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
   </header>
 
@@ -328,7 +328,27 @@ export function landingPageHtml(): string {
 
     <div class="tool">
       <div class="tool-name">syenite.help</div>
-      <p class="tool-desc">Service info, available tools, supported chains, and how to get started.</p>
+      <p class="tool-desc">Service info, full tool list, supported chains, and how to get started.</p>
+    </div>
+
+    <p class="section-label">wallet & gas</p>
+
+    <div class="tool">
+      <div class="tool-name">wallet.balances</div>
+      <p class="tool-desc">Native and stablecoin balances for any EVM address on Ethereum, Arbitrum, Base, and BNB Chain. Check funds before you transact.</p>
+      <div class="params">
+        <span class="pn">address</span><span class="pt">string</span><span class="pd">Wallet to check</span>
+        <span class="pn">chains</span><span class="pt">array</span><span class="pd">Optional: ethereum, arbitrum, base, bsc (defaults to all four)</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">gas.estimate</div>
+      <p class="tool-desc">Current gas prices and estimated costs for common operations (swap, bridge, approve, contract register, and more).</p>
+      <div class="params">
+        <span class="pn">chains</span><span class="pt">array</span><span class="pd">Optional chain filter</span>
+        <span class="pn">operations</span><span class="pt">array</span><span class="pd">Optional: transfer, swap, bridge, lending_supply, contract_register, etc.</span>
+      </div>
     </div>
 
     <p class="section-label">swap & bridge</p>
@@ -349,12 +369,50 @@ export function landingPageHtml(): string {
     </div>
 
     <div class="tool">
+      <div class="tool-name">swap.multi</div>
+      <p class="tool-desc">Batch multiple swap or bridge quotes in parallel. Compare routes or split liquidity across chains.</p>
+      <div class="params">
+        <span class="pn">requests</span><span class="pt">array</span><span class="pd">1\u201310 items, each same shape as swap.quote (fromToken, toToken, fromAmount, fromAddress, chains, slippage, order)</span>
+      </div>
+    </div>
+
+    <div class="tool">
       <div class="tool-name">swap.status</div>
       <p class="tool-desc">Track execution status of a cross-chain bridge. Returns status, receiving tx hash, and amount received.</p>
       <div class="params">
         <span class="pn">txHash</span><span class="pt">string</span><span class="pd">Transaction hash of the submitted swap/bridge</span>
         <span class="pn">fromChain</span><span class="pt">string</span><span class="pd">Chain where tx was submitted</span>
         <span class="pn">toChain</span><span class="pt">string</span><span class="pd">Destination chain</span>
+      </div>
+    </div>
+
+    <p class="section-label">trust layer</p>
+
+    <div class="tool">
+      <div class="tool-name">tx.verify</div>
+      <p class="tool-desc">Check the callee against Etherscan, Sourcify, and Syenite\u2019s protocol registry. Risk flags for unverified contracts, proxies, and EOAs. Optional calldata decode via function selector.</p>
+      <div class="params">
+        <span class="pn">to</span><span class="pt">string</span><span class="pd">Contract address</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, bsc</span>
+        <span class="pn">data</span><span class="pt">string</span><span class="pd">Optional calldata for selector decode</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">tx.simulate</div>
+      <p class="tool-desc">Simulate an unsigned transaction with eth_call: success or revert, gas estimate, native value effects. Verifiable on any RPC for the same block.</p>
+      <div class="params">
+        <span class="pn">transaction</span><span class="pt">object</span><span class="pd">to, data, from, optional value, optional chainId</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">Optional override (defaults from tx)</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">tx.guard</div>
+      <p class="tool-desc">Evaluate a transaction against your rules: max native value, allowlists, blocklists, gas cap, require Syenite registry match.</p>
+      <div class="params">
+        <span class="pn">transaction</span><span class="pt">object</span><span class="pd">to, optional data, value, gasLimit, chainId</span>
+        <span class="pn">rules</span><span class="pt">object</span><span class="pd">maxValueNative, allowedContracts, blockedContracts, requireAllowlisted, maxGasLimit, etc.</span>
       </div>
     </div>
 
@@ -380,6 +438,66 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+    <p class="section-label">strategy & prediction</p>
+
+    <div class="tool">
+      <div class="tool-name">strategy.carry.screen</div>
+      <p class="tool-desc">Screen lending markets for positive carry (supply APY vs borrow APY). Ranks self-funding leveraged ideas.</p>
+      <div class="params">
+        <span class="pn">collateral</span><span class="pt">string</span><span class="pd">Asset, BTC/ETH category, or "all"</span>
+        <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">Default USDC</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, all</span>
+        <span class="pn">positionSizeUSD</span><span class="pt">number</span><span class="pd">For return estimates</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">find.strategy</div>
+      <p class="tool-desc">Composable scan across yield, carry, gas, and optional prediction signals for an asset you want to deploy.</p>
+      <div class="params">
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">e.g. ETH, WETH, USDC, wBTC</span>
+        <span class="pn">amount</span><span class="pt">number</span><span class="pd">USD notionally deployed</span>
+        <span class="pn">riskTolerance</span><span class="pt">string</span><span class="pd">low, medium, high</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, all</span>
+        <span class="pn">includePrediction</span><span class="pt">boolean</span><span class="pd">Include prediction signals (default true)</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.trending</div>
+      <p class="tool-desc">Top Polymarket events by volume: probabilities, liquidity, spread.</p>
+      <div class="params">
+        <span class="pn">limit</span><span class="pt">number</span><span class="pd">1\u201325 (default 10)</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.search</div>
+      <p class="tool-desc">Search Polymarket by topic.</p>
+      <div class="params">
+        <span class="pn">query</span><span class="pt">string</span><span class="pd">Topic or keyword</span>
+        <span class="pn">limit</span><span class="pt">number</span><span class="pd">Optional</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.book</div>
+      <p class="tool-desc">Order book depth for a Polymarket outcome token (token id from trending or search).</p>
+      <div class="params">
+        <span class="pn">tokenId</span><span class="pt">string</span><span class="pd">Outcome token id</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.signals</div>
+      <p class="tool-desc">Actionable signals: wide spreads, extreme probabilities, volume spikes, mispricing-style flags.</p>
+      <div class="params">
+        <span class="pn">minStrength</span><span class="pt">number</span><span class="pd">0\u2013100</span>
+        <span class="pn">types</span><span class="pt">array</span><span class="pd">Optional filter: wide_spread, extreme_probability, high_volume, deep_liquidity, mispriced</span>
+        <span class="pn">limit</span><span class="pt">number</span><span class="pd">Max signals (default 20)</span>
+      </div>
+    </div>
+
     <p class="section-label">lending</p>
 
     <div class="tool">
@@ -388,6 +506,7 @@ export function landingPageHtml(): string {
       <div class="params">
         <span class="pn">collateral</span><span class="pt">string</span><span class="pd">"wBTC", "WETH", "wstETH", "BTC", "ETH", or "all"</span>
         <span class="pn">borrowAsset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", "DAI", or "GHO"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, all</span>
       </div>
     </div>
 
@@ -396,6 +515,7 @@ export function landingPageHtml(): string {
       <p class="tool-desc">Aggregate market view. Per-protocol TVL, utilization, rate ranges, and available liquidity.</p>
       <div class="params">
         <span class="pn">collateral</span><span class="pt">string</span><span class="pd">Filter by asset, category, or "all"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, all</span>
       </div>
     </div>
 
@@ -403,8 +523,9 @@ export function landingPageHtml(): string {
       <div class="tool-name">lending.position.monitor</div>
       <p class="tool-desc">Health check for any DeFi lending position. LTV, health factor, liquidation price, and estimated annual cost.</p>
       <div class="params">
-        <span class="pn">address</span><span class="pt">string</span><span class="pd">Ethereum address to check</span>
-        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "all"</span>
+        <span class="pn">address</span><span class="pt">string</span><span class="pd">EVM address to check</span>
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "compound-v3", "morpho", "spark", or "all"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, all</span>
       </div>
     </div>
 
@@ -418,12 +539,25 @@ export function landingPageHtml(): string {
         <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "best"</span>
       </div>
     </div>
+
+    <p class="section-label">alerts</p>
+
+    <div class="tool">
+      <div class="tool-name">alerts.watch</div>
+      <p class="tool-desc">Register an address for health-factor monitoring. Poll <code>alerts.check</code> for warnings. Use <code>alerts.list</code> and <code>alerts.remove</code> to manage watches.</p>
+      <div class="params">
+        <span class="pn">address</span><span class="pt">string</span><span class="pd">Position owner</span>
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">Optional protocol filter</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">Optional chain</span>
+        <span class="pn">healthFactorThreshold</span><span class="pt">number</span><span class="pd">Alert below this (default 1.5)</span>
+      </div>
+    </div>
   </section>
 
   <section>
     <h2>how execution works</h2>
     <div class="callout">
-      <strong>Syenite never holds private keys.</strong> The <code>swap.quote</code> tool returns an unsigned <code>transactionRequest</code> containing the optimal route calldata. The agent or user signs and submits the transaction from their own wallet. For cross-chain bridges, use <code>swap.status</code> to track execution progress.
+      <strong>Syenite never holds private keys.</strong> <code>swap.quote</code> (and similar) returns an unsigned <code>transactionRequest</code>. Before signing, use <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code> on that payload. The agent or user signs and submits from their own wallet. For cross-chain bridges, use <code>swap.status</code> to track progress. <a href="/docs/mcp-trust-speed-security">Trust and speed tradeoffs</a> \u00b7 <a href="/docs/tx-trust-layer">Tool reference</a>
     </div>
     <p>Routing is aggregated across 1inch, 0x, Paraswap, and bridge protocols via Li.Fi. Quotes are optimised for best price or fastest execution.</p>
   </section>
@@ -431,7 +565,7 @@ export function landingPageHtml(): string {
   <section>
     <h2>supported chains</h2>
     <p>Swap and bridge routing supports 30+ chains including Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scroll, Gnosis, and Fantom.</p>
-    <p>Yield intelligence and lending data cover Ethereum mainnet protocols.</p>
+    <p>Lending rates, market overview, and position monitoring run on Ethereum, Arbitrum, and Base (per protocol availability). Wallet balances, gas estimates, and the trust-layer simulation tools use Ethereum, Arbitrum, Base, and BNB Chain. Yield intelligence is centred on Ethereum mainnet blue-chip protocols.</p>
   </section>
 
   <section>

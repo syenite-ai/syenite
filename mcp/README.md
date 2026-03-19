@@ -1,6 +1,6 @@
 # @syenite/mcp
 
-Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield analysis, lending rates, prediction markets, risk assessment, and wallet operations via the [Model Context Protocol](https://modelcontextprotocol.io).
+Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield and lending, prediction markets, carry and strategy search, alerts, wallet and gas tools, and a **trust layer** (`tx.verify`, `tx.simulate`, `tx.guard`) for verification before signing — via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 **One endpoint. 30+ chains. No API key required.**
 
@@ -65,6 +65,14 @@ curl -X POST https://syenite.ai/mcp \
 | `swap.multi` | Batch up to 10 swap/bridge quotes in parallel |
 | `swap.status` | Track cross-chain bridge delivery |
 
+### Trust layer
+
+| Tool | Description |
+|------|-------------|
+| `tx.verify` | Etherscan + Sourcify + Syenite protocol registry; risk flags |
+| `tx.simulate` | `eth_call` simulation: revert detection, gas estimate, native value effects |
+| `tx.guard` | Your rules: value caps, allowlists, blocklists, registry requirement |
+
 ### Yield
 
 | Tool | Description |
@@ -81,6 +89,7 @@ curl -X POST https://syenite.ai/mcp \
 | `lending.position.monitor` | Health factor, liquidation distance, costs for any address |
 | `lending.risk.assess` | Risk assessment for proposed lending positions |
 | `strategy.carry.screen` | Screen all markets for positive carry (supply APY > borrow APY) |
+| `find.strategy` | Composable scan: yield, carry, gas, optional prediction signals for an asset |
 
 ### Prediction Markets
 
@@ -89,6 +98,7 @@ curl -X POST https://syenite.ai/mcp \
 | `prediction.trending` | Top Polymarket events by volume — probabilities, liquidity, spread |
 | `prediction.search` | Search prediction markets by topic |
 | `prediction.book` | Order book depth and spread for an outcome token |
+| `prediction.signals` | Actionable signals: spreads, extreme probabilities, volume, mispricing-style flags |
 
 ### Alerts
 
@@ -101,15 +111,17 @@ curl -X POST https://syenite.ai/mcp \
 
 ## How Execution Works
 
-Syenite never holds private keys. `swap.quote` returns an unsigned `transactionRequest` with optimal route calldata. The agent or user signs and submits from their own wallet. For cross-chain bridges, use `swap.status` to track delivery.
+Syenite never holds private keys. `swap.quote` (and similar) returns an unsigned `transactionRequest`. Before signing, use `tx.verify`, `tx.simulate`, and `tx.guard` on that payload. The agent or user signs and submits from their own wallet. For cross-chain bridges, use `swap.status` to track delivery.
 
 ## Supported Chains
 
 **Swap/Bridge:** Ethereum, Arbitrum, Base, Optimism, Polygon, BNB Chain, Avalanche, zkSync, Linea, Scroll, and 20+ more.
 
-**Lending data:** Ethereum, Arbitrum, Base, BNB Chain.
+**Lending rates / markets / position monitor:** Ethereum, Arbitrum, Base (per protocol availability).
 
-**Protocols:** Aave v3, Morpho Blue, Spark, Compound V3, Fluid, Venus.
+**Wallet, gas, trust simulation:** Ethereum, Arbitrum, Base, BNB Chain.
+
+**Protocols:** Aave v3, Morpho Blue, Spark, Compound V3, Fluid, and others (see `syenite.help`).
 
 ## Access
 

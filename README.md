@@ -1,12 +1,12 @@
 # Syenite
 
-The DeFi interface for AI agents. One MCP endpoint for swaps, bridges, yield, lending, and risk across 30+ chains.
+The DeFi interface for AI agents. One MCP endpoint for swaps, bridges, yield, lending, prediction markets, strategy search, alerts, wallet and gas tools, and a **trust layer** (verify, simulate, guard before sign) across 30+ chains.
 
 ## What This Is
 
-Syenite is an MCP server that gives AI agents everything they need to interact with DeFi — swap routing, cross-chain bridges, yield intelligence, lending rates, risk assessment, and position monitoring. **Intelligence and execution in one place** (not swap-only).
+Syenite is an MCP server for agentic DeFi: swap and bridge routing, yield and multi-chain lending intelligence, Polymarket-style prediction data and signals, carry screening and `find.strategy`, position alerts, balances and gas estimates, plus `tx.verify`, `tx.simulate`, and `tx.guard` so agents can check calldata before a key is used. **Intelligence and execution in one place** (unsigned only).
 
-Agents read data, get quotes, and receive unsigned transactions ready to sign. **Syenite never holds private keys** — no custody, no API key required, rate-limited for production use.
+Agents read data, get quotes, and receive unsigned transactions ready to sign. **Syenite never holds private keys** — no custody, no API key required, rate-limited for production use. [Docs](https://syenite.ai/docs) · [Tool reference](https://syenite.ai/) (homepage lists all tools).
 
 **Live at [syenite.ai/mcp](https://syenite.ai/mcp)**
 
@@ -24,44 +24,32 @@ Agents read data, get quotes, and receive unsigned transactions ready to sign. *
 
 No API key needed. 30 requests/minute per IP.
 
-## Tools
+## Tools (summary)
 
-### Swap & Bridge
-| Tool | Description |
-|---|---|
-| `swap.quote` | Optimal swap/bridge quote with unsigned transaction calldata. 30+ chains via 1inch, 0x, Paraswap, and bridge aggregation |
-| `swap.status` | Track cross-chain bridge execution status |
+| Area | Examples |
+|------|----------|
+| **Swap & bridge** | `swap.quote`, `swap.multi`, `swap.status` |
+| **Trust layer** | `tx.verify`, `tx.simulate`, `tx.guard` |
+| **Wallet & gas** | `wallet.balances`, `gas.estimate` |
+| **Yield & lending** | `yield.opportunities`, `yield.assess`, `lending.rates.query`, `lending.position.monitor`, `lending.risk.assess`, … |
+| **Strategy & prediction** | `strategy.carry.screen`, `find.strategy`, `prediction.trending`, `prediction.search`, `prediction.book`, `prediction.signals` |
+| **Alerts** | `alerts.watch`, `alerts.check`, `alerts.list`, `alerts.remove` |
 
-### Yield Intelligence
-| Tool | Description |
-|---|---|
-| `yield.opportunities` | Best yields across lending supply, liquid staking, vaults, savings rates, and basis capture |
-| `yield.assess` | Deep risk assessment for any yield strategy |
-
-### Lending
-| Tool | Description |
-|---|---|
-| `lending.rates.query` | Borrow/supply rates across Aave v3, Morpho Blue, Spark |
-| `lending.market.overview` | Aggregate market view — TVL, utilization, rate ranges |
-| `lending.position.monitor` | Health factor, liquidation distance for any address |
-| `lending.risk.assess` | Risk assessment for proposed lending positions |
-
-### Utility
-| Tool | Description |
-|---|---|
-| `syenite.help` | Service info, available tools, supported chains |
+Full tables and parameters: [`mcp/README.md`](mcp/README.md) or call `syenite.help` on the live endpoint.
 
 ## Architecture
 
 ```
 Agent → syenite.ai/mcp
-         ├── swap.quote        → Li.Fi API (1inch, 0x, Paraswap, bridges)
-         ├── swap.status       → Li.Fi status tracking
-         ├── yield.*           → On-chain data (Aave, Lido, Morpho, Yearn, Ethena, Maker, ...)
-         └── lending.*         → On-chain data (Aave v3, Morpho Blue, Spark)
+         ├── swap.*            → Li.Fi (1inch, 0x, Paraswap, bridges)
+         ├── tx.verify/simulate/guard → RPC + Etherscan/Sourcify/registry
+         ├── yield.* / lending.* → On-chain + oracles
+         ├── prediction.*      → Polymarket data
+         ├── strategy.* / find.strategy → Aggregated scans
+         └── alerts.*          → Position monitoring
 ```
 
-Swap routing via Li.Fi aggregation. Yield and lending data sourced directly from on-chain contracts via Ethereum RPC with Chainlink price feeds.
+Swap routing via Li.Fi aggregation. Yield and lending from on-chain contracts and feeds. Trust tools use public RPC `eth_call` and third-party verification APIs.
 
 ## Yield Sources
 
@@ -77,7 +65,7 @@ Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scro
 
 ## How Execution Works
 
-`swap.quote` returns an unsigned `transactionRequest` with optimised calldata. The agent or user signs and submits from their own wallet. For cross-chain bridges, `swap.status` tracks progress. Syenite never holds keys.
+`swap.quote` (and similar) returns an unsigned `transactionRequest`. Use `tx.verify`, `tx.simulate`, and `tx.guard` before signing when you need independent checks. The agent or user signs and submits from their own wallet. For cross-chain bridges, `swap.status` tracks progress. Syenite never holds keys.
 
 ## Product Tiers
 
@@ -114,6 +102,6 @@ syenite/
 
 ## Status
 
-MCP server is live at [syenite.ai](https://syenite.ai) with swap/bridge routing (30+ chains), yield intelligence (10+ protocols), and lending tools (Aave v3, Morpho Blue, Spark). Vault contracts are a parallel build track.
+MCP server is live at [syenite.ai](https://syenite.ai) with swap/bridge (30+ chains), yield and multi-chain lending, prediction markets and signals, carry and strategy search, alerts, wallet/gas tools, and the tx trust layer. Vault contracts are a parallel build track.
 
 **Source:** [github.com/syenite-ai/syenite](https://github.com/syenite-ai/syenite)
