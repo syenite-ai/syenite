@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ERC-8004 agent registration with Syenite — on-chain agent identity</title>
-  <meta name="description" content="Register your AI agent on-chain with ERC-8004 using Syenite. Step-by-step: build registration tx, run register-agent script, set agent ID. DeFi MCP agent identity and discovery.">
+  <title>ERC-8004 agent registration and x402 payments — Syenite MCP</title>
+  <meta name="description" content="Register your AI agent on-chain with ERC-8004 via Syenite. Declare x402 payment support. Step-by-step registration, discovery via agent-registration.json, and agent-to-agent payment readiness.">
   <link rel="canonical" href="https://syenite.ai/docs/erc-8004-agent-registration">
   <style>
     :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
@@ -26,17 +26,19 @@
     .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
     .foot a{color:var(--muted);}
     ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    li{margin-bottom:0.4rem;}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>ERC-8004 agent registration with Syenite</h1>
-  <p>ERC-8004 gives AI agents an on-chain identity: a registry contract stores agent metadata and assigns a unique agent ID. Syenite supports registration so your MCP server appears as a verified agent on Base, Ethereum, Arbitrum, and BNB Chain. This guide walks through building and submitting the registration transaction.</p>
+  <p><a href="/docs">&larr; docs</a></p>
+  <h1>ERC-8004 agent registration and x402 payments</h1>
+  <p>ERC-8004 gives AI agents an on-chain identity: a registry contract stores agent metadata and assigns a unique agent ID. Syenite supports registration on Base, Ethereum, Arbitrum, and BNB Chain, and declares x402 payment support in the same registration document so your agent is discoverable and payment-ready.</p>
 
-  <h2>What you get</h2>
-  <p>After registering, your agent has a public agent ID (NFT-style) on the chain you chose. Syenite exposes that ID via <code>/.well-known/agent-registration.json</code>. Clients and other agents can discover your MCP endpoint, x402 support, and services from that URL. The Syenite landing page can show an "ERC-8004 Agent" link when <code>AGENT_ID</code> (or <code>AGENT_ID_BASE</code>) is set.</p>
+  <h2>what you get</h2>
+  <p>After registering, your agent has a public agent ID (NFT-style) on the chain you chose. Syenite exposes that ID via <code>/.well-known/agent-registration.json</code>. Clients and other agents can discover your MCP endpoint, x402 support, and services from that URL. The Syenite landing page shows an "ERC-8004 Agent" link when <code>AGENT_ID</code> (or <code>AGENT_ID_BASE</code>) is set.</p>
 
-  <h2>Demo: run the registration script</h2>
+  <h2>demo: run the registration script</h2>
   <p>Syenite ships a script that builds and sends the registration transaction. You need a wallet with native gas on the target chain and <code>AGENT_PRIVATE_KEY</code> in <code>.env</code>.</p>
 
   <h3>Step 1: Install and configure</h3>
@@ -48,24 +50,29 @@
   <p>Build the registration payload and see what would be sent. Default chain is Base.</p>
   <pre><code><span class="prompt">$ </span>npm run register-agent -- --dry-run
 <span class="prompt">$ </span>npm run register-agent -- --chain=ethereum --dry-run</code></pre>
-  <p>The script loads <code>agentRegistrationJson()</code> from the server (name, description, MCP endpoint, x402 support), encodes it as a data URI, and shows the <code>register(agentURI)</code> call. No transaction is submitted.</p>
+  <p>The script loads <code>agentRegistrationJson()</code> from the server (name, description, MCP endpoint, x402 support), encodes it as a data URI, and shows the <code>register(agentURI)</code> call.</p>
 
   <h3>Step 3: Submit the transaction</h3>
   <p>Remove <code>--dry-run</code> to send the transaction to the ERC-8004 registry (<code>0x8004A169FB4a3325136EB29fA0ceB6D2e539a432</code>).</p>
   <pre><code><span class="prompt">$ </span>npm run register-agent -- --chain=base</code></pre>
-  <p>After the tx confirms, look up your agent ID on the block explorer (e.g. Basescan) under the registry contract or your address's NFT transfers. The script prints the URL.</p>
+  <p>After the tx confirms, look up your agent ID on the block explorer (e.g. Basescan) under the registry contract or your address's NFT transfers.</p>
 
   <h3>Step 4: Set agent ID and redeploy</h3>
-  <p>Put the numeric agent ID in <code>.env</code> as <code>AGENT_ID</code> (or <code>AGENT_ID_BASE</code> for Base). Redeploy Syenite so <code>/.well-known/agent-registration.json</code> includes your registration. The landing page can then link to your agent on the explorer.</p>
+  <p>Put the numeric agent ID in <code>.env</code> as <code>AGENT_ID</code> (or <code>AGENT_ID_BASE</code> for Base). Redeploy Syenite so <code>/.well-known/agent-registration.json</code> includes your registration.</p>
 
-  <h2>Discovery</h2>
+  <h2>discovery</h2>
   <p><code>GET https://syenite.ai/.well-known/agent-registration.json</code> returns the EIP-8004 registration document: type, name, description, image, services (MCP and web endpoints), <code>x402Support: true</code>, and registrations (agentId and agentRegistry per chain). Clients that support ERC-8004 use this to resolve your agent.</p>
 
-  <h2>Gas</h2>
+  <h2>gas</h2>
   <p>Registration is a single contract call. Use <code>gas.estimate</code> with <code>operations: ["contract_register"]</code> to see current cost on each chain. See <a href="/docs/wallet-balances-and-gas">Wallet balances and gas estimates</a>.</p>
 
-  <h2>Related</h2>
-  <p><a href="/docs/why-agentic-defi">Why agentic DeFi</a> (ERC-8004 and AgentKit). <a href="/docs/x402-agent-payments">x402 and agent payments</a> (Syenite declares x402 support in the same registration). <a href="/docs/quick-start">Quick start</a> for MCP setup.</p>
+  <h2>x402 and agent payments</h2>
+  <p>x402 is an open protocol that uses the HTTP 402 "Payment Required" status code for agent-to-agent and agent-to-service micropayments. Services that support x402 return 402 when a request requires payment; the client sends payment on-chain and retries with proof. Settlement is fast and chain-agnostic (Base, Solana, and others).</p>
+  <p>Syenite's registration document includes <code>"x402Support": true</code>, which tells discovery clients and wallets that this agent can participate in x402 flows. The MCP endpoint itself is currently free and rate-limited; x402 is a declaration for future payment integration and for appearing in agent directories that filter by payment capability.</p>
+  <p>To verify: fetch the registration document and check the <code>x402Support</code> field. Agents with both ERC-8004 and x402 are discoverable as payment-capable DeFi tools. DeFi operations (quotes, execution, data) can be monetized per call via this standard — no API keys or billing dashboards required.</p>
+
+  <h2>related</h2>
+  <p><a href="/docs/why-agentic-defi">Why agentic DeFi</a> (ERC-8004, AgentKit, and the agent economy). <a href="/docs/quick-start">Quick start</a> for MCP setup. <a href="/docs/security-and-production">Security and production</a>.</p>
 
   <footer class="foot">
     <a href="/docs">Docs</a> · <a href="/">syenite</a>

@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cross-chain swap and bridge with Syenite MCP</title>
-  <meta name="description" content="Use swap.quote and swap.status to get optimal swap and bridge routes and unsigned transactions. Track cross-chain execution. Syenite MCP for DeFi swap agents. 30+ chains.">
+  <meta name="description" content="swap.quote, swap.multi, and swap.status: get optimal swap and bridge routes, batch multiple quotes in parallel, and track cross-chain execution. Unsigned transactions on 30+ chains. Syenite MCP.">
+  <link rel="canonical" href="https://syenite.ai/docs/swap-and-bridge">
   <style>
     :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -26,15 +27,17 @@
     .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
     .foot a{color:var(--muted);}
     ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    li{margin-bottom:0.4rem;}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Cross-chain swap and bridge with Syenite MCP</h1>
-  <p>The Syenite MCP server exposes <code>swap.quote</code> and <code>swap.status</code> for same-chain swaps and cross-chain bridges. Routing aggregates 1inch, 0x, Paraswap, and bridge protocols via Li.Fi. 30+ chains. The server returns unsigned transactions; you or the agent signs and submits from your wallet.</p>
+  <p><a href="/docs">&larr; docs</a></p>
+  <h1>Cross-chain swap and bridge</h1>
+  <p>Three tools cover the full swap lifecycle: <code>swap.quote</code> for a single optimal route, <code>swap.multi</code> for batching multiple quotes in parallel, and <code>swap.status</code> for tracking cross-chain bridges after submission. Routing aggregates 1inch, 0x, Paraswap, and bridge protocols via Li.Fi across 30+ chains. All tools return unsigned transactions; you or the agent signs.</p>
 
   <h2>swap.quote</h2>
-  <p>Returns an optimal swap or bridge quote and unsigned transaction calldata.</p>
+  <p>Returns an optimal swap or bridge quote with unsigned transaction calldata.</p>
   <p>Parameters:</p>
   <ul>
     <li><code>fromToken</code> (string): token to sell (symbol or address)</li>
@@ -47,31 +50,42 @@
     <li><code>slippage</code> (number): max slippage as decimal (e.g. 0.005 = 0.5%); default 0.005</li>
     <li><code>order</code> (string): <code>"CHEAPEST"</code> or <code>"FASTEST"</code></li>
   </ul>
-  <p>Response includes <code>transactionRequest</code> (unsigned tx), expected amount out, and route details. The agent or user signs the transaction and submits it. For cross-chain, use <code>fromChain</code> and <code>toChain</code>; the quote includes bridge steps.</p>
+  <p>Response includes <code>transactionRequest</code> (unsigned tx), expected output, route steps, gas and fee breakdown. For cross-chain, set <code>fromChain</code> and <code>toChain</code> differently; the quote includes bridge steps.</p>
+
+  <h2>swap.multi</h2>
+  <p>Batch multiple swap or bridge quotes in a single MCP call. Each request is quoted in parallel. Use it to compare routes across chains, split a position, or prepare several transactions before signing.</p>
+  <p>When to use: <code>swap.quote</code> for one route, <code>swap.multi</code> for two or more. Example: "Quote USDC to ETH on Ethereum, Base, and Arbitrum so I can pick the best chain."</p>
+  <p>Parameters: one argument <code>requests</code>, an array of 1-10 swap request objects. Each object has the same shape as <code>swap.quote</code> (fromToken, toToken, fromAmount, fromAddress, chains, slippage, order).</p>
+  <p>Each result in the response mirrors a single <code>swap.quote</code> result with its own <code>transactionRequest</code>. Quotes are valid for about 30 seconds; sign and submit sequentially to avoid nonce issues.</p>
+
+  <h3>Demo: compare chains</h3>
+  <p>"Get swap quotes for 1000 USDC to ETH on Base and on Arbitrum." The agent calls <code>swap.multi</code> with two requests, compares output amounts and gas, and recommends the better route.</p>
+
+  <h3>Demo: split across chains</h3>
+  <p>"Bridge 5000 USDC from Base to Ethereum and 5000 USDC from Base to Arbitrum." Two requests with same <code>fromChain</code>, different <code>toChain</code>. Execute one bridge at a time and track each with <code>swap.status</code>.</p>
 
   <h2>swap.status</h2>
-  <p>Tracks execution of a cross-chain bridge. Use after the user has submitted the transaction from <code>swap.quote</code>.</p>
+  <p>Tracks execution of a cross-chain bridge after submission.</p>
   <p>Parameters:</p>
   <ul>
     <li><code>txHash</code> (string): transaction hash of the submitted swap/bridge</li>
     <li><code>fromChain</code> (string): chain where the tx was submitted (default <code>"ethereum"</code>)</li>
     <li><code>toChain</code> (string, optional): destination chain for bridges</li>
   </ul>
-  <p>Returns status, receiving transaction hash, and amount received when the bridge completes.</p>
+  <p>Returns status (PENDING, DONE, FAILED), receiving transaction hash, and amount received when the bridge completes.</p>
 
   <div class="callout">
-    <strong>Syenite never holds private keys.</strong> <code>swap.quote</code> returns an unsigned <code>transactionRequest</code>. The agent or user signs and submits from their own wallet. No custody.
+    <strong>Syenite never holds private keys.</strong> <code>swap.quote</code> and <code>swap.multi</code> return unsigned <code>transactionRequest</code> objects. Before signing, use <a href="/docs/tx-trust-layer">tx.verify, tx.simulate, and tx.guard</a> to verify the transaction independently. After signing, confirm with <code>tx.receipt</code>.
   </div>
 
-  <h2>Workflow</h2>
-  <p>1. Agent calls <code>swap.quote</code> with fromToken, toToken, fromAmount, fromAddress, and (for bridge) fromChain and toChain. 2. User (or agent with signing capability) signs and submits the returned transaction. 3. For cross-chain, agent calls <code>swap.status</code> with the tx hash and chains to poll until the bridge completes.</p>
+  <h2>workflow</h2>
+  <p>1. Call <code>swap.quote</code> (or <code>swap.multi</code> for batch) with tokens, amounts, addresses, and chains. 2. Optionally verify with the <a href="/docs/tx-trust-layer">trust layer</a>. 3. Sign and submit from your wallet. 4. For cross-chain bridges, call <code>swap.status</code> with the tx hash to poll until completion.</p>
 
-  <h2>Supported chains</h2>
+  <h2>supported chains</h2>
   <p>Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scroll, Gnosis, Fantom, and others (30+). Same-chain and cross-chain both supported.</p>
 
-  <h2>Related</h2>
-  <p>After <code>swap.quote</code>, use the <a href="/docs/tx-trust-layer">trust layer</a> (<code>tx.verify</code>, <code>tx.simulate</code>, <code>tx.guard</code>) before signing. <a href="/docs/mcp-trust-speed-security">MCP trust, speed, and security</a> explains the tradeoffs.</p>
-  <p><a href="/docs/quick-start">Quick start</a> and <a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> cover MCP setup and lending. <a href="/docs/yield-opportunities">Yield opportunities</a>. Full tool list: <a href="/">syenite.ai</a>.</p>
+  <h2>related</h2>
+  <p><a href="/docs/tx-trust-layer">Transaction trust layer</a> (verify, simulate, guard before signing). <a href="/docs/wallet-balances-and-gas">Wallet balances and gas</a> (check funds before swapping). <a href="/docs/yield-opportunities">Yield opportunities</a>. <a href="/">Full tool list</a>.</p>
 
   <footer class="foot">
     <a href="/docs">Docs</a> · <a href="/">syenite</a>

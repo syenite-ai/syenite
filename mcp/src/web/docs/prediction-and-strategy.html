@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prediction markets and strategy — Syenite MCP</title>
+  <meta name="description" content="Discover Polymarket markets, detect actionable signals, and surface composite strategies with prediction.trending, prediction.search, prediction.book, prediction.signals, and find.strategy. Syenite MCP.">
+  <link rel="canonical" href="https://syenite.ai/docs/prediction-and-strategy">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    li{margin-bottom:0.4rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    pre code{color:#888;}
+    .callout{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin:1rem 0 1.5rem;font-size:0.88rem;color:#777;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <p><a href="/docs">&larr; docs</a></p>
+  <h1>Prediction markets and strategy</h1>
+  <p>Five tools cover the full intelligence loop: discover markets, assess liquidity, detect actionable signals, and surface composite strategies across all Syenite data sources. Prediction data comes from Polymarket; strategy search combines yield, carry, lending, prediction signals, and gas estimates.</p>
+
+  <h2>prediction.trending</h2>
+  <p>Top markets by volume — a quick read on what the crowd is pricing.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>limit</code> (number, 1–25, default 10): how many markets to return</li>
+  </ul>
+  <p>Response: event title, slug, total volume (USDC), liquidity, and per-outcome probabilities, best bid/ask, spread. Use this as a starting point to find interesting markets, then drill into specific outcomes with <code>prediction.book</code>.</p>
+
+  <h2>prediction.search</h2>
+  <p>Search markets by keyword — "Bitcoin", "Fed rate", "election", or any topic.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>query</code> (string): search term</li>
+    <li><code>limit</code> (number, 1–25, default 10): max results</li>
+  </ul>
+  <p>Same response shape as <code>prediction.trending</code>. Combine with signals to find tradeable opportunities in a specific domain.</p>
+
+  <h2>prediction.book</h2>
+  <p>Order book depth for a single outcome token. Use to assess execution cost, slippage, and available depth before trading.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>tokenId</code> (string): outcome token ID from a trending or search result</li>
+  </ul>
+  <p>Response: bids, asks, spread, mid-price, cumulative depth at various price levels.</p>
+
+  <h2>prediction.signals</h2>
+  <p>The detection layer. Scans Polymarket for actionable opportunities: wide spreads (market-making), extreme probabilities (mean-reversion), volume spikes (momentum), deep liquidity pools, and mispriced outcomes.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>minStrength</code> (number, 0–100, default 0): minimum signal strength to include</li>
+    <li><code>types</code> (array, optional): filter to specific signal types — <code>"wide_spread"</code>, <code>"extreme_probability"</code>, <code>"high_volume"</code>, <code>"deep_liquidity"</code>, <code>"mispriced"</code></li>
+    <li><code>limit</code> (number, 1–50, default 20): max signals to return</li>
+  </ul>
+  <p>Each signal includes the market context, signal type, strength score, and a suggested action. Agents can use this for autonomous strategy discovery — scan for signals, filter by type, then execute via the Polymarket CLOB or hedge on-chain.</p>
+
+  <div class="callout">
+    <strong>Example:</strong> "Find wide-spread signals above strength 60" → <code>prediction.signals</code> with <code>types: ["wide_spread"], minStrength: 60</code>. The agent identifies markets where market-making is profitable, checks depth via <code>prediction.book</code>, and executes.
+  </div>
+
+  <h2>find.strategy</h2>
+  <p>The intelligence layer that ties all Syenite data sources together. Tell it what asset you have and your risk tolerance; it scans yield opportunities, carry trades, lending leverage, prediction signals, and gas costs to return ranked strategies with expected returns and execution steps.</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>asset</code> (string): what you have — <code>"ETH"</code>, <code>"WETH"</code>, <code>"wBTC"</code>, <code>"USDC"</code>, <code>"USDT"</code>, etc.</li>
+    <li><code>amount</code> (number, default 10000): USD value to deploy</li>
+    <li><code>riskTolerance</code> (<code>"low"</code> | <code>"medium"</code> | <code>"high"</code>, default <code>"high"</code>): low = yield only, medium = carry + arb, high = leverage + prediction</li>
+    <li><code>chain</code> (<code>"ethereum"</code> | <code>"arbitrum"</code> | <code>"base"</code> | <code>"all"</code>, default <code>"all"</code>): chain preference</li>
+    <li><code>includePrediction</code> (boolean, default true): include prediction market signals in the strategy search</li>
+  </ul>
+  <p>Response: ranked strategies, each with category (yield, carry, leverage, prediction, arbitrage), expected return, risk level, confidence, and the specific Syenite tool calls to execute. The agent can chain from <code>find.strategy</code> directly into <code>lending.supply</code>, <code>swap.quote</code>, or any other execution tool.</p>
+
+  <div class="callout">
+    <strong>Example:</strong> "I have 50k USDC on Ethereum, medium risk" → <code>find.strategy</code> with <code>asset: "USDC", amount: 50000, riskTolerance: "medium", chain: "ethereum"</code>. Returns a ranked list: best yield vault, top carry trade, and any prediction signal plays — with exact next steps.
+  </div>
+
+  <h2>typical flow</h2>
+  <p>1. <code>prediction.trending</code> or <code>prediction.search</code> to discover markets. 2. <code>prediction.book</code> on interesting outcomes for depth. 3. <code>prediction.signals</code> to scan for actionable opportunities. 4. <code>find.strategy</code> to get a holistic view combining prediction signals with yield, carry, and gas data. 5. Execute with <code>lending.supply</code>, <code>swap.quote</code>, or external trading tools.</p>
+
+  <h2>related</h2>
+  <p><a href="/docs/yield-opportunities">Yield opportunities</a>. <a href="/docs/lending-rates-and-risk">Lending rates and risk</a>. <a href="/docs/lending-execution">Lending execution</a>. <a href="/docs/position-alerts-and-carry">Position alerts and carry</a>. <a href="/">Full tool list</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

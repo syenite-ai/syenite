@@ -6,24 +6,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Allowed doc slugs. Only these return 200; others should 404. */
 export const DOC_SLUGS = [
-  "build-defi-lending-agent-30-min",
   "quick-start",
+  "build-defi-lending-agent-30-min",
   "lending-rates-and-risk",
+  "lending-execution",
   "yield-opportunities",
   "swap-and-bridge",
+  "tx-trust-layer",
+  "wallet-balances-and-gas",
+  "position-alerts-and-carry",
+  "prediction-and-strategy",
   "security-and-production",
-  "mcp-defi-discovery",
   "why-agentic-defi",
   "erc-8004-agent-registration",
-  "x402-agent-payments",
-  "wallet-balances-and-gas",
-  "batch-swaps-multi-chain",
-  "position-alerts-and-carry",
-  "prediction-markets",
+  "mcp-defi-discovery",
   "seo-and-indexing",
-  "tx-trust-layer",
-  "mcp-trust-speed-security",
-  "lending-execution",
 ] as const;
 
 export type DocSlug = (typeof DOC_SLUGS)[number];

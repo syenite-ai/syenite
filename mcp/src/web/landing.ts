@@ -617,7 +617,7 @@ export function landingPageHtml(): string {
   <section>
     <h2>how execution works</h2>
     <div class="callout">
-      <strong>Syenite never holds private keys.</strong> <code>swap.quote</code>, <code>lending.supply</code>, <code>lending.borrow</code>, <code>lending.withdraw</code>, and <code>lending.repay</code> all return unsigned <code>transactionRequest</code> objects. Before signing, use <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code>. After signing and submitting, confirm with <code>tx.receipt</code>. For cross-chain bridges, track with <code>swap.status</code>. <a href="/docs/mcp-trust-speed-security">Trust and speed tradeoffs</a> \u00b7 <a href="/docs/tx-trust-layer">Tool reference</a> \u00b7 <a href="/docs/lending-execution">Lending execution guide</a>
+      <strong>Syenite never holds private keys.</strong> <code>swap.quote</code>, <code>lending.supply</code>, <code>lending.borrow</code>, <code>lending.withdraw</code>, and <code>lending.repay</code> all return unsigned <code>transactionRequest</code> objects. Before signing, use <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code>. After signing and submitting, confirm with <code>tx.receipt</code>. For cross-chain bridges, track with <code>swap.status</code>. <a href="/docs/tx-trust-layer">Trust layer: verify, simulate, guard, receipt</a> \u00b7 <a href="/docs/lending-execution">Lending execution guide</a>
     </div>
     <p>Routing is aggregated across 1inch, 0x, Paraswap, and bridge protocols via Li.Fi. Quotes are optimised for best price or fastest execution.</p>
   </section>

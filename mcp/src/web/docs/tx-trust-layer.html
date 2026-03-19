@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Transaction trust layer — tx.simulate, tx.verify, tx.guard</title>
-  <meta name="description" content="Syenite MCP trust tools: tx.simulate (eth_call simulation), tx.verify (Etherscan, Sourcify, protocol registry), tx.guard (your rules). Verify third-party transactions before signing.">
+  <title>Transaction trust layer — verify, simulate, guard, receipt</title>
+  <meta name="description" content="Syenite MCP trust tools: tx.verify (Etherscan, Sourcify, protocol registry), tx.simulate (eth_call), tx.guard (your rules), tx.receipt (post-signing confirmation). Verify before and after signing.">
   <link rel="canonical" href="https://syenite.ai/docs/tx-trust-layer">
   <style>
-    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
     .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
@@ -19,39 +19,77 @@
     a{color:var(--accent);text-decoration:none;}
     a:hover{color:var(--accent-hover);}
     ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    li{margin-bottom:0.4rem;}
     code{font-family:var(--mono);font-size:0.85em;}
     :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
     pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;margin:0.75rem 0 1.5rem;}
+    .callout{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin:1rem 0 1.5rem;font-size:0.88rem;color:#777;}
     .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
     .foot a{color:var(--muted);}
   </style>
 </head>
 <body>
 <div class="wrap">
+  <p><a href="/docs">&larr; docs</a></p>
   <h1>Transaction trust layer</h1>
-  <p>Three tools sit between a constructed transaction and a signature: <code>tx.verify</code> (who you are calling), <code>tx.simulate</code> (whether it succeeds on current state), <code>tx.guard</code> (whether it passes your policy). They work on any unsigned transaction, including calldata from <code>swap.quote</code> or another MCP.</p>
+  <p>An MCP server is a remote capability boundary. The model calls tools; the user approves signing or delegates to an agent. Syenite returns unsigned <code>transactionRequest</code> objects — routing and data stay separate from custody. The trust layer extends that idea: four tools let you verify, simulate, enforce policy, and confirm on-chain results without trusting Syenite's narrative about the transaction.</p>
+
+  <h2>where trust breaks down</h2>
+  <p>Execution tools return intent (calldata and targets), not settled state. If the only step after <code>swap.quote</code> is sign, you trust whoever built the quote — routing APIs, the MCP host, prompt injection — that the <code>to</code> address and <code>data</code> match what you think you are doing. Speed favors skipping checks. Security favors treating every transaction as untrusted until verified against independent sources and your own policy.</p>
+
+  <h2>the pipeline</h2>
+  <p>Five stages: <strong>verify</strong> the target, <strong>simulate</strong> against current state, <strong>guard</strong> against your rules, <strong>sign</strong>, and <strong>receipt</strong> to confirm settlement. Each stage is independent and reproducible via public RPCs and block explorers.</p>
 
   <h2>tx.verify</h2>
-  <p>Checks the <code>to</code> address: contract vs EOA, Etherscan verification, Sourcify match, Syenite protocol registry, and optional function selector decode via 4byte.directory.</p>
-  <p>Parameters: <code>to</code> (address), <code>chain</code> (<code>ethereum</code>, <code>arbitrum</code>, <code>base</code>, <code>bsc</code>), optional <code>data</code> (calldata for selector decode).</p>
-  <p>Response highlights: <code>verification.etherscan</code>, <code>verification.sourcify</code>, <code>protocol.syeniteAllowlisted</code>, <code>riskFlags</code> (e.g. <code>unverified_contract</code>, <code>unknown_protocol</code>, <code>proxy_contract</code>, <code>eoa_target</code>), <code>summary</code>.</p>
+  <p>Checks the <code>to</code> address: contract vs EOA, Etherscan verification, Sourcify match, Syenite protocol registry, and optional function selector decode via 4byte.directory. Answers "who am I really calling?"</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>to</code> (address): target contract or EOA</li>
+    <li><code>chain</code>: <code>ethereum</code>, <code>arbitrum</code>, <code>base</code>, <code>bsc</code></li>
+    <li><code>data</code> (optional): calldata for selector decode</li>
+  </ul>
+  <p>Response: <code>verification.etherscan</code>, <code>verification.sourcify</code>, <code>protocol.syeniteAllowlisted</code>, <code>riskFlags</code> (e.g. <code>unverified_contract</code>, <code>proxy_contract</code>, <code>eoa_target</code>), <code>summary</code>.</p>
 
   <h2>tx.simulate</h2>
-  <p>Runs <code>eth_call</code> at the current block with the proposed tx. Reports success or revert, gas estimate, native value outflow from <code>from</code>, and approximate gas cost in USD. Reverts mapped to <code>token_approval_required</code> when the error suggests allowance issues.</p>
-  <p>Parameters: <code>transaction</code> object: <code>to</code>, <code>data</code>, <code>from</code>, optional <code>value</code>, optional <code>chainId</code>; optional top-level <code>chain</code> (name or id).</p>
-  <p>Chains: ethereum, arbitrum, base, bsc (same as wallet and gas tools).</p>
-  <p>Limits: full ERC-20 balance deltas need trace-level simulation (e.g. Tenderly); the tool documents this in its <code>note</code> field. Results are verifiable by repeating the same <code>eth_call</code> against any RPC for that block.</p>
+  <p>Runs <code>eth_call</code> at the current block. Reports success or revert, gas estimate, native value outflow, and approximate gas cost in USD. Reverts mapped to <code>token_approval_required</code> when the error suggests allowance issues. Answers "does this tx plausibly execute as intended?"</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>transaction</code> object: <code>to</code>, <code>data</code>, <code>from</code>, optional <code>value</code>, optional <code>chainId</code></li>
+    <li><code>chain</code> (optional): name or id</li>
+  </ul>
+  <p>Chains: ethereum, arbitrum, base, bsc. Full ERC-20 balance deltas need trace-level simulation (e.g. Tenderly); the tool documents this in its <code>note</code> field.</p>
 
   <h2>tx.guard</h2>
-  <p>Evaluates <code>transaction</code> against <code>rules</code> you supply. Syenite does not change your rules.</p>
-  <p>Rules (all optional except you must pass at least one): <code>maxValueNative</code> (string, ETH-equivalent cap), <code>allowedContracts</code>, <code>blockedContracts</code>, <code>allowedFunctions</code> (selectors or hex strings), <code>requireVerifiedContract</code> (boolean: emits a <code>skip</code> telling you to run <code>tx.verify</code> first), <code>requireAllowlisted</code> (must match Syenite curated registry), <code>maxGasLimit</code> (with <code>transaction.gasLimit</code> set).</p>
-  <p>Response: <code>checks</code> with <code>pass</code> / <code>fail</code> / <code>skip</code>, <code>approved</code> when there are no failures and no skips, <code>summary</code>.</p>
+  <p>Evaluates the transaction against rules you supply. Syenite does not change your rules. Answers "does this tx fit my agent's mandate?"</p>
+  <p>Rules (at least one required):</p>
+  <ul>
+    <li><code>maxValueNative</code> (string): ETH-equivalent cap</li>
+    <li><code>allowedContracts</code> / <code>blockedContracts</code>: address arrays</li>
+    <li><code>allowedFunctions</code>: selectors or hex strings</li>
+    <li><code>requireVerifiedContract</code> (boolean): emits <code>skip</code> telling you to run <code>tx.verify</code> first</li>
+    <li><code>requireAllowlisted</code>: must match Syenite curated registry</li>
+    <li><code>maxGasLimit</code>: with <code>transaction.gasLimit</code> set</li>
+  </ul>
+  <p>Response: <code>checks</code> with <code>pass</code>/<code>fail</code>/<code>skip</code>, <code>approved</code> (no failures and no skips), <code>summary</code>.</p>
 
-  <h2>Recommended order</h2>
-  <p>1. <code>swap.quote</code>, <code>lending.supply</code>, or other source returns <code>transactionRequest</code>. 2. <code>tx.verify</code> on <code>to</code> and calldata. 3. <code>tx.simulate</code> with full tx. 4. <code>tx.guard</code> with your caps and allowlists. 5. Sign only if verify + simulate + guard outcomes are acceptable. 6. After signing, call <code>tx.receipt</code> to confirm the transaction landed and decode its events.</p>
+  <h2>tx.receipt</h2>
+  <p>Post-signing confirmation. Fetches the on-chain transaction receipt and decodes events, giving definitive proof of settlement. Answers "did the transaction land, and what happened?"</p>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>txHash</code> (string): transaction hash to look up</li>
+    <li><code>chain</code> (string, optional): defaults to <code>ethereum</code>; accepts names and aliases</li>
+  </ul>
+  <p>Response: <code>status</code> (<code>confirmed</code> or <code>reverted</code>), <code>gasUsed</code>, <code>gasCostETH</code>, <code>gasCostUSD</code>, decoded <code>logs</code> (up to 20 events with known topic names), <code>tokenTransfers</code> (ERC-20 transfers extracted from Transfer events), <code>explorerUrl</code>. The receipt is fetched via standard RPC — independently verifiable.</p>
 
-  <h2>Related</h2>
-  <p><a href="/docs/mcp-trust-speed-security">MCP trust, speed, and security</a>. <a href="/docs/lending-execution">Lending execution (supply, borrow, withdraw, repay)</a>. <a href="/docs/swap-and-bridge">Swap and bridge</a>. <a href="/docs/security-and-production">Security and production</a>.</p>
+  <h2>speed vs security in practice</h2>
+  <p>Each pre-signing step adds latency (HTTP to explorers, RPC for simulation). The fast path is quote → sign → receipt. The safer path is verify → simulate → guard → sign → receipt. Autonomous agents can default to the full pipeline for high-value or unfamiliar contracts, and relax it for repeated, allowlisted routes once operational confidence is established.</p>
+
+  <div class="callout">
+    <strong>Recommended order:</strong> 1. Source tool (<code>swap.quote</code>, <code>lending.supply</code>, etc.) returns <code>transactionRequest</code>. 2. <code>tx.verify</code> the target. 3. <code>tx.simulate</code> the full tx. 4. <code>tx.guard</code> against your rules. 5. Sign if all checks pass. 6. <code>tx.receipt</code> to confirm settlement and decode events.
+  </div>
+
+  <h2>related</h2>
+  <p><a href="/docs/lending-execution">Lending execution</a> (supply, borrow, withdraw, repay). <a href="/docs/swap-and-bridge">Swap and bridge</a>. <a href="/docs/security-and-production">Security and production</a>. <a href="/docs/position-alerts-and-carry">Position alerts</a>.</p>
 
   <footer class="foot">
     <a href="/docs">Docs</a> · <a href="/">syenite</a>
