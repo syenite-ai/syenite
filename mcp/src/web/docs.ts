@@ -19,6 +19,8 @@ export const DOC_SLUGS = [
   "wallet-balances-and-gas",
   "batch-swaps-multi-chain",
   "position-alerts-and-carry",
+  "prediction-markets",
+  "seo-and-indexing",
 ] as const;
 
 export type DocSlug = (typeof DOC_SLUGS)[number];

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEO and indexing — Syenite sitemap, robots.txt, Google Search Console</title>
+  <meta name="description" content="Syenite SEO: sitemap at /sitemap.xml, robots.txt at /robots.txt. Verify the site in Google Search Console with GOOGLE_SITE_VERIFICATION. Indexing and crawl guidance.">
+  <link rel="canonical" href="https://syenite.ai/docs/seo-and-indexing">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    code{font-family:var(--mono);font-size:0.85em;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;margin:0.75rem 0 1.5rem;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SEO and indexing</h1>
+  <p>Syenite serves a sitemap and robots.txt so crawlers can discover and index the site. You can verify ownership in Google Search Console (GSC) using an environment variable.</p>
+
+  <h2>Sitemap</h2>
+  <p><code>GET https://syenite.ai/sitemap.xml</code> returns an XML sitemap of the homepage, docs index, and all doc articles. Updated when new docs are added. Cache-Control: 1 hour. Submit this URL in GSC under Sitemaps after verifying the property.</p>
+
+  <h2>robots.txt</h2>
+  <p><code>GET https://syenite.ai/robots.txt</code> allows crawlers for <code>/</code> and <code>/docs</code>, disallows <code>/dashboard</code> and <code>/metrics</code>, and references the sitemap. Cache-Control: 24 hours.</p>
+
+  <h2>Google Search Console</h2>
+  <p>Add the property at <a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a> with URL prefix <code>https://syenite.ai</code>. To verify ownership, use one of the following.</p>
+  <h3>HTML tag</h3>
+  <p>In GSC choose “HTML tag” and copy the <code>content</code> value from the meta tag. Set it in your deployment environment:</p>
+  <pre><code>GOOGLE_SITE_VERIFICATION=<span style="color:#8a9a7c">your-token-from-gsc</span></code></pre>
+  <p>Syenite injects <code>&lt;meta name="google-site-verification" content="..."&gt;</code> into the landing page head when this variable is set. Redeploy, then click Verify in GSC.</p>
+  <h3>HTML file</h3>
+  <p>If you prefer the file method, use the same token. GSC will ask you to place a file named <code>google&lt;token&gt;.html</code>. Syenite serves that URL with the required content when <code>GOOGLE_SITE_VERIFICATION</code> is set. Request <code>https://syenite.ai/google&lt;token&gt;.html</code> after deploying; then verify in GSC.</p>
+
+  <h2>After verification</h2>
+  <p>Submit the sitemap URL in GSC (Sitemaps → Add a new sitemap → <code>sitemap.xml</code>). Use the URL Inspection tool to request indexing for important URLs. Indexing can take a few days for new or updated pages.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

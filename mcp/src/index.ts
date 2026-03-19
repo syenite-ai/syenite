@@ -198,20 +198,68 @@ app.get("/docs/:slug", (req, res) => {
 
 // ── Sitemap ──────────────────────────────────────────────────────────
 
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 app.get("/sitemap.xml", (_req, res) => {
-  const base = "https://syenite.ai";
-  const urls = [
-    base + "/",
-    base + "/docs",
-    ...DOC_SLUGS.map((slug) => base + "/docs/" + slug),
-  ];
-  const xml =
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    urls.map((url) => `  <url><loc>${url}</loc></url>`).join("\n") +
-    "\n</urlset>";
-  res.type("application/xml").send(xml);
+  try {
+    const base = "https://syenite.ai";
+    const urls = [
+      base + "/",
+      base + "/docs",
+      ...DOC_SLUGS.map((slug) => base + "/docs/" + slug),
+    ];
+    const lastmod = new Date().toISOString().slice(0, 10);
+    const xml =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+      urls
+        .map(
+          (url) =>
+            `  <url><loc>${escapeXml(url)}</loc><lastmod>${lastmod}</lastmod></url>`
+        )
+        .join("\n") +
+      "\n</urlset>";
+    res.type("application/xml").set("Cache-Control", "public, max-age=3600").send(xml);
+  } catch (e) {
+    log.error("sitemap error", { error: e instanceof Error ? e.message : String(e) });
+    res.status(500).type("text/plain").send("Sitemap unavailable");
+  }
 });
+
+// ── robots.txt ────────────────────────────────────────────────────────
+
+app.get("/robots.txt", (_req, res) => {
+  const body = [
+    "User-agent: *",
+    "Allow: /",
+    "Allow: /docs",
+    "Disallow: /dashboard",
+    "Disallow: /metrics",
+    "",
+    "Sitemap: https://syenite.ai/sitemap.xml",
+  ].join("\n");
+  res.type("text/plain").set("Cache-Control", "public, max-age=86400").send(body);
+});
+
+// ── Google Search Console verification (HTML file method) ─────────────
+// Set GOOGLE_SITE_VERIFICATION to the token from GSC; serves google<token>.html
+
+const GSC_TOKEN = (process.env.GOOGLE_SITE_VERIFICATION ?? "").trim();
+if (GSC_TOKEN) {
+  app.get(`/google${GSC_TOKEN}.html`, (_req, res) => {
+    res
+      .type("text/html")
+      .set("Cache-Control", "public, max-age=86400")
+      .send(`google-site-verification: google${GSC_TOKEN}.html`);
+  });
+}
 
 // ── Dashboard (password-protected) ──────────────────────────────────
 

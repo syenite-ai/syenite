@@ -1,9 +1,14 @@
+const GOOGLE_SITE_VERIFICATION = (process.env.GOOGLE_SITE_VERIFICATION ?? "").trim();
+
 export function landingPageHtml(): string {
+  const gscMeta = GOOGLE_SITE_VERIFICATION
+    ? `\n  <meta name="google-site-verification" content="${GOOGLE_SITE_VERIFICATION.replace(/"/g, "&quot;")}">`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">${gscMeta}
   <title>syenite — the DeFi interface for AI agents</title>
   <meta name="description" content="The DeFi interface for AI agents. Swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP. One endpoint for reading and writing to DeFi across 30+ chains.">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">

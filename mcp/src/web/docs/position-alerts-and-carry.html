@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Position alerts and carry screening with Syenite MCP</title>
+  <meta name="description" content="Monitor lending positions with alerts.watch and alerts.check. Screen for positive carry with strategy.carry.screen. Health factor alerts and self-funding DeFi strategies via MCP.">
+  <link rel="canonical" href="https://syenite.ai/docs/position-alerts-and-carry">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Position alerts and carry screening</h1>
+  <p>Syenite provides two workflows for lending and strategy: continuous health-factor monitoring with alerts, and screening for positive-carry (self-funding) strategies across protocols. Both use MCP tools so an agent can watch positions and discover the best borrow-to-yield opportunities.</p>
+
+  <h2>Position alerts</h2>
+  <p>Register an address for monitoring; when its health factor drops below a threshold, alerts are generated. Poll for alerts and act (e.g. add collateral or reduce debt) before liquidation.</p>
+
+  <h3>alerts.watch</h3>
+  <p>Registers a lending position for monitoring. Parameters:</p>
+  <ul>
+    <li><code>address</code> (string): EVM address with the position. Required.</li>
+    <li><code>protocol</code> (optional): e.g. <code>"aave-v3"</code>, <code>"morpho"</code>, <code>"spark"</code>, <code>"all"</code>.</li>
+    <li><code>chain</code> (optional): <code>"ethereum"</code>, <code>"arbitrum"</code>, <code>"base"</code>, <code>"all"</code>.</li>
+    <li><code>healthFactorThreshold</code> (optional): default 1.5. Alerts when health factor goes below this.</li>
+  </ul>
+  <p>Returns a watch object with an ID. Use that ID in <code>alerts.check</code> and <code>alerts.remove</code>.</p>
+
+  <h3>alerts.check</h3>
+  <p>Polls for active alerts. Optionally filter by <code>watchId</code> and set <code>acknowledge: true</code> to clear alerts for that watch. Returns alert count, critical vs warning, and per-alert details (type, severity, message, data). Call this on a schedule or after user actions.</p>
+
+  <h3>alerts.list and alerts.remove</h3>
+  <p><code>alerts.list</code> returns all active watches (address, threshold, last check). <code>alerts.remove</code> takes a watch ID and stops monitoring that position.</p>
+
+  <h2>Demo: watch a position and poll</h2>
+  <p>1. Call <code>alerts.watch</code> with the user's address and optional protocol/chain. 2. Periodically call <code>alerts.check</code>. 3. If alerts exist, present them (e.g. "Health factor below 1.5 on 0x...") and suggest actions. 4. Optionally call <code>lending.position.monitor</code> for full position details. 5. To stop watching, call <code>alerts.remove</code> with the watch ID.</p>
+
+  <h2>Carry screening</h2>
+  <p><code>strategy.carry.screen</code> scans lending markets for positive carry: supply APY on collateral exceeds borrow APY, so the net cost is negative (you are paid to be leveraged). Results are ranked by carry and include liquidation parameters and liquidity.</p>
+
+  <h3>strategy.carry.screen</h3>
+  <p>Parameters:</p>
+  <ul>
+    <li><code>collateral</code> (optional): <code>"all"</code>, <code>"BTC"</code>, <code>"ETH"</code>, or a specific asset.</li>
+    <li><code>borrowAsset</code> (optional): default <code>"USDC"</code>.</li>
+    <li><code>chain</code> (optional): <code>"ethereum"</code>, <code>"arbitrum"</code>, <code>"base"</code>, <code>"all"</code>.</li>
+    <li><code>minCarry</code> (optional): minimum net carry % (e.g. 0 for positive-only).</li>
+    <li><code>positionSizeUSD</code> (optional): default 100000; used for annual return estimates.</li>
+  </ul>
+  <p>Returns strategies with protocol, chain, market, supply APY, borrow APY, net carry, max LTV, leveraged carry, liquidation penalty, and liquidity. Use it to find the best self-funding strategies before opening a position; then use <code>lending.risk.assess</code> for a specific market.</p>
+
+  <h2>Demo: find positive carry</h2>
+  <p>"Screen for positive carry on ETH collateral, USDC borrow, on Ethereum." Agent calls <code>strategy.carry.screen</code> with <code>collateral: "ETH"</code>, <code>borrowAsset: "USDC"</code>, <code>chain: "ethereum"</code>. Results show markets ranked by net carry. User picks one; agent can call <code>lending.risk.assess</code> and <code>lending.rates.query</code> for execution details.</p>
+
+  <h2>Related</h2>
+  <p><a href="/docs/lending-rates-and-risk">Compare DeFi lending rates and assess risk</a>. <a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent</a>. <a href="/">Tool list</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

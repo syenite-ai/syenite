@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prediction markets with Syenite MCP — Polymarket data</title>
+  <meta name="description" content="Discover and query prediction markets via prediction.trending, prediction.search, prediction.book. Polymarket probabilities, volume, liquidity, order book. DeFi MCP.">
+  <link rel="canonical" href="https://syenite.ai/docs/prediction-markets">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Prediction markets</h1>
+  <p>Syenite exposes Polymarket data via three tools: discover trending markets, search by topic, and get order book depth for an outcome token. Probabilities are derived from outcome prices; volume and liquidity are in USDC.</p>
+
+  <h2>Tools</h2>
+  <p><strong>prediction.trending</strong> — Top markets by volume. Parameter: <code>limit</code> (1–25, default 10). Returns event title, slug, volume, liquidity, and per-market outcomes with probabilities, best bid/ask, spread.</p>
+  <p><strong>prediction.search</strong> — Search by keyword (e.g. "Bitcoin", "Fed rate", "election"). Parameters: <code>query</code>, optional <code>limit</code>. Same response shape as trending.</p>
+  <p><strong>prediction.book</strong> — Order book for one outcome token. Parameter: <code>tokenId</code> (from a market’s outcome in trending or search). Returns bids, asks, spread, mid-price, depth.</p>
+
+  <h2>Typical flow</h2>
+  <p>Call <code>prediction.trending</code> or <code>prediction.search</code> to find markets. Use an outcome’s token ID in <code>prediction.book</code> to assess execution cost or depth before trading elsewhere.</p>
+
+  <h2>Related</h2>
+  <p><a href="/docs/yield-opportunities">Yield opportunities</a>. <a href="/docs/position-alerts-and-carry">Position alerts and carry</a>. <a href="/">Tool list</a>.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>
