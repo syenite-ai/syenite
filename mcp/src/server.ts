@@ -10,6 +10,8 @@ import { handleSwapQuote, handleSwapStatus, swapQuoteDescription, swapStatusDesc
 import { handleSwapMulti, swapMultiDescription } from "./tools/multi-swap.js";
 import { handleWalletBalances, walletBalancesDescription } from "./tools/wallet.js";
 import { handleGasEstimate, gasEstimateDescription } from "./tools/gas.js";
+import { handlePredictionSignals, predictionSignalsDescription } from "./tools/prediction-signals.js";
+import { handleFindStrategy, findStrategyDescription } from "./tools/find-strategy.js";
 import {
   handlePredictionTrending,
   handlePredictionSearch,
@@ -45,6 +47,8 @@ import {
   swapMultiOutput,
   walletBalancesOutput,
   gasEstimateOutput,
+  predictionSignalsOutput,
+  findStrategyOutput,
   predictionTrendingOutput,
   predictionSearchOutput,
   predictionBookOutput,
@@ -107,7 +111,7 @@ export function createMcpServer(clientIp: string): McpServer {
   const server = new McpServer(
     {
       name: "syenite",
-      version: "0.5.0",
+      version: "0.5.1",
     },
     { capabilities: { tools: {} } }
   );
@@ -131,9 +135,11 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
       { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
       { name: "strategy.carry.screen", use: "Screen all markets for positive carry (supply APY > borrow APY). Ranks self-funding leveraged strategies." },
+      { name: "find.strategy", use: "Composable strategy finder — scans yield, carry, leverage, prediction, and gas data to surface the best opportunities for a given asset." },
       { name: "prediction.trending", use: "Top prediction markets by volume — probabilities, liquidity, and spread." },
       { name: "prediction.search", use: "Search prediction markets by topic." },
       { name: "prediction.book", use: "Order book depth and spread for a specific outcome token." },
+      { name: "prediction.signals", use: "Detect actionable signals — wide spreads, extreme probabilities, volume spikes, mispricing." },
       { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
       { name: "alerts.check", use: "Poll for active alerts (health factor warnings, rate spikes)." },
       { name: "alerts.list", use: "List all active position watches." },
@@ -559,6 +565,69 @@ Call this tool to learn what tools are available and how to use them.`,
     outputSchema: predictionBookOutput,
   }, withLogging(clientIp, "prediction.book", (p) =>
     handlePredictionBook(p as { tokenId: string })
+  ));
+
+  // ── prediction.signals ──────────────────────────────────────────────
+
+  server.registerTool("prediction.signals", {
+    description: predictionSignalsDescription,
+    inputSchema: {
+      minStrength: z
+        .number()
+        .min(0)
+        .max(100)
+        .default(0)
+        .describe("Minimum signal strength (0-100) to include"),
+      types: z
+        .array(z.enum(["wide_spread", "extreme_probability", "high_volume", "deep_liquidity", "mispriced"]))
+        .optional()
+        .describe("Filter to specific signal types (defaults to all)"),
+      limit: z
+        .number()
+        .min(1)
+        .max(50)
+        .default(20)
+        .describe("Maximum signals to return"),
+    },
+    outputSchema: predictionSignalsOutput,
+  }, withLogging(clientIp, "prediction.signals", (p) =>
+    handlePredictionSignals(p as { minStrength?: number; types?: string[]; limit?: number })
+  ));
+
+  // ── find.strategy ──────────────────────────────────────────────────
+
+  server.registerTool("find.strategy", {
+    description: findStrategyDescription,
+    inputSchema: {
+      asset: z
+        .string()
+        .describe('Asset you have or want to deploy: "ETH", "WETH", "wBTC", "USDC", "USDT", etc.'),
+      amount: z
+        .number()
+        .default(10000)
+        .describe("Amount in USD to deploy (for return calculations)"),
+      riskTolerance: z
+        .enum(["low", "medium", "high"])
+        .default("high")
+        .describe("Maximum risk level: low (yield only), medium (carry + arb), high (leverage + prediction)"),
+      chain: z
+        .enum(["ethereum", "arbitrum", "base", "all"])
+        .default("all")
+        .describe("Chain preference"),
+      includePrediction: z
+        .boolean()
+        .default(true)
+        .describe("Include prediction market signals in strategy search"),
+    },
+    outputSchema: findStrategyOutput,
+  }, withLogging(clientIp, "find.strategy", (p) =>
+    handleFindStrategy(p as {
+      asset: string;
+      amount?: number;
+      riskTolerance?: string;
+      chain?: string;
+      includePrediction?: boolean;
+    })
   ));
 
   // ── alerts.watch ──────────────────────────────────────────────────

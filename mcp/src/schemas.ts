@@ -463,6 +463,62 @@ export const gasEstimateOutput = z.object({
   note: z.string(),
 });
 
+// ── prediction.signals ──────────────────────────────────────────────
+
+export const predictionSignalsOutput = z.object({
+  source: z.string(),
+  marketsScanned: z.number(),
+  signalCount: z.number(),
+  typeCounts: z.record(z.string(), z.number()),
+  signals: z.array(z.record(z.string(), z.unknown())).describe("Ranked signals — each has type, strength, market, question, action, and signal-specific data"),
+  signalTypes: z.record(z.string(), z.string()).describe("Legend: signal type → description"),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+// ── find.strategy ───────────────────────────────────────────────────
+
+const StrategyItem = z.object({
+  rank: z.number(),
+  name: z.string(),
+  category: z.enum(["yield", "carry", "leverage", "prediction", "arbitrage"]),
+  expectedAPY: z.number().describe("Expected annual return as percentage"),
+  risk: z.enum(["low", "medium", "high"]),
+  summary: z.string().describe("Human-readable strategy description"),
+  details: z.record(z.string(), z.unknown()),
+  executionSteps: z.array(z.string()).describe("Ordered steps to execute this strategy"),
+  tools: z.array(z.string()).describe("Syenite tools to call for execution"),
+});
+
+export const findStrategyOutput = z.object({
+  query: z.object({
+    asset: z.string(),
+    amount: z.number(),
+    riskTolerance: z.string(),
+    chain: z.string(),
+    includePrediction: z.boolean(),
+  }),
+  summary: z.object({
+    strategiesFound: z.number(),
+    bestStrategy: z.object({
+      name: z.string(),
+      expectedAPY: z.number(),
+      risk: z.string(),
+      category: z.string(),
+    }).nullable(),
+    categoryCounts: z.record(z.string(), z.number()),
+    gasContext: z.object({
+      cheapestSwapChain: z.string().optional(),
+      swapGasCost: z.string().optional(),
+      cheapestLendingChain: z.string().optional(),
+      lendingGasCost: z.string().optional(),
+    }).optional(),
+  }),
+  strategies: z.array(StrategyItem),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
 // ── swap.multi ──────────────────────────────────────────────────────
 
 export const swapMultiOutput = z.object({
