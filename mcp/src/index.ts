@@ -17,7 +17,7 @@ import {
 } from "./web/docs.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin";
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD ?? "admin").trim();
 
 const app = express();
 app.set("trust proxy", true);
@@ -146,8 +146,9 @@ app.get("/dashboard", (req, res) => {
     res.status(401).send("Authentication required");
     return;
   }
-  const decoded = Buffer.from(auth.slice(6), "base64").toString();
-  const [, password] = decoded.split(":");
+  const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
+  const colonIdx = decoded.indexOf(":");
+  const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
   if (password !== ADMIN_PASSWORD) {
     res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
     res.status(401).send("Invalid credentials");
@@ -163,8 +164,9 @@ app.get("/dashboard/stats", (req, res) => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const decoded = Buffer.from(auth.slice(6), "base64").toString();
-  const [, password] = decoded.split(":");
+  const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
+  const colonIdx = decoded.indexOf(":");
+  const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
   if (password !== ADMIN_PASSWORD) {
     res.status(401).json({ error: "Unauthorized" });
     return;
