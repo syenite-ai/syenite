@@ -2,6 +2,7 @@ import { getAaveRates, getSparkRates } from "../data/aave.js";
 import { getMorphoRates } from "../data/morpho.js";
 import { getTokenPrice } from "../data/prices.js";
 import type { ProtocolRate, RiskAssessment } from "../data/types.js";
+import { SyeniteError } from "../errors.js";
 
 export const riskToolName = "lending.risk.assess";
 
@@ -71,23 +72,17 @@ export async function handleRiskAssess(params: {
   borrowAsset?: string;
   targetLTV: number;
   protocol?: string;
-}): Promise<string> {
+}): Promise<Record<string, unknown>> {
   const { collateral, collateralAmount, targetLTV } = params;
   const borrowAsset = params.borrowAsset ?? "USDC";
   const protocolPref = params.protocol ?? "best";
 
   if (targetLTV <= 0 || targetLTV >= 100) {
-    return JSON.stringify({
-      error: "invalid_ltv",
-      message: "targetLTV must be between 0 and 100 (exclusive).",
-    });
+    throw SyeniteError.invalidInput("targetLTV must be between 0 and 100 (exclusive).");
   }
 
   if (collateralAmount <= 0) {
-    return JSON.stringify({
-      error: "invalid_amount",
-      message: "collateralAmount must be positive.",
-    });
+    throw SyeniteError.invalidInput("collateralAmount must be positive.");
   }
 
   const assetPrice = await getTokenPrice(collateral);
@@ -107,10 +102,7 @@ export async function handleRiskAssess(params: {
   ];
 
   if (allRates.length === 0) {
-    return JSON.stringify({
-      error: "no_markets",
-      message: `No lending markets found for ${collateral}/${borrowAsset}.`,
-    });
+    throw SyeniteError.notFound(`No lending markets found for ${collateral}/${borrowAsset}.`);
   }
 
   let candidates: ProtocolRate[];
@@ -124,11 +116,9 @@ export async function handleRiskAssess(params: {
 
   const viable = candidates.filter((r) => targetLTV < r.maxLTV);
   if (viable.length === 0) {
-    return JSON.stringify({
-      error: "ltv_exceeds_max",
-      message: `Target LTV of ${targetLTV}% exceeds maximum allowed LTV on all available markets. Maximum LTVs: ${candidates.map((r) => `${r.market}: ${r.maxLTV}%`).join(", ")}`,
-      recommendation: `Reduce target LTV below ${Math.min(...candidates.map((r) => r.maxLTV))}%`,
-    });
+    throw SyeniteError.invalidInput(
+      `Target LTV of ${targetLTV}% exceeds maximum allowed LTV on all available markets. Maximum LTVs: ${candidates.map((r) => `${r.market}: ${r.maxLTV}%`).join(", ")}. Reduce target LTV below ${Math.min(...candidates.map((r) => r.maxLTV))}%.`
+    );
   }
 
   const best = viable.reduce((a, b) => (a.borrowAPY < b.borrowAPY ? a : b));
@@ -155,7 +145,6 @@ export async function handleRiskAssess(params: {
     positionSizingWarning = `Your borrow is ${round(borrowAsPoolPercent)}% of available pool liquidity — within normal range but worth monitoring.`;
   }
 
-  // ── Risk scoring (1 = lowest risk, 10 = highest) ─────────────
   let riskScore = 1;
 
   const ltvRatio = targetLTV / best.liquidationThreshold;
@@ -219,7 +208,7 @@ export async function handleRiskAssess(params: {
     summary,
   };
 
-  return JSON.stringify({
+  return {
     query: {
       collateral,
       collateralAmount,
@@ -239,7 +228,7 @@ export async function handleRiskAssess(params: {
         availableLiquidityUSD: round(r.availableLiquidityUSD),
       })),
     timestamp: new Date().toISOString(),
-  });
+  };
 }
 
 function round(n: number, decimals = 2): number {

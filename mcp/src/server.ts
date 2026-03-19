@@ -8,11 +8,23 @@ import { handleYieldOpportunities, yieldToolDescription } from "./tools/yield.js
 import { handleYieldAssess, yieldAssessToolDescription } from "./tools/yield-assess.js";
 import { handleSwapQuote, handleSwapStatus, swapQuoteDescription, swapStatusDescription } from "./tools/swap.js";
 import { logToolCall } from "./logging/usage.js";
+import { SyeniteError } from "./errors.js";
+import {
+  helpOutput,
+  ratesOutput,
+  marketOverviewOutput,
+  positionMonitorOutput,
+  riskAssessOutput,
+  yieldOpportunitiesOutput,
+  yieldAssessOutput,
+  swapQuoteOutput,
+  swapStatusOutput,
+} from "./schemas.js";
 
 function withLogging(
   clientIp: string,
   toolName: string,
-  handler: (params: Record<string, unknown>) => Promise<string>,
+  handler: (params: Record<string, unknown>) => Promise<Record<string, unknown>>,
   redactParams?: (params: Record<string, unknown>) => Record<string, unknown>
 ) {
   return async (params: Record<string, unknown>) => {
@@ -26,9 +38,14 @@ function withLogging(
         responseTimeMs: Date.now() - start,
         success: true,
       });
-      return { content: [{ type: "text" as const, text: result }] };
+      return {
+        structuredContent: result,
+        content: [{ type: "text" as const, text: JSON.stringify(result) }],
+      };
     } catch (e) {
+      const code = e instanceof SyeniteError ? e.code : "internal_error";
       const msg = e instanceof Error ? e.message : "Unknown error";
+      const retryable = e instanceof SyeniteError ? e.retryable : false;
       await logToolCall({
         clientIp,
         toolName,
@@ -38,7 +55,10 @@ function withLogging(
         errorMessage: msg,
       });
       return {
-        content: [{ type: "text" as const, text: JSON.stringify({ error: msg }) }],
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({ error: { code, message: msg, retryable } }),
+        }],
         isError: true,
       };
     }
@@ -49,89 +69,62 @@ export function createMcpServer(clientIp: string): McpServer {
   const server = new McpServer(
     {
       name: "syenite",
-      version: "0.4.0",
+      version: "0.5.0",
     },
     { capabilities: { tools: {} } }
   );
 
   // ── syenite.help ──────────────────────────────────────────────────
-  server.tool(
-    "syenite.help",
-    `Get information about Syenite — the DeFi interface for AI agents. Swap/bridge routing, yield intelligence, lending data, risk assessment, and position monitoring.
+
+  const helpData = {
+    service: "Syenite — The DeFi interface for AI agents",
+    description:
+      "Swap routing, bridge execution, yield intelligence, lending rates, risk assessment, and position monitoring — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
+    tools: [
+      { name: "swap.quote", use: "Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, bridges). 30+ chains." },
+      { name: "swap.status", use: "Track execution status of a cross-chain bridge transaction." },
+      { name: "yield.opportunities", use: "Find the best yield for any asset across lending, staking, vaults, savings, and basis capture." },
+      { name: "yield.assess", use: "Deep risk assessment for a specific yield strategy — smart contract, oracle, governance, liquidity, and depeg risk." },
+      { name: "lending.rates.query", use: "Compare borrow/supply rates across protocols for any collateral and borrow asset pair." },
+      { name: "lending.market.overview", use: "Aggregate market view — TVL, utilization, rate ranges per protocol." },
+      { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
+      { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
+    ],
+    swapAndBridge: {
+      chains: "Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, and 25+ more",
+      routing: "Aggregated via 1inch, 0x, Paraswap, and bridge protocols",
+      execution: "Returns unsigned transaction calldata — agent or user signs. Syenite never holds keys.",
+    },
+    yieldSources: {
+      "lending-supply": ["Aave v3", "Morpho Blue", "Spark"],
+      "liquid-staking": ["Lido (stETH/wstETH)", "Rocket Pool (rETH)", "Coinbase (cbETH)"],
+      "savings-rate": ["Maker DSR (sDAI)"],
+      vault: ["MetaMorpho (Steakhouse, Gauntlet)", "Yearn v3"],
+      "basis-capture": ["Ethena (sUSDe)"],
+    },
+    lendingProtocols: ["Aave v3", "Morpho Blue", "Spark"],
+    access: {
+      status: "Free — no API key required",
+      rateLimit: "30 requests/minute",
+      endpoint: "https://syenite.ai/mcp",
+    },
+    website: "https://syenite.ai",
+  };
+
+  server.registerTool("syenite.help", {
+    description: `Get information about Syenite — the DeFi interface for AI agents. Swap/bridge routing, yield intelligence, lending data, risk assessment, and position monitoring.
 Call this tool to learn what tools are available and how to use them.`,
-    {},
-    async () => ({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            service: "Syenite — The DeFi interface for AI agents",
-            description:
-              "Swap routing, bridge execution, yield intelligence, lending rates, risk assessment, and position monitoring — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
-            tools: [
-              {
-                name: "swap.quote",
-                use: "Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, bridges). 30+ chains.",
-              },
-              {
-                name: "swap.status",
-                use: "Track execution status of a cross-chain bridge transaction.",
-              },
-              {
-                name: "yield.opportunities",
-                use: "Find the best yield for any asset across lending, staking, vaults, savings, and basis capture.",
-              },
-              {
-                name: "yield.assess",
-                use: "Deep risk assessment for a specific yield strategy — smart contract, oracle, governance, liquidity, and depeg risk.",
-              },
-              {
-                name: "lending.rates.query",
-                use: "Compare borrow/supply rates across protocols for any collateral and borrow asset pair.",
-              },
-              {
-                name: "lending.market.overview",
-                use: "Aggregate market view — TVL, utilization, rate ranges per protocol.",
-              },
-              {
-                name: "lending.position.monitor",
-                use: "Check health factor, liquidation distance, and costs for any Ethereum address.",
-              },
-              {
-                name: "lending.risk.assess",
-                use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost.",
-              },
-            ],
-            swapAndBridge: {
-              chains: "Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, and 25+ more",
-              routing: "Aggregated via 1inch, 0x, Paraswap, and bridge protocols",
-              execution: "Returns unsigned transaction calldata — agent or user signs. Syenite never holds keys.",
-            },
-            yieldSources: {
-              "lending-supply": ["Aave v3", "Morpho Blue", "Spark"],
-              "liquid-staking": ["Lido (stETH/wstETH)", "Rocket Pool (rETH)", "Coinbase (cbETH)"],
-              "savings-rate": ["Maker DSR (sDAI)"],
-              vault: ["MetaMorpho (Steakhouse, Gauntlet)", "Yearn v3"],
-              "basis-capture": ["Ethena (sUSDe)"],
-            },
-            lendingProtocols: ["Aave v3", "Morpho Blue", "Spark"],
-            access: {
-              status: "Free — no API key required",
-              rateLimit: "30 requests/minute",
-              endpoint: "https://syenite.ai/mcp",
-            },
-            website: "https://syenite.ai",
-          }),
-        },
-      ],
-    })
-  );
+    outputSchema: helpOutput,
+  }, async () => ({
+    structuredContent: helpData,
+    content: [{ type: "text" as const, text: JSON.stringify(helpData) }],
+  }));
 
   // ── lending.rates.query ───────────────────────────────────────────
-  server.tool(
-    "lending.rates.query",
-    ratesToolDescription,
-    {
+
+  server.registerTool("lending.rates.query", {
+    description: ratesToolDescription,
+    inputSchema: {
       collateral: z
         .string()
         .default("all")
@@ -141,50 +134,50 @@ Call this tool to learn what tools are available and how to use them.`,
         .default("USDC")
         .describe('Asset to borrow: "USDC", "USDT", "DAI", "GHO"'),
     },
-    withLogging(clientIp, "lending.rates.query", (p) =>
-      handleRatesQuery(p as { collateral?: string; borrowAsset?: string })
-    )
-  );
+    outputSchema: ratesOutput,
+  }, withLogging(clientIp, "lending.rates.query", (p) =>
+    handleRatesQuery(p as { collateral?: string; borrowAsset?: string })
+  ));
 
   // ── lending.market.overview ───────────────────────────────────────
-  server.tool(
-    "lending.market.overview",
-    marketToolDescription,
-    {
+
+  server.registerTool("lending.market.overview", {
+    description: marketToolDescription,
+    inputSchema: {
       collateral: z
         .string()
         .default("all")
         .describe('Filter by collateral asset, or "all"'),
     },
-    withLogging(clientIp, "lending.market.overview", (p) =>
-      handleMarketOverview(p as { collateral?: string })
-    )
-  );
+    outputSchema: marketOverviewOutput,
+  }, withLogging(clientIp, "lending.market.overview", (p) =>
+    handleMarketOverview(p as { collateral?: string })
+  ));
 
   // ── lending.position.monitor ──────────────────────────────────────
-  server.tool(
-    "lending.position.monitor",
-    monitorToolDescription,
-    {
+
+  server.registerTool("lending.position.monitor", {
+    description: monitorToolDescription,
+    inputSchema: {
       address: z.string().describe("Ethereum address to check"),
       protocol: z
         .enum(["aave-v3", "morpho", "spark", "all"])
         .default("all")
         .describe("Protocol filter"),
     },
-    withLogging(
-      clientIp,
-      "lending.position.monitor",
-      (p) => handlePositionMonitor(p as { address: string; protocol?: string }),
-      (p) => ({ address: "***", protocol: p.protocol })
-    )
-  );
+    outputSchema: positionMonitorOutput,
+  }, withLogging(
+    clientIp,
+    "lending.position.monitor",
+    (p) => handlePositionMonitor(p as { address: string; protocol?: string }),
+    (p) => ({ address: "***", protocol: p.protocol })
+  ));
 
   // ── lending.risk.assess ───────────────────────────────────────────
-  server.tool(
-    "lending.risk.assess",
-    riskToolDescription,
-    {
+
+  server.registerTool("lending.risk.assess", {
+    description: riskToolDescription,
+    inputSchema: {
       collateral: z
         .string()
         .describe('Collateral asset: "wBTC", "tBTC", "cbBTC", "WETH", "wstETH", "rETH", "cbETH", "weETH"'),
@@ -206,24 +199,24 @@ Call this tool to learn what tools are available and how to use them.`,
         .default("best")
         .describe("Protocol preference"),
     },
-    withLogging(clientIp, "lending.risk.assess", (p) =>
-      handleRiskAssess(
-        p as {
-          collateral: string;
-          collateralAmount: number;
-          borrowAsset?: string;
-          targetLTV: number;
-          protocol?: string;
-        }
-      )
+    outputSchema: riskAssessOutput,
+  }, withLogging(clientIp, "lending.risk.assess", (p) =>
+    handleRiskAssess(
+      p as {
+        collateral: string;
+        collateralAmount: number;
+        borrowAsset?: string;
+        targetLTV: number;
+        protocol?: string;
+      }
     )
-  );
+  ));
 
   // ── yield.opportunities ──────────────────────────────────────────
-  server.tool(
-    "yield.opportunities",
-    yieldToolDescription,
-    {
+
+  server.registerTool("yield.opportunities", {
+    description: yieldToolDescription,
+    inputSchema: {
       asset: z
         .string()
         .default("all")
@@ -237,16 +230,16 @@ Call this tool to learn what tools are available and how to use them.`,
         .default("high")
         .describe('Maximum risk level to show: "low", "medium", or "high" (default, shows all)'),
     },
-    withLogging(clientIp, "yield.opportunities", (p) =>
-      handleYieldOpportunities(p as { asset?: string; category?: string; riskTolerance?: string })
-    )
-  );
+    outputSchema: yieldOpportunitiesOutput,
+  }, withLogging(clientIp, "yield.opportunities", (p) =>
+    handleYieldOpportunities(p as { asset?: string; category?: string; riskTolerance?: string })
+  ));
 
   // ── yield.assess ────────────────────────────────────────────────
-  server.tool(
-    "yield.assess",
-    yieldAssessToolDescription,
-    {
+
+  server.registerTool("yield.assess", {
+    description: yieldAssessToolDescription,
+    inputSchema: {
       protocol: z
         .string()
         .describe('Protocol to assess: "Aave", "Lido", "Morpho", "Ethena", "Yearn", "Maker", "Rocket Pool", "Coinbase"'),
@@ -263,16 +256,16 @@ Call this tool to learn what tools are available and how to use them.`,
         .default("all")
         .describe("Asset context for finding alternatives"),
     },
-    withLogging(clientIp, "yield.assess", (p) =>
-      handleYieldAssess(p as { protocol: string; product?: string; amount?: number; asset?: string })
-    )
-  );
+    outputSchema: yieldAssessOutput,
+  }, withLogging(clientIp, "yield.assess", (p) =>
+    handleYieldAssess(p as { protocol: string; product?: string; amount?: number; asset?: string })
+  ));
 
   // ── swap.quote ─────────────────────────────────────────────────────
-  server.tool(
-    "swap.quote",
-    swapQuoteDescription,
-    {
+
+  server.registerTool("swap.quote", {
+    description: swapQuoteDescription,
+    inputSchema: {
       fromToken: z
         .string()
         .describe('Token to sell — symbol (e.g. "USDC", "ETH") or contract address'),
@@ -308,32 +301,32 @@ Call this tool to learn what tools are available and how to use them.`,
         .default("CHEAPEST")
         .describe("Route preference: CHEAPEST (best price) or FASTEST (lowest execution time)"),
     },
-    withLogging(
-      clientIp,
-      "swap.quote",
-      (p) =>
-        handleSwapQuote(
-          p as {
-            fromToken: string;
-            toToken: string;
-            fromAmount: string;
-            fromAddress: string;
-            toAddress?: string;
-            fromChain?: string;
-            toChain?: string;
-            slippage?: number;
-            order?: string;
-          }
-        ),
-      (p) => ({ ...p, fromAddress: "***", toAddress: p.toAddress ? "***" : undefined })
-    )
-  );
+    outputSchema: swapQuoteOutput,
+  }, withLogging(
+    clientIp,
+    "swap.quote",
+    (p) =>
+      handleSwapQuote(
+        p as {
+          fromToken: string;
+          toToken: string;
+          fromAmount: string;
+          fromAddress: string;
+          toAddress?: string;
+          fromChain?: string;
+          toChain?: string;
+          slippage?: number;
+          order?: string;
+        }
+      ),
+    (p) => ({ ...p, fromAddress: "***", toAddress: p.toAddress ? "***" : undefined })
+  ));
 
   // ── swap.status ───────────────────────────────────────────────────
-  server.tool(
-    "swap.status",
-    swapStatusDescription,
-    {
+
+  server.registerTool("swap.status", {
+    description: swapStatusDescription,
+    inputSchema: {
       txHash: z
         .string()
         .describe("Transaction hash of the submitted swap/bridge"),
@@ -346,10 +339,10 @@ Call this tool to learn what tools are available and how to use them.`,
         .optional()
         .describe("Destination chain (for cross-chain bridges)"),
     },
-    withLogging(clientIp, "swap.status", (p) =>
-      handleSwapStatus(p as { txHash: string; fromChain?: string; toChain?: string })
-    )
-  );
+    outputSchema: swapStatusOutput,
+  }, withLogging(clientIp, "swap.status", (p) =>
+    handleSwapStatus(p as { txHash: string; fromChain?: string; toChain?: string })
+  ));
 
   return server;
 }

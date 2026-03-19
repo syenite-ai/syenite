@@ -4,6 +4,7 @@ import { getStakingYields } from "../data/yield-staking.js";
 import { getVaultYields } from "../data/yield-vaults.js";
 import { getStructuredYields } from "../data/yield-structured.js";
 import type { YieldOpportunity } from "../data/types.js";
+import { SyeniteError } from "../errors.js";
 
 export const yieldAssessToolName = "yield.assess";
 
@@ -88,7 +89,6 @@ const PROTOCOL_DEEP_RISK: Record<string, {
     liquidity: "7-day cooldown for sUSDe unstaking. USDe itself is liquid on DEXs but can depeg under stress.",
     depeg: "USDe peg depends on delta-neutral position maintenance. Negative funding rates, exchange insolvency, or custodian failure could break the peg. Highest risk category in the yield stack.",
   },
-  // Pendle: deprecated pending updated market addresses — see yield-structured.ts
 };
 
 export async function handleYieldAssess(params: {
@@ -96,7 +96,7 @@ export async function handleYieldAssess(params: {
   product?: string;
   amount?: number;
   asset?: string;
-}): Promise<string> {
+}): Promise<Record<string, unknown>> {
   const { protocol } = params;
   const amount = params.amount ?? 0;
   const asset = params.asset ?? "all";
@@ -125,10 +125,9 @@ export async function handleYieldAssess(params: {
   });
 
   if (!match) {
-    return JSON.stringify({
-      error: "not_found",
-      message: `No yield source found matching protocol="${protocol}"${params.product ? `, product="${params.product}"` : ""}. Use yield.opportunities to see available sources.`,
-    });
+    throw SyeniteError.notFound(
+      `No yield source found matching protocol="${protocol}"${params.product ? `, product="${params.product}"` : ""}. Use yield.opportunities to see available sources.`
+    );
   }
 
   const deepRisk = PROTOCOL_DEEP_RISK[match.protocol] ?? {
@@ -172,7 +171,7 @@ export async function handleYieldAssess(params: {
   if (match.lockup !== "none") riskScore += 1;
   riskScore = Math.min(riskScore, 10);
 
-  return JSON.stringify({
+  return {
     query: { protocol, product: params.product, amount, asset },
     source: {
       protocol: match.protocol,
@@ -206,7 +205,7 @@ export async function handleYieldAssess(params: {
     }),
     alternatives,
     timestamp: new Date().toISOString(),
-  });
+  };
 }
 
 function round(n: number, decimals = 2): number {

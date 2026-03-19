@@ -2,6 +2,7 @@ import { type Address, isAddress } from "viem";
 import { getAavePosition, getSparkPosition } from "../data/aave.js";
 import { getMorphoPosition } from "../data/morpho.js";
 import type { PositionData } from "../data/types.js";
+import { SyeniteError } from "../errors.js";
 
 export const monitorToolName = "lending.position.monitor";
 
@@ -9,27 +10,14 @@ export const monitorToolDescription = `Check the health of any DeFi lending posi
 Returns current LTV, health factor, liquidation price, distance to liquidation (% price drop needed), borrow rate, and estimated annual cost.
 Works with any wallet address. Scans all collateral types (BTC wrappers, ETH, LSTs) automatically.`;
 
-export const monitorToolSchema = {
-  address: {
-    type: "string" as const,
-    description: "Ethereum wallet or vault address to check for lending positions.",
-  },
-  protocol: {
-    type: "string" as const,
-    description:
-      'Filter to a specific protocol: "aave-v3", "morpho", "spark", or check all (default).',
-  },
-};
-
 export async function handlePositionMonitor(params: {
   address: string;
   protocol?: string;
-}): Promise<string> {
+}): Promise<Record<string, unknown>> {
   if (!isAddress(params.address)) {
-    return JSON.stringify({
-      error: "invalid_address",
-      message: `"${params.address}" is not a valid Ethereum address. Provide a 0x-prefixed 42-character hex address.`,
-    });
+    throw SyeniteError.invalidInput(
+      `"${params.address}" is not a valid Ethereum address. Provide a 0x-prefixed 42-character hex address.`
+    );
   }
 
   const address = params.address as Address;
@@ -49,18 +37,9 @@ export async function handlePositionMonitor(params: {
 
   const results = (await Promise.all(positionPromises)).flat();
 
-  if (results.length === 0) {
-    return JSON.stringify({
-      status: "no_positions",
-      address,
-      message:
-        "No active lending positions found for this address on Aave v3, Morpho Blue, or Spark. The address may have positions on unsupported protocols or no lending positions at all.",
-    });
-  }
-
   const atRisk = results.filter((p) => p.healthFactor < 1.5);
 
-  return JSON.stringify({
+  return {
     address,
     positionCount: results.length,
     ...(atRisk.length > 0 && {
@@ -82,12 +61,13 @@ export async function handlePositionMonitor(params: {
       currentLTV: round(p.currentLTV),
       healthFactor: p.healthFactor === Infinity ? "safe (no debt)" : round(p.healthFactor),
       liquidationPrice: round(p.liquidationPrice),
+      distanceToLiquidationPct: round(p.distanceToLiquidation),
       distanceToLiquidation: `${round(p.distanceToLiquidation)}% price drop needed`,
       borrowRateAPY: round(p.borrowRate),
       estimatedAnnualCost: round(p.estimatedAnnualCost),
     })),
     timestamp: new Date().toISOString(),
-  });
+  };
 }
 
 function round(n: number, decimals = 2): number {

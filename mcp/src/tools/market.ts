@@ -8,17 +8,9 @@ export const marketToolDescription = `Get an aggregate overview of DeFi lending 
 Returns per-protocol totals: TVL, total borrowed, utilization ranges, rate ranges, and available liquidity.
 Supports all collateral types (BTC wrappers, ETH, LSTs). Use this for a high-level view of lending market conditions.`;
 
-export const marketToolSchema = {
-  collateral: {
-    type: "string" as const,
-    description:
-      'Filter by asset, category ("BTC", "ETH"), or "all" (default).',
-  },
-};
-
 export async function handleMarketOverview(params: {
   collateral?: string;
-}): Promise<string> {
+}): Promise<Record<string, unknown>> {
   const collateral = params.collateral ?? "all";
 
   const [aaveRates, morphoRates, sparkRates] = await Promise.allSettled([
@@ -34,10 +26,17 @@ export async function handleMarketOverview(params: {
   ];
 
   if (allRates.length === 0) {
-    return JSON.stringify({
-      status: "no_markets",
-      message: `No active lending markets found for collateral=${collateral}`,
-    });
+    return {
+      query: { collateral },
+      crossProtocol: {
+        totalMarketsScanned: 0,
+        lowestBorrowAPY: 0,
+        highestSupplyAPY: 0,
+        totalAvailableLiquidityUSD: 0,
+      },
+      protocols: [],
+      timestamp: new Date().toISOString(),
+    };
   }
 
   const byProtocol = groupBy(allRates, (r) => r.protocol);
@@ -91,12 +90,12 @@ export async function handleMarketOverview(params: {
     ),
   };
 
-  return JSON.stringify({
+  return {
     query: { collateral },
     crossProtocol,
     protocols,
     timestamp: new Date().toISOString(),
-  });
+  };
 }
 
 function groupBy<T>(arr: T[], keyFn: (item: T) => string): Record<string, T[]> {

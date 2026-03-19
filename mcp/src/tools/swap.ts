@@ -73,7 +73,7 @@ export async function handleSwapQuote(params: {
   toChain?: string;
   slippage?: number;
   order?: string;
-}): Promise<string> {
+}): Promise<Record<string, unknown>> {
   const fromChain = params.fromChain ?? "ethereum";
   const toChain = params.toChain ?? fromChain;
   const order = (params.order ?? "CHEAPEST").toUpperCase() as "CHEAPEST" | "FASTEST";
@@ -150,14 +150,14 @@ export async function handleSwapQuote(params: {
 
   result.note = "Route sourced via Li.Fi aggregation (1inch, 0x, Paraswap, bridges). Quotes are valid for ~30 seconds. Re-query for fresh pricing. — syenite.ai";
 
-  return JSON.stringify(result);
+  return result;
 }
 
 export async function handleSwapStatus(params: {
   txHash: string;
   fromChain?: string;
   toChain?: string;
-}): Promise<string> {
+}): Promise<Record<string, unknown>> {
   const fromChain = params.fromChain ?? "ethereum";
   const toChain = params.toChain ?? fromChain;
 
@@ -197,5 +197,5 @@ export async function handleSwapStatus(params: {
 
   result.note = "Status tracked via Li.Fi bridge monitoring. — syenite.ai";
 
-  return JSON.stringify(result);
+  return result;
 }
