@@ -24,7 +24,7 @@ export function agentRegistrationJson() {
     type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
     name: "Syenite",
     description:
-      "Composable DeFi intelligence for AI agents: swaps and bridges (30+ chains), yield and lending, prediction markets, carry and strategy search, alerts, wallet and gas, and tx.verify/tx.simulate/tx.guard for verification before signing. MCP endpoint for reading and writing to DeFi.",
+      "Composable DeFi intelligence for AI agents: swaps and bridges (30+ chains), yield and lending with execution (supply, borrow, withdraw, repay calldata), prediction markets, carry and strategy search, alerts with webhooks, wallet and gas, tx.verify/tx.simulate/tx.guard/tx.receipt for verification before and after signing. MCP endpoint for reading and writing to DeFi.",
     image: "https://syenite.ai/assets/icon-64.png",
     services: [
       {

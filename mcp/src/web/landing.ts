@@ -10,7 +10,7 @@ export function landingPageHtml(): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">${gscMeta}
   <title>syenite — the DeFi interface for AI agents</title>
-  <meta name="description" content="DeFi MCP for AI agents: swaps and bridges (30+ chains), yield and lending, prediction markets, carry screening, wallet balances, gas estimates, tx.verify and tx.simulate before you sign. Open access, no API key.">
+  <meta name="description" content="DeFi MCP for AI agents: swaps and bridges (30+ chains), yield and lending with execution (supply, borrow, withdraw, repay), prediction markets, carry screening, wallet balances, gas estimates, tx.verify, tx.simulate, and tx.receipt. Open access, no API key.">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
   <style>
     :root {
@@ -295,7 +295,7 @@ export function landingPageHtml(): string {
       <img src="/assets/icon-32.png" alt="" class="logo" width="32" height="32">
       <h1>syenite</h1>
     </div>
-    <p class="lead">One MCP endpoint for swaps and bridges (30+ chains), yield, multi-chain lending, prediction markets, carry and strategy search, position alerts, and a trust layer: verify contracts, simulate before sign, and enforce your own guard rules. Syenite never holds keys \u2014 you get unsigned transactions and independent checks.</p>
+    <p class="lead">One MCP endpoint for swaps and bridges (30+ chains), yield, multi-chain lending with execution (supply, borrow, withdraw, repay), prediction markets, carry and strategy search, position alerts with webhooks, and a trust layer: verify contracts, simulate before sign, confirm with tx.receipt after. Syenite never holds keys \u2014 you get unsigned transactions and independent checks.</p>
     <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
   </header>
 
@@ -413,6 +413,15 @@ export function landingPageHtml(): string {
       <div class="params">
         <span class="pn">transaction</span><span class="pt">object</span><span class="pd">to, optional data, value, gasLimit, chainId</span>
         <span class="pn">rules</span><span class="pt">object</span><span class="pd">maxValueNative, allowedContracts, blockedContracts, requireAllowlisted, maxGasLimit, etc.</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">tx.receipt</div>
+      <p class="tool-desc">Fetch and decode a transaction receipt: confirmed or reverted, gas cost in native and USD, decoded event logs (Transfer, Approval, Aave supply/borrow, Uniswap swaps), token transfers, and explorer link. Use after submitting any transaction to close the execution loop.</p>
+      <div class="params">
+        <span class="pn">txHash</span><span class="pt">string</span><span class="pd">Transaction hash to look up</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base, bsc (or chain ID)</span>
       </div>
     </div>
 
@@ -540,16 +549,67 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+    <p class="section-label">lending execution</p>
+
+    <div class="tool">
+      <div class="tool-name">lending.supply</div>
+      <p class="tool-desc">Generate unsigned calldata to supply (deposit) an asset into Aave v3 or Spark. Returns a <code>transactionRequest</code> plus the ERC-20 approval tx. Ethereum, Arbitrum, Base.</p>
+      <div class="params">
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3" or "spark"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base</span>
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">"USDC", "WETH", "wBTC", "tBTC", "DAI", etc.</span>
+        <span class="pn">amount</span><span class="pt">string</span><span class="pd">Human-readable (e.g. "1000" for 1000 USDC)</span>
+        <span class="pn">onBehalfOf</span><span class="pt">string</span><span class="pd">Address that receives the aToken</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">lending.borrow</div>
+      <p class="tool-desc">Generate unsigned calldata to borrow against deposited collateral. Variable rate. Check <code>lending.risk.assess</code> first.</p>
+      <div class="params">
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3" or "spark"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base</span>
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">"USDC", "USDT", "DAI", "GHO"</span>
+        <span class="pn">amount</span><span class="pt">string</span><span class="pd">Borrow amount in human-readable units</span>
+        <span class="pn">onBehalfOf</span><span class="pt">string</span><span class="pd">Address with collateral deposited</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">lending.withdraw</div>
+      <p class="tool-desc">Generate unsigned calldata to withdraw a supplied asset. Use "max" to withdraw everything.</p>
+      <div class="params">
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3" or "spark"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base</span>
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">Asset to withdraw</span>
+        <span class="pn">amount</span><span class="pt">string</span><span class="pd">Amount or "max"</span>
+        <span class="pn">to</span><span class="pt">string</span><span class="pd">Recipient address</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">lending.repay</div>
+      <p class="tool-desc">Generate unsigned calldata to repay debt. Use "max" for full repayment. Includes the ERC-20 approval tx.</p>
+      <div class="params">
+        <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3" or "spark"</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, arbitrum, base</span>
+        <span class="pn">asset</span><span class="pt">string</span><span class="pd">Asset to repay</span>
+        <span class="pn">amount</span><span class="pt">string</span><span class="pd">Amount or "max" for full repayment</span>
+        <span class="pn">onBehalfOf</span><span class="pt">string</span><span class="pd">Address whose debt to repay</span>
+      </div>
+    </div>
+
     <p class="section-label">alerts</p>
 
     <div class="tool">
       <div class="tool-name">alerts.watch</div>
-      <p class="tool-desc">Register an address for health-factor monitoring. Poll <code>alerts.check</code> for warnings. Use <code>alerts.list</code> and <code>alerts.remove</code> to manage watches.</p>
+      <p class="tool-desc">Register an address for health-factor monitoring. Poll <code>alerts.check</code> for warnings, or provide a <code>webhookUrl</code> to receive alerts as POST requests in real-time. Use <code>alerts.list</code> and <code>alerts.remove</code> to manage watches.</p>
       <div class="params">
         <span class="pn">address</span><span class="pt">string</span><span class="pd">Position owner</span>
         <span class="pn">protocol</span><span class="pt">string</span><span class="pd">Optional protocol filter</span>
         <span class="pn">chain</span><span class="pt">string</span><span class="pd">Optional chain</span>
         <span class="pn">healthFactorThreshold</span><span class="pt">number</span><span class="pd">Alert below this (default 1.5)</span>
+        <span class="pn">webhookUrl</span><span class="pt">string</span><span class="pd">Optional HTTP(S) URL for push alerts. Structured JSON payload with retries.</span>
       </div>
     </div>
   </section>
@@ -557,7 +617,7 @@ export function landingPageHtml(): string {
   <section>
     <h2>how execution works</h2>
     <div class="callout">
-      <strong>Syenite never holds private keys.</strong> <code>swap.quote</code> (and similar) returns an unsigned <code>transactionRequest</code>. Before signing, use <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code> on that payload. The agent or user signs and submits from their own wallet. For cross-chain bridges, use <code>swap.status</code> to track progress. <a href="/docs/mcp-trust-speed-security">Trust and speed tradeoffs</a> \u00b7 <a href="/docs/tx-trust-layer">Tool reference</a>
+      <strong>Syenite never holds private keys.</strong> <code>swap.quote</code>, <code>lending.supply</code>, <code>lending.borrow</code>, <code>lending.withdraw</code>, and <code>lending.repay</code> all return unsigned <code>transactionRequest</code> objects. Before signing, use <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code>. After signing and submitting, confirm with <code>tx.receipt</code>. For cross-chain bridges, track with <code>swap.status</code>. <a href="/docs/mcp-trust-speed-security">Trust and speed tradeoffs</a> \u00b7 <a href="/docs/tx-trust-layer">Tool reference</a> \u00b7 <a href="/docs/lending-execution">Lending execution guide</a>
     </div>
     <p>Routing is aggregated across 1inch, 0x, Paraswap, and bridge protocols via Li.Fi. Quotes are optimised for best price or fastest execution.</p>
   </section>

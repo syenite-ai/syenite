@@ -48,10 +48,10 @@
   <p>Response: <code>checks</code> with <code>pass</code> / <code>fail</code> / <code>skip</code>, <code>approved</code> when there are no failures and no skips, <code>summary</code>.</p>
 
   <h2>Recommended order</h2>
-  <p>1. <code>swap.quote</code> (or other source) returns <code>transactionRequest</code>. 2. <code>tx.verify</code> on <code>to</code> and calldata. 3. <code>tx.simulate</code> with full tx. 4. <code>tx.guard</code> with your caps and allowlists. 5. Sign only if verify + simulate + guard outcomes are acceptable.</p>
+  <p>1. <code>swap.quote</code>, <code>lending.supply</code>, or other source returns <code>transactionRequest</code>. 2. <code>tx.verify</code> on <code>to</code> and calldata. 3. <code>tx.simulate</code> with full tx. 4. <code>tx.guard</code> with your caps and allowlists. 5. Sign only if verify + simulate + guard outcomes are acceptable. 6. After signing, call <code>tx.receipt</code> to confirm the transaction landed and decode its events.</p>
 
   <h2>Related</h2>
-  <p><a href="/docs/mcp-trust-speed-security">MCP trust, speed, and security</a>. <a href="/docs/swap-and-bridge">Swap and bridge</a>. <a href="/docs/security-and-production">Security and production</a>.</p>
+  <p><a href="/docs/mcp-trust-speed-security">MCP trust, speed, and security</a>. <a href="/docs/lending-execution">Lending execution (supply, borrow, withdraw, repay)</a>. <a href="/docs/swap-and-bridge">Swap and bridge</a>. <a href="/docs/security-and-production">Security and production</a>.</p>
 
   <footer class="foot">
     <a href="/docs">Docs</a> · <a href="/">syenite</a>

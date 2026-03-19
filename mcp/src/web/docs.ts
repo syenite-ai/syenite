@@ -23,6 +23,7 @@ export const DOC_SLUGS = [
   "seo-and-indexing",
   "tx-trust-layer",
   "mcp-trust-speed-security",
+  "lending-execution",
 ] as const;
 
 export type DocSlug = (typeof DOC_SLUGS)[number];
