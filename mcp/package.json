@@ -13,6 +13,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc && node -e \"require('fs').cpSync('src/web/docs', 'dist/web/docs', { recursive: true })\" && node -e \"require('fs').cpSync('assets', 'dist/assets', { recursive: true })\"",
     "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "generate-key": "tsx src/scripts/generate-key.ts",
     "register-agent": "tsx src/scripts/register-agent.ts",
     "register-agent:ethereum": "tsx src/scripts/register-agent.ts --chain=ethereum",
@@ -66,10 +68,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.10",
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
+    "@types/pg": "^8.11.10",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }
