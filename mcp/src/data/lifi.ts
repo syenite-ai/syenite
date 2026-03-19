@@ -57,6 +57,7 @@ export async function getLifiQuote(params: {
 
   const resp = await fetch(`${LIFI_BASE}/quote?${qs.toString()}`, {
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!resp.ok) {
@@ -166,6 +167,7 @@ export async function getLifiStatus(params: {
 
   const resp = await fetch(`${LIFI_BASE}/status?${qs.toString()}`, {
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!resp.ok) {

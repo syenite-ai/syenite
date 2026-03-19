@@ -11,7 +11,9 @@ export function getClient(): PublicClient {
 
   client = createPublicClient({
     chain: mainnet,
-    transport: http(`https://eth-mainnet.g.alchemy.com/v2/${apiKey}`),
+    transport: http(`https://eth-mainnet.g.alchemy.com/v2/${apiKey}`, {
+      timeout: 15_000,
+    }),
   });
 
   return client;

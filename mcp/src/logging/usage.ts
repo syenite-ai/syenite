@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { getPool } from "../data/db.js";
 
+function hashIp(ip: string): string {
+  return createHash("sha256").update(ip).digest("hex").slice(0, 16);
+}
+
 export async function logToolCall(params: {
   clientIp: string;
   toolName: string;
@@ -18,7 +22,7 @@ export async function logToolCall(params: {
     `INSERT INTO usage_logs (api_key, tool_name, params_hash, response_time_ms, success, error_message)
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [
-      params.clientIp,
+      hashIp(params.clientIp),
       params.toolName,
       paramsHash,
       params.responseTimeMs,

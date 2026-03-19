@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import { existsSync } from "fs";
+import { timingSafeEqual } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./server.js";
 import { checkRateLimit, getClientIp } from "./auth/rate-limit.js";
@@ -19,16 +20,33 @@ import {
 } from "./web/docs.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
-// DASHBOARD_PASSWORD avoids DO component override: set only at app-level so it's not overwritten by literal "${ADMIN_PASSWORD}"
 const ADMIN_PASSWORD = (
   process.env.DASHBOARD_PASSWORD ??
   process.env.ADMIN_PASSWORD ??
-  "admin"
+  ""
 ).trim();
+
+function constantTimeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "utf8");
+  const bufB = Buffer.from(b, "utf8");
+  if (bufA.length !== bufB.length) {
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
 
 const app = express();
 app.set("trust proxy", true);
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
+
+app.use((_req, res, next) => {
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("X-Frame-Options", "DENY");
+  res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.set("X-XSS-Protection", "0");
+  next();
+});
 
 // ── MCP Endpoint (stateless, open access) ────────────────────────────
 
@@ -69,7 +87,7 @@ app.post("/mcp", async (req, res) => {
         jsonrpc: "2.0",
         error: {
           code: -32603,
-          message: e instanceof Error ? e.message : "Internal server error",
+          message: "Internal server error",
         },
         id: null,
       });
@@ -146,53 +164,48 @@ app.get("/sitemap.xml", (_req, res) => {
 
 // ── Dashboard (password-protected) ──────────────────────────────────
 
-app.get("/dashboard", async (req, res) => {
+function verifyDashboardAuth(req: express.Request, res: express.Response): boolean {
+  if (!ADMIN_PASSWORD) {
+    res.status(503).send("Dashboard disabled — no DASHBOARD_PASSWORD configured");
+    return false;
+  }
+
+  const clientIp = getClientIp(req);
+  const rl = checkRateLimit(`dashboard:${clientIp}`);
+  if (!rl.allowed) {
+    res.status(429).send("Too many attempts");
+    return false;
+  }
+
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Basic ")) {
     res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
     res.status(401).send("Authentication required");
-    return;
+    return false;
   }
+
   const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
   const colonIdx = decoded.indexOf(":");
   const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
-  if (password !== ADMIN_PASSWORD) {
+
+  if (!constantTimeEqual(password, ADMIN_PASSWORD)) {
     res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
-    res.set("X-Submitted-Password-Length", String(password.length));
     res.status(401).send("Invalid credentials");
-    return;
+    return false;
   }
+
+  return true;
+}
+
+app.get("/dashboard", async (req, res) => {
+  if (!verifyDashboardAuth(req, res)) return;
   const stats = await getUsageStats();
   res.type("html").send(dashboardHtml(stats));
 });
 
 app.get("/dashboard/stats", async (req, res) => {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Basic ")) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
-  const colonIdx = decoded.indexOf(":");
-  const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
-  if (password !== ADMIN_PASSWORD) {
-    res.set("X-Submitted-Password-Length", String(password.length));
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+  if (!verifyDashboardAuth(req, res)) return;
   res.json(await getUsageStats());
-});
-
-// Temporary: verify what the app sees for ADMIN_PASSWORD (remove after debugging)
-app.get("/dashboard/debug", (_req, res) => {
-  const first = ADMIN_PASSWORD.charCodeAt(0);
-  const last = ADMIN_PASSWORD.charCodeAt(ADMIN_PASSWORD.length - 1);
-  res.json({
-    passwordSet: ADMIN_PASSWORD.length > 0,
-    passwordLength: ADMIN_PASSWORD.length,
-    firstCharCode: ADMIN_PASSWORD.length > 0 ? first : null,
-    lastCharCode: ADMIN_PASSWORD.length > 0 ? last : null,
-  });
 });
 
 // ── Start ───────────────────────────────────────────────────────────
@@ -205,14 +218,17 @@ const start = async () => {
     console.error("[syenite] DB init failed:", e instanceof Error ? e.message : e);
     process.exit(1);
   }
+  if (!ADMIN_PASSWORD) {
+    console.warn("[syenite] WARNING: DASHBOARD_PASSWORD not set — dashboard is disabled");
+  }
+
   app.listen(PORT, () => {
     console.log(`Syenite MCP Server running on http://localhost:${PORT}`);
-  console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
-  console.log(`  Landing page:  http://localhost:${PORT}/`);
-  console.log(`  Docs:         http://localhost:${PORT}/docs`);
-  console.log(`  Sitemap:      http://localhost:${PORT}/sitemap.xml`);
-  console.log(`  Health check:  http://localhost:${PORT}/health`);
-  console.log(`  Dashboard:     http://localhost:${PORT}/dashboard`);
+    console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
+    console.log(`  Landing page:  http://localhost:${PORT}/`);
+    console.log(`  Docs:          http://localhost:${PORT}/docs`);
+    console.log(`  Health check:  http://localhost:${PORT}/health`);
+    console.log(`  Dashboard:     http://localhost:${PORT}/dashboard`);
   });
 };
 start();

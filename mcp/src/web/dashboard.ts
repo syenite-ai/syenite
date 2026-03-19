@@ -280,12 +280,12 @@ export function dashboardHtml(stats: UsageStats): string {
   <h2>top users</h2>
   <div class="table-wrap">
     <table>
-      <tr><th>api key</th><th>calls</th></tr>
+      <tr><th>client</th><th>calls</th></tr>
       ${userRows || '<tr><td colspan="2" style="color:var(--muted)">no data yet</td></tr>'}
     </table>
   </div>
 
-  <p class="foot">refresh to update \u00b7 data from sqlite</p>
+  <p class="foot">refresh to update</p>
 
 </div>
 </body>

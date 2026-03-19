@@ -12,30 +12,22 @@ export async function getHealthStatus(): Promise<{
   // Database check
   try {
     await getPool().query("SELECT 1");
-    checks.database = { ok: true, message: "Postgres connected" };
+    checks.database = { ok: true, message: "connected" };
   } catch (e) {
-    checks.database = {
-      ok: false,
-      message: `Postgres error: ${e instanceof Error ? e.message : "unknown"}`,
-    };
+    console.warn("[syenite] health: db error:", e instanceof Error ? e.message : e);
+    checks.database = { ok: false, message: "unavailable" };
   }
 
   // RPC check
   try {
     const rpcStart = Date.now();
     const client = getClient();
-    const blockNumber = await client.getBlockNumber();
+    await client.getBlockNumber();
     const rpcLatency = Date.now() - rpcStart;
-    checks.rpc = {
-      ok: true,
-      message: `Alchemy connected, block ${blockNumber}`,
-      latencyMs: rpcLatency,
-    };
+    checks.rpc = { ok: true, message: "connected", latencyMs: rpcLatency };
   } catch (e) {
-    checks.rpc = {
-      ok: false,
-      message: `RPC error: ${e instanceof Error ? e.message : "unknown"}`,
-    };
+    console.warn("[syenite] health: rpc error:", e instanceof Error ? e.message : e);
+    checks.rpc = { ok: false, message: "unavailable" };
   }
 
   const allOk = Object.values(checks).every((c) => c.ok);
