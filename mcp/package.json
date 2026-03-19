@@ -1,6 +1,7 @@
 {
   "name": "@syenite/mcp",
   "version": "0.4.0",
+  "mcpName": "io.github.syenite-ai/syenite",
   "description": "The DeFi interface for AI agents — swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP",
   "type": "module",
   "main": "dist/index.js",
@@ -9,7 +10,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && node -e \"require('fs').cpSync('src/web/docs', 'dist/web/docs', { recursive: true })\"",
+    "build": "tsc && node -e \"require('fs').cpSync('src/web/docs', 'dist/web/docs', { recursive: true })\" && node -e \"require('fs').cpSync('assets', 'dist/assets', { recursive: true })\"",
     "start": "node dist/index.js",
     "generate-key": "tsx src/scripts/generate-key.ts"
   },
@@ -26,6 +27,19 @@
     "lifi"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syenite-ai/syenite.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://syenite.ai",
+  "bugs": {
+    "url": "https://github.com/syenite-ai/syenite/issues"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },

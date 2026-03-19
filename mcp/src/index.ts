@@ -1,5 +1,7 @@
 import "dotenv/config";
 import express from "express";
+import path from "path";
+import { existsSync } from "fs";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./server.js";
 import { checkRateLimit, getClientIp } from "./auth/rate-limit.js";
@@ -75,6 +77,13 @@ app.get("/mcp", (_req, res) => {
 app.delete("/mcp", (_req, res) => {
   res.status(405).json({ error: "Session management not available (stateless mode)." });
 });
+
+// ── Static assets (icon for landing / favicon) ─────────────────────────
+
+const distAssets = path.join(process.cwd(), "dist", "assets");
+const devAssets = path.join(process.cwd(), "assets");
+const assetsDir = existsSync(distAssets) ? distAssets : devAssets;
+app.use("/assets", express.static(assetsDir));
 
 // ── Web Routes ──────────────────────────────────────────────────────
 

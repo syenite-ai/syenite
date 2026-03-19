@@ -6,6 +6,7 @@ export function landingPageHtml(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>syenite — the DeFi interface for AI agents</title>
   <meta name="description" content="The DeFi interface for AI agents. Swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP. One endpoint for reading and writing to DeFi across 30+ chains.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
   <style>
     :root {
       --bg: #101010;
@@ -80,6 +81,20 @@ export function landingPageHtml(): string {
     a:hover { color: var(--accent-hover); }
 
     .hero { margin-bottom: 0.5rem; }
+
+    .hero-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-head .logo {
+      width: 32px;
+      height: 32px;
+      display: block;
+      flex-shrink: 0;
+    }
 
     .tag {
       display: block;
@@ -271,7 +286,10 @@ export function landingPageHtml(): string {
 
   <header class="hero">
     <span class="tag">the defi interface for ai agents \u00b7 open access \u00b7 no api key</span>
-    <h1>syenite</h1>
+    <div class="hero-head">
+      <img src="/assets/icon-32.png" alt="" class="logo" width="32" height="32">
+      <h1>syenite</h1>
+    </div>
     <p class="lead">One MCP endpoint for swaps, bridges, yield, lending, and risk across 30+ chains. Intelligence and execution in one place \u2014 agents read data, get quotes, and receive unsigned transactions ready to sign.</p>
     <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
   </header>
