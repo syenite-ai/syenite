@@ -174,6 +174,14 @@ app.get("/dashboard/stats", (req, res) => {
   res.json(getUsageStats());
 });
 
+// Temporary: verify what the app sees for ADMIN_PASSWORD (remove after debugging)
+app.get("/dashboard/debug", (_req, res) => {
+  res.json({
+    passwordSet: ADMIN_PASSWORD.length > 0,
+    passwordLength: ADMIN_PASSWORD.length,
+  });
+});
+
 // ── Start ───────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
