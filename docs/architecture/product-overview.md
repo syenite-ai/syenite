@@ -192,7 +192,7 @@ The vault contracts don't care which BTC wrapper is deposited. Risk parameters a
 
 ### MCP Distribution Mechanics
 
-The MCP ecosystem has 85M+ weekly npm downloads, 11,800+ servers, and cross-vendor client support (Claude, ChatGPT, Cursor, VS Code, Windsurf, Cline). The DeFi niche within it has ~27 servers, none targeting institutional lending. See `docs/research/mcp-distribution-landscape.md` for the full competitive analysis.
+The MCP ecosystem has 85M+ weekly npm downloads, 11,800+ servers, and cross-vendor client support (Claude, ChatGPT, Cursor, VS Code, Windsurf, Cline). The DeFi niche within it has ~27 servers, none targeting institutional lending.
 
 **Distribution playbook:**
 1. Free tier ships early (before vaults are on mainnet) — agent developers build against read tools
