@@ -535,6 +535,87 @@ export const swapMultiOutput = z.object({
   note: z.string(),
 });
 
+// ── tx.simulate ─────────────────────────────────────────────────────
+
+export const txSimulateOutput = z.object({
+  success: z.boolean(),
+  gasUsed: z.number(),
+  gasEstimateUSD: z.string(),
+  balanceChanges: z.array(z.object({
+    address: z.string(),
+    token: z.string(),
+    before: z.string(),
+    after: z.string(),
+    delta: z.string(),
+    direction: z.enum(["inflow", "outflow", "none"]),
+  })),
+  contractsCalled: z.array(z.string()),
+  revertReason: z.string().nullable().optional().describe("Present when simulation reverts"),
+  detail: z.string().optional(),
+  chain: z.string(),
+  simulatedAtBlock: z.number(),
+  timestamp: z.string(),
+  verification: z.string().describe("How the simulation was performed — verifiable by any RPC node"),
+  note: z.string().optional(),
+});
+
+// ── tx.verify ───────────────────────────────────────────────────────
+
+export const txVerifyOutput = z.object({
+  address: z.string(),
+  chain: z.string(),
+  isContract: z.boolean(),
+  verification: z.object({
+    etherscan: z.object({
+      verified: z.boolean(),
+      contractName: z.string().nullable(),
+      compiler: z.string().nullable(),
+      proxy: z.boolean(),
+      implementation: z.string().nullable(),
+    }),
+    sourcify: z.object({
+      verified: z.boolean(),
+      match: z.enum(["full", "partial", "none"]),
+    }),
+  }),
+  protocol: z.object({
+    identified: z.boolean(),
+    name: z.string().nullable(),
+    contractName: z.string().nullable(),
+    type: z.string().nullable(),
+    syeniteAllowlisted: z.boolean(),
+    risk: z.string().nullable(),
+  }),
+  functionCalled: z.object({
+    selector: z.string(),
+    name: z.string().nullable(),
+    decoded: z.boolean(),
+  }).nullable(),
+  riskFlags: z.array(z.string()),
+  riskFlagCount: z.number(),
+  summary: z.string(),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+// ── tx.guard ────────────────────────────────────────────────────────
+
+export const txGuardOutput = z.object({
+  approved: z.boolean(),
+  checks: z.array(z.object({
+    rule: z.string(),
+    status: z.enum(["pass", "fail", "skip"]),
+    detail: z.string(),
+  })),
+  passedCount: z.number(),
+  failedCount: z.number(),
+  skippedCount: z.number(),
+  chain: z.string(),
+  summary: z.string(),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
 // ── swap.quote ──────────────────────────────────────────────────────
 
 export const swapQuoteOutput = z.object({

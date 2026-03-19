@@ -10,6 +10,9 @@ import { handleSwapQuote, handleSwapStatus, swapQuoteDescription, swapStatusDesc
 import { handleSwapMulti, swapMultiDescription } from "./tools/multi-swap.js";
 import { handleWalletBalances, walletBalancesDescription } from "./tools/wallet.js";
 import { handleGasEstimate, gasEstimateDescription } from "./tools/gas.js";
+import { handleTxSimulate, txSimulateDescription } from "./tools/tx-simulate.js";
+import { handleTxVerify, txVerifyDescription } from "./tools/tx-verify.js";
+import { handleTxGuard, txGuardDescription } from "./tools/tx-guard.js";
 import { handlePredictionSignals, predictionSignalsDescription } from "./tools/prediction-signals.js";
 import { handleFindStrategy, findStrategyDescription } from "./tools/find-strategy.js";
 import {
@@ -47,6 +50,9 @@ import {
   swapMultiOutput,
   walletBalancesOutput,
   gasEstimateOutput,
+  txSimulateOutput,
+  txVerifyOutput,
+  txGuardOutput,
   predictionSignalsOutput,
   findStrategyOutput,
   predictionTrendingOutput,
@@ -128,6 +134,9 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "swap.quote", use: "Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, bridges). 30+ chains." },
       { name: "swap.multi", use: "Batch multiple swap/bridge quotes in parallel. Split funds across chains or compare routes." },
       { name: "swap.status", use: "Track execution status of a cross-chain bridge transaction." },
+      { name: "tx.simulate", use: "Simulate a transaction before signing — balance changes, gas, revert detection. Third-party verified via EVM." },
+      { name: "tx.verify", use: "Verify a contract via Etherscan + Sourcify. Check if it's a known protocol. Risk flags." },
+      { name: "tx.guard", use: "Check a transaction against your own risk rules — value caps, allowlists, gas limits." },
       { name: "yield.opportunities", use: "Find the best yield for any asset across lending, staking, vaults, savings, and basis capture." },
       { name: "yield.assess", use: "Deep risk assessment for a specific yield strategy — smart contract, oracle, governance, liquidity, and depeg risk." },
       { name: "lending.rates.query", use: "Compare borrow/supply rates across protocols for any collateral and borrow asset pair." },
@@ -477,6 +486,87 @@ Call this tool to learn what tools are available and how to use them.`,
     outputSchema: gasEstimateOutput,
   }, withLogging(clientIp, "gas.estimate", (p) =>
     handleGasEstimate(p as { chains?: string[]; operations?: string[] })
+  ));
+
+  // ── tx.simulate ─────────────────────────────────────────────────────
+
+  const txTransactionSchema = z.object({
+    to: z.string().describe("Target contract address"),
+    data: z.string().describe("Calldata (hex)"),
+    value: z.string().optional().describe("Native token value (hex or decimal wei)"),
+    from: z.string().describe("Sender address"),
+    chainId: z.number().optional(),
+  });
+
+  server.registerTool("tx.simulate", {
+    description: txSimulateDescription,
+    inputSchema: {
+      transaction: txTransactionSchema,
+      chain: z.string().optional().describe("Chain name or ID (defaults to tx chainId or ethereum)"),
+    },
+    outputSchema: txSimulateOutput,
+  }, withLogging(
+    clientIp,
+    "tx.simulate",
+    (p) => handleTxSimulate(p as {
+      transaction: { to: string; data: string; value?: string; from: string; chainId?: number };
+      chain?: string;
+    }),
+    (p) => {
+      const tx = p.transaction as Record<string, unknown>;
+      return { transaction: { to: tx?.to, from: "***", data: `${String(tx?.data ?? "").slice(0, 10)}...` }, chain: p.chain };
+    }
+  ));
+
+  // ── tx.verify ──────────────────────────────────────────────────────
+
+  server.registerTool("tx.verify", {
+    description: txVerifyDescription,
+    inputSchema: {
+      to: z.string().describe("Contract address to verify"),
+      chain: z.string().describe("Chain name: ethereum, arbitrum, base, bsc"),
+      data: z.string().optional().describe("Calldata — if provided, decodes the function being called"),
+    },
+    outputSchema: txVerifyOutput,
+  }, withLogging(clientIp, "tx.verify", (p) =>
+    handleTxVerify(p as { to: string; chain: string; data?: string })
+  ));
+
+  // ── tx.guard ───────────────────────────────────────────────────────
+
+  const guardRulesSchema = z.object({
+    maxValueNative: z.string().optional().describe("Max native token value (e.g. '0.1' for 0.1 ETH)"),
+    allowedContracts: z.array(z.string()).optional().describe("Allowlisted contract addresses"),
+    blockedContracts: z.array(z.string()).optional().describe("Blocklisted contract addresses"),
+    allowedFunctions: z.array(z.string()).optional().describe("Permitted function selectors or names"),
+    requireVerifiedContract: z.boolean().optional().describe("Require Etherscan/Sourcify verified"),
+    requireAllowlisted: z.boolean().optional().describe("Require contract in Syenite protocol registry"),
+    maxGasLimit: z.number().optional().describe("Maximum gas limit"),
+  });
+
+  server.registerTool("tx.guard", {
+    description: txGuardDescription,
+    inputSchema: {
+      transaction: z.object({
+        to: z.string().describe("Target address"),
+        data: z.string().optional().describe("Calldata"),
+        value: z.string().optional().describe("Native value (wei)"),
+        gasLimit: z.string().optional(),
+        chainId: z.number().optional(),
+      }),
+      rules: guardRulesSchema,
+      chain: z.string().optional().describe("Chain name (defaults to ethereum)"),
+    },
+    outputSchema: txGuardOutput,
+  }, withLogging(
+    clientIp,
+    "tx.guard",
+    (p) => handleTxGuard(p as {
+      transaction: { to: string; data?: string; value?: string; gasLimit?: string; chainId?: number };
+      rules: Record<string, unknown>;
+      chain?: string;
+    }),
+    (p) => ({ transaction: { to: (p.transaction as Record<string, unknown>)?.to }, rules: "[redacted]", chain: p.chain })
   ));
 
   // ── strategy.carry.screen ──────────────────────────────────────────
