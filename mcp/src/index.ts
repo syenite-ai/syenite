@@ -17,7 +17,12 @@ import {
 } from "./web/docs.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
-const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD ?? "admin").trim();
+// DASHBOARD_PASSWORD avoids DO component override: set only at app-level so it's not overwritten by literal "${ADMIN_PASSWORD}"
+const ADMIN_PASSWORD = (
+  process.env.DASHBOARD_PASSWORD ??
+  process.env.ADMIN_PASSWORD ??
+  "admin"
+).trim();
 
 const app = express();
 app.set("trust proxy", true);

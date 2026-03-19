@@ -13,9 +13,8 @@ services:
     instance_size_slug: apps-s-1vcpu-0.5gb
     routes:
       - path: /
-    # Secrets (ALCHEMY_API_KEY, ADMIN_PASSWORD, SEED_API_KEY) must be set as App-Level
-    # Environment Variables in DO Control Panel. Do not use value: "${VAR}" in the spec —
-    # App Platform passes it literally; app-level vars are injected into all components.
+    # Secrets: set at App-Level in DO only. Use DASHBOARD_PASSWORD (not ADMIN_PASSWORD) for
+    # the dashboard so component-level literal "${ADMIN_PASSWORD}" doesn't override.
     envs:
       - key: DATABASE_PATH
         value: /data/syenite.db
