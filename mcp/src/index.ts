@@ -151,6 +151,7 @@ app.get("/dashboard", (req, res) => {
   const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
   if (password !== ADMIN_PASSWORD) {
     res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
+    res.set("X-Submitted-Password-Length", String(password.length));
     res.status(401).send("Invalid credentials");
     return;
   }
@@ -168,6 +169,7 @@ app.get("/dashboard/stats", (req, res) => {
   const colonIdx = decoded.indexOf(":");
   const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
   if (password !== ADMIN_PASSWORD) {
+    res.set("X-Submitted-Password-Length", String(password.length));
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -176,9 +178,13 @@ app.get("/dashboard/stats", (req, res) => {
 
 // Temporary: verify what the app sees for ADMIN_PASSWORD (remove after debugging)
 app.get("/dashboard/debug", (_req, res) => {
+  const first = ADMIN_PASSWORD.charCodeAt(0);
+  const last = ADMIN_PASSWORD.charCodeAt(ADMIN_PASSWORD.length - 1);
   res.json({
     passwordSet: ADMIN_PASSWORD.length > 0,
     passwordLength: ADMIN_PASSWORD.length,
+    firstCharCode: ADMIN_PASSWORD.length > 0 ? first : null,
+    lastCharCode: ADMIN_PASSWORD.length > 0 ? last : null,
   });
 });
 
