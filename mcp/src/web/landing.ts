@@ -462,7 +462,7 @@ export function landingPageHtml(): string {
   </section>
 
   <footer class="foot">
-    syenite \u00b7 the defi interface for ai agents \u00b7 <a href="https://syenite.ai">syenite.ai</a> \u00b7 <a href="/docs">docs</a>
+    syenite \u00b7 the defi interface for ai agents \u00b7 <a href="https://syenite.ai">syenite.ai</a> \u00b7 <a href="/docs">docs</a>${(process.env.AGENT_ID_BASE || process.env.AGENT_ID) ? ` \u00b7 <a href="https://basescan.org/nft/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432/${process.env.AGENT_ID_BASE || process.env.AGENT_ID}">ERC-8004 Agent</a>` : ""}
   </footer>
 
 </div>

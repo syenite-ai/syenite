@@ -4,13 +4,14 @@ const { Pool } = pg;
 
 let pool: pg.Pool | null = null;
 
+export function hasDatabase(): boolean {
+  return !!process.env.DATABASE_URL;
+}
+
 export function getPool(): pg.Pool {
   if (!pool) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is required (e.g. from DO Managed Postgres)");
-    // Strip sslmode from connection string — pg-connection-string treats
-    // sslmode=require as verify-full (rejects self-signed certs like DO's).
-    // We handle SSL ourselves with rejectUnauthorized: false.
     const cleanUrl = url.replace(/[?&]sslmode=[^&]*/g, "").replace(/\?$/, "");
     pool = new Pool({
       connectionString: cleanUrl,

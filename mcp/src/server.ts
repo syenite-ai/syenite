@@ -7,7 +7,27 @@ import { handleRiskAssess, riskToolDescription } from "./tools/risk.js";
 import { handleYieldOpportunities, yieldToolDescription } from "./tools/yield.js";
 import { handleYieldAssess, yieldAssessToolDescription } from "./tools/yield-assess.js";
 import { handleSwapQuote, handleSwapStatus, swapQuoteDescription, swapStatusDescription } from "./tools/swap.js";
+import {
+  handlePredictionTrending,
+  handlePredictionSearch,
+  handlePredictionBook,
+  predictionTrendingDescription,
+  predictionSearchDescription,
+  predictionBookDescription,
+} from "./tools/prediction.js";
+import { handleCarryScreener, carryScreenerDescription } from "./tools/carry.js";
+import {
+  handleAlertWatch,
+  handleAlertCheck,
+  handleAlertList,
+  handleAlertRemove,
+  alertWatchDescription,
+  alertCheckDescription,
+  alertListDescription,
+  alertRemoveDescription,
+} from "./tools/alerts.js";
 import { logToolCall } from "./logging/usage.js";
+import { recordToolCall } from "./logging/metrics.js";
 import { SyeniteError } from "./errors.js";
 import {
   helpOutput,
@@ -19,6 +39,14 @@ import {
   yieldAssessOutput,
   swapQuoteOutput,
   swapStatusOutput,
+  predictionTrendingOutput,
+  predictionSearchOutput,
+  predictionBookOutput,
+  carryScreenerOutput,
+  alertWatchOutput,
+  alertCheckOutput,
+  alertListOutput,
+  alertRemoveOutput,
 } from "./schemas.js";
 
 function withLogging(
@@ -31,11 +59,13 @@ function withLogging(
     const start = Date.now();
     try {
       const result = await handler(params);
+      const elapsed = Date.now() - start;
+      recordToolCall(toolName, elapsed, true);
       await logToolCall({
         clientIp,
         toolName,
         toolParams: redactParams ? redactParams(params) : params,
-        responseTimeMs: Date.now() - start,
+        responseTimeMs: elapsed,
         success: true,
       });
       return {
@@ -43,14 +73,16 @@ function withLogging(
         content: [{ type: "text" as const, text: JSON.stringify(result) }],
       };
     } catch (e) {
+      const elapsed = Date.now() - start;
       const code = e instanceof SyeniteError ? e.code : "internal_error";
       const msg = e instanceof Error ? e.message : "Unknown error";
       const retryable = e instanceof SyeniteError ? e.retryable : false;
+      recordToolCall(toolName, elapsed, false);
       await logToolCall({
         clientIp,
         toolName,
         toolParams: redactParams ? redactParams(params) : params,
-        responseTimeMs: Date.now() - start,
+        responseTimeMs: elapsed,
         success: false,
         errorMessage: msg,
       });
@@ -89,6 +121,14 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "lending.market.overview", use: "Aggregate market view — TVL, utilization, rate ranges per protocol." },
       { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
       { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
+      { name: "strategy.carry.screen", use: "Screen all markets for positive carry (supply APY > borrow APY). Ranks self-funding leveraged strategies." },
+      { name: "prediction.trending", use: "Top prediction markets by volume — probabilities, liquidity, and spread." },
+      { name: "prediction.search", use: "Search prediction markets by topic." },
+      { name: "prediction.book", use: "Order book depth and spread for a specific outcome token." },
+      { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
+      { name: "alerts.check", use: "Poll for active alerts (health factor warnings, rate spikes)." },
+      { name: "alerts.list", use: "List all active position watches." },
+      { name: "alerts.remove", use: "Remove a position watch." },
     ],
     swapAndBridge: {
       chains: "Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, and 25+ more",
@@ -102,7 +142,7 @@ export function createMcpServer(clientIp: string): McpServer {
       vault: ["MetaMorpho (Steakhouse, Gauntlet)", "Yearn v3"],
       "basis-capture": ["Ethena (sUSDe)"],
     },
-    lendingProtocols: ["Aave v3", "Morpho Blue", "Spark"],
+    lendingProtocols: ["Aave v3 (Ethereum, Arbitrum, Base)", "Morpho Blue (Ethereum)", "Spark (Ethereum)"],
     access: {
       status: "Free — no API key required",
       rateLimit: "30 requests/minute",
@@ -133,10 +173,14 @@ Call this tool to learn what tools are available and how to use them.`,
         .string()
         .default("USDC")
         .describe('Asset to borrow: "USDC", "USDT", "DAI", "GHO"'),
+      chain: z
+        .enum(["ethereum", "arbitrum", "base", "all"])
+        .default("all")
+        .describe("Chain to query. Defaults to all supported chains."),
     },
     outputSchema: ratesOutput,
   }, withLogging(clientIp, "lending.rates.query", (p) =>
-    handleRatesQuery(p as { collateral?: string; borrowAsset?: string })
+    handleRatesQuery(p as { collateral?: string; borrowAsset?: string; chain?: string })
   ));
 
   // ── lending.market.overview ───────────────────────────────────────
@@ -148,10 +192,14 @@ Call this tool to learn what tools are available and how to use them.`,
         .string()
         .default("all")
         .describe('Filter by collateral asset, or "all"'),
+      chain: z
+        .enum(["ethereum", "arbitrum", "base", "all"])
+        .default("all")
+        .describe("Chain to query. Defaults to all supported chains."),
     },
     outputSchema: marketOverviewOutput,
   }, withLogging(clientIp, "lending.market.overview", (p) =>
-    handleMarketOverview(p as { collateral?: string })
+    handleMarketOverview(p as { collateral?: string; chain?: string })
   ));
 
   // ── lending.position.monitor ──────────────────────────────────────
@@ -159,18 +207,22 @@ Call this tool to learn what tools are available and how to use them.`,
   server.registerTool("lending.position.monitor", {
     description: monitorToolDescription,
     inputSchema: {
-      address: z.string().describe("Ethereum address to check"),
+      address: z.string().describe("EVM address to check (works on all supported chains)"),
       protocol: z
-        .enum(["aave-v3", "morpho", "spark", "all"])
+        .enum(["aave-v3", "compound-v3", "morpho", "spark", "all"])
         .default("all")
         .describe("Protocol filter"),
+      chain: z
+        .enum(["ethereum", "arbitrum", "base", "all"])
+        .default("all")
+        .describe("Chain to query. Defaults to all supported chains."),
     },
     outputSchema: positionMonitorOutput,
   }, withLogging(
     clientIp,
     "lending.position.monitor",
-    (p) => handlePositionMonitor(p as { address: string; protocol?: string }),
-    (p) => ({ address: "***", protocol: p.protocol })
+    (p) => handlePositionMonitor(p as { address: string; protocol?: string; chain?: string }),
+    (p) => ({ address: "***", protocol: p.protocol, chain: p.chain })
   ));
 
   // ── lending.risk.assess ───────────────────────────────────────────
@@ -342,6 +394,155 @@ Call this tool to learn what tools are available and how to use them.`,
     outputSchema: swapStatusOutput,
   }, withLogging(clientIp, "swap.status", (p) =>
     handleSwapStatus(p as { txHash: string; fromChain?: string; toChain?: string })
+  ));
+
+  // ── strategy.carry.screen ──────────────────────────────────────────
+
+  server.registerTool("strategy.carry.screen", {
+    description: carryScreenerDescription,
+    inputSchema: {
+      collateral: z
+        .string()
+        .default("all")
+        .describe('Collateral filter: specific asset, "BTC", "ETH", or "all"'),
+      borrowAsset: z
+        .string()
+        .default("USDC")
+        .describe("Borrow asset"),
+      chain: z
+        .enum(["ethereum", "arbitrum", "base", "all"])
+        .default("all")
+        .describe("Chain filter"),
+      minCarry: z
+        .number()
+        .optional()
+        .describe("Minimum net carry % to include (e.g. 0 for positive-only)"),
+      positionSizeUSD: z
+        .number()
+        .default(100000)
+        .describe("Position size in USD for annual return calculation"),
+    },
+    outputSchema: carryScreenerOutput,
+  }, withLogging(clientIp, "strategy.carry.screen", (p) =>
+    handleCarryScreener(p as {
+      collateral?: string;
+      borrowAsset?: string;
+      chain?: string;
+      minCarry?: number;
+      positionSizeUSD?: number;
+    })
+  ));
+
+  // ── prediction.trending ────────────────────────────────────────────
+
+  server.registerTool("prediction.trending", {
+    description: predictionTrendingDescription,
+    inputSchema: {
+      limit: z
+        .number()
+        .min(1)
+        .max(25)
+        .default(10)
+        .describe("Number of trending markets to return (max 25)"),
+    },
+    outputSchema: predictionTrendingOutput,
+  }, withLogging(clientIp, "prediction.trending", (p) =>
+    handlePredictionTrending(p as { limit?: number })
+  ));
+
+  // ── prediction.search ──────────────────────────────────────────────
+
+  server.registerTool("prediction.search", {
+    description: predictionSearchDescription,
+    inputSchema: {
+      query: z
+        .string()
+        .describe("Search query (e.g. 'Bitcoin price', 'US election', 'Fed rate')"),
+      limit: z
+        .number()
+        .min(1)
+        .max(25)
+        .default(10)
+        .describe("Maximum results to return"),
+    },
+    outputSchema: predictionSearchOutput,
+  }, withLogging(clientIp, "prediction.search", (p) =>
+    handlePredictionSearch(p as { query: string; limit?: number })
+  ));
+
+  // ── prediction.book ────────────────────────────────────────────────
+
+  server.registerTool("prediction.book", {
+    description: predictionBookDescription,
+    inputSchema: {
+      tokenId: z
+        .string()
+        .describe("Polymarket outcome token ID (from prediction.trending or prediction.search results)"),
+    },
+    outputSchema: predictionBookOutput,
+  }, withLogging(clientIp, "prediction.book", (p) =>
+    handlePredictionBook(p as { tokenId: string })
+  ));
+
+  // ── alerts.watch ──────────────────────────────────────────────────
+
+  server.registerTool("alerts.watch", {
+    description: alertWatchDescription,
+    inputSchema: {
+      address: z.string().describe("EVM address to monitor"),
+      protocol: z
+        .enum(["aave-v3", "compound-v3", "morpho", "spark", "all"])
+        .default("all")
+        .describe("Protocol filter"),
+      chain: z
+        .enum(["ethereum", "arbitrum", "base", "all"])
+        .default("all")
+        .describe("Chain filter"),
+      healthFactorThreshold: z
+        .number()
+        .min(1.0)
+        .max(5.0)
+        .default(1.5)
+        .describe("Alert when health factor drops below this value (default 1.5)"),
+    },
+    outputSchema: alertWatchOutput,
+  }, withLogging(
+    clientIp,
+    "alerts.watch",
+    (p) => handleAlertWatch(p as { address: string; protocol?: string; chain?: string; healthFactorThreshold?: number }),
+    (p) => ({ address: "***", protocol: p.protocol, chain: p.chain, healthFactorThreshold: p.healthFactorThreshold })
+  ));
+
+  // ── alerts.check ──────────────────────────────────────────────────
+
+  server.registerTool("alerts.check", {
+    description: alertCheckDescription,
+    inputSchema: {
+      watchId: z.string().optional().describe("Filter alerts for a specific watch ID"),
+      acknowledge: z.boolean().default(false).describe("Mark returned alerts as acknowledged"),
+    },
+    outputSchema: alertCheckOutput,
+  }, withLogging(clientIp, "alerts.check", (p) =>
+    handleAlertCheck(p as { watchId?: string; acknowledge?: boolean })
+  ));
+
+  // ── alerts.list ───────────────────────────────────────────────────
+
+  server.registerTool("alerts.list", {
+    description: alertListDescription,
+    outputSchema: alertListOutput,
+  }, withLogging(clientIp, "alerts.list", () => handleAlertList()));
+
+  // ── alerts.remove ─────────────────────────────────────────────────
+
+  server.registerTool("alerts.remove", {
+    description: alertRemoveDescription,
+    inputSchema: {
+      watchId: z.string().describe("ID of the watch to remove"),
+    },
+    outputSchema: alertRemoveOutput,
+  }, withLogging(clientIp, "alerts.remove", (p) =>
+    handleAlertRemove(p as { watchId: string })
   ));
 
   return server;

@@ -2,6 +2,7 @@ import { type Address, formatUnits } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
 import { getTokenPrice } from "./prices.js";
+import { log } from "../logging/logger.js";
 import {
   MORPHO,
   MORPHO_MARKETS,
@@ -201,6 +202,7 @@ export async function getMorphoRates(
 
       results.push({
         protocol: "morpho-blue",
+        chain: "ethereum",
         market: `Morpho ${mkt.label}`,
         collateral: collSymbol,
         borrowAsset,
@@ -218,7 +220,7 @@ export async function getMorphoRates(
         lastUpdated: new Date().toISOString(),
       });
     } catch (e) {
-      console.warn(`[syenite] Morpho market ${mkt.label} failed:`, e instanceof Error ? e.message : e);
+      log.warn(`Morpho market ${mkt.label} failed`, { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -337,7 +339,7 @@ export async function getMorphoPosition(
         estimatedAnnualCost: debtAmount * (borrowRate / 100),
       });
     } catch (e) {
-      console.warn(`[syenite] Morpho position for ${mkt.label} failed:`, e instanceof Error ? e.message : e);
+      log.warn(`Morpho position for ${mkt.label} failed`, { error: e instanceof Error ? e.message : String(e) });
     }
   }
 

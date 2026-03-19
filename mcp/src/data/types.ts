@@ -2,7 +2,7 @@ import { getAddress, type Address } from "viem";
 
 // ── Protocol types ──────────────────────────────────────────────────
 
-export type Protocol = "aave-v3" | "morpho-blue" | "spark" | "compound-v3" | "euler-v2" | "liquity-v2";
+export type Protocol = "aave-v3" | "morpho-blue" | "spark" | "compound-v3" | "fluid" | "venus" | "euler-v2" | "liquity-v2";
 
 // ── Contract addresses (Ethereum mainnet) ───────────────────────────
 // All addresses normalized via getAddress() to ensure correct EIP-55 checksums
@@ -47,6 +47,16 @@ export const AAVE_V3 = {
   pool: getAddress("0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"),
   poolDataProvider: getAddress("0x0a16f2fcc0d44fae41cc54e079281d84a363becd"),
   uiPoolDataProvider: getAddress("0x91c0ea31b49b69ea18607702c5d9ac360bf3de7d"),
+};
+
+export const AAVE_V3_ARBITRUM = {
+  pool: getAddress("0x794a61358D6845594F94dc1DB02A252b5b4814aD"),
+  poolDataProvider: getAddress("0x69FA688f1Dc47d4B5d8029D5a35FB7a548310654"),
+};
+
+export const AAVE_V3_BASE = {
+  pool: getAddress("0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"),
+  poolDataProvider: getAddress("0x2d8A3C5677189723C4cB8873CfC9C8976FDF38Ac"),
 };
 
 export const SPARK = {
@@ -200,6 +210,52 @@ export const YEARN_VAULTS: Array<{ address: Address; label: string; asset: strin
 
 // Pendle PT markets deprecated — expired maturities, pending update.
 
+// ── Multi-chain token addresses ──────────────────────────────────────
+
+export const TOKENS_ARBITRUM: Record<string, Address> = {
+  WBTC: getAddress("0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"),
+  WETH: getAddress("0x82af49447d8a07e3bd95bd0d56f35241523fbab1"),
+  wstETH: getAddress("0x5979D7b546E38E414F7E9822514be443A4800529"),
+  rETH: getAddress("0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8"),
+  USDC: getAddress("0xaf88d065e77c8cC2239327C5EDb3A432268e5831"),
+  "USDC.e": getAddress("0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"),
+  USDT: getAddress("0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"),
+  DAI: getAddress("0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"),
+};
+
+export const TOKENS_BASE: Record<string, Address> = {
+  WETH: getAddress("0x4200000000000000000000000000000000000006"),
+  cbETH: getAddress("0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"),
+  wstETH: getAddress("0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452"),
+  USDbC: getAddress("0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"),
+  USDC: getAddress("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
+  cbBTC: getAddress("0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"),
+};
+
+export const COLLATERAL_ASSETS_ARBITRUM: Array<{ symbol: string; address: Address; category: string }> = [
+  { symbol: "WBTC", address: TOKENS_ARBITRUM.WBTC, category: "BTC" },
+  { symbol: "WETH", address: TOKENS_ARBITRUM.WETH, category: "ETH" },
+  { symbol: "wstETH", address: TOKENS_ARBITRUM.wstETH, category: "ETH" },
+  { symbol: "rETH", address: TOKENS_ARBITRUM.rETH, category: "ETH" },
+];
+
+export const COLLATERAL_ASSETS_BASE: Array<{ symbol: string; address: Address; category: string }> = [
+  { symbol: "cbBTC", address: TOKENS_BASE.cbBTC, category: "BTC" },
+  { symbol: "WETH", address: TOKENS_BASE.WETH, category: "ETH" },
+  { symbol: "cbETH", address: TOKENS_BASE.cbETH, category: "ETH" },
+  { symbol: "wstETH", address: TOKENS_BASE.wstETH, category: "ETH" },
+];
+
+export const TOKEN_DECIMALS_ARBITRUM: Record<string, number> = {
+  WBTC: 8, WETH: 18, wstETH: 18, rETH: 18,
+  USDC: 6, "USDC.e": 6, USDT: 6, DAI: 18,
+};
+
+export const TOKEN_DECIMALS_BASE: Record<string, number> = {
+  WETH: 18, cbETH: 18, wstETH: 18, cbBTC: 8,
+  USDC: 6, USDbC: 6,
+};
+
 // ── Cache TTL configuration (seconds) ───────────────────────────────
 
 export const CACHE_TTL = {
@@ -214,6 +270,7 @@ export const CACHE_TTL = {
 
 export interface ProtocolRate {
   protocol: Protocol;
+  chain: string;
   market: string;
   collateral: string;
   borrowAsset: string;

@@ -1,5 +1,6 @@
 import { getPool } from "../data/db.js";
 import { getClient } from "../data/client.js";
+import { log } from "./logger.js";
 
 export async function getHealthStatus(): Promise<{
   status: "healthy" | "degraded" | "unhealthy";
@@ -9,16 +10,15 @@ export async function getHealthStatus(): Promise<{
   const startTime = process.uptime();
   const checks: Record<string, { ok: boolean; message: string; latencyMs?: number }> = {};
 
-  // Database check
   try {
+    const dbStart = Date.now();
     await getPool().query("SELECT 1");
-    checks.database = { ok: true, message: "connected" };
+    checks.database = { ok: true, message: "connected", latencyMs: Date.now() - dbStart };
   } catch (e) {
-    console.warn("[syenite] health: db error:", e instanceof Error ? e.message : e);
+    log.warn("health: db error", { error: e instanceof Error ? e.message : String(e) });
     checks.database = { ok: false, message: "unavailable" };
   }
 
-  // RPC check
   try {
     const rpcStart = Date.now();
     const client = getClient();
@@ -26,7 +26,7 @@ export async function getHealthStatus(): Promise<{
     const rpcLatency = Date.now() - rpcStart;
     checks.rpc = { ok: true, message: "connected", latencyMs: rpcLatency };
   } catch (e) {
-    console.warn("[syenite] health: rpc error:", e instanceof Error ? e.message : e);
+    log.warn("health: rpc error", { error: e instanceof Error ? e.message : String(e) });
     checks.rpc = { ok: false, message: "unavailable" };
   }
 

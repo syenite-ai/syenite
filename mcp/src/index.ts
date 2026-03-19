@@ -8,9 +8,14 @@ import { createMcpServer } from "./server.js";
 import { checkRateLimit, getClientIp } from "./auth/rate-limit.js";
 import { getHealthStatus } from "./logging/health.js";
 import { getUsageStats } from "./logging/usage.js";
+import { getPrometheusMetrics, recordRateLimitHit } from "./logging/metrics.js";
+import { log } from "./logging/logger.js";
+import { warmCache, startBackgroundRefresh } from "./data/warm-cache.js";
+import { startAlertChecker } from "./data/alert-checker.js";
 import { landingPageHtml } from "./web/landing.js";
 import { dashboardHtml } from "./web/dashboard.js";
 import { wellKnownMcp } from "./web/well-known.js";
+import { agentRegistrationJson } from "./web/agent-registration.js";
 import { initSchema } from "./data/db.js";
 import { seedApiKeyFromEnv } from "./auth/keys.js";
 import {
@@ -55,6 +60,7 @@ app.post("/mcp", async (req, res) => {
 
   const rateCheck = checkRateLimit(clientIp);
   if (!rateCheck.allowed) {
+    recordRateLimitHit();
     res.status(429).json({
       jsonrpc: "2.0",
       error: {
@@ -81,7 +87,7 @@ app.post("/mcp", async (req, res) => {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (e) {
-    console.warn("[syenite] MCP request handler error:", e instanceof Error ? e.message : e);
+    log.warn("MCP request handler error", { error: e instanceof Error ? e.message : String(e) });
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: "2.0",
@@ -110,6 +116,41 @@ const devAssets = path.join(process.cwd(), "assets");
 const assetsDir = existsSync(distAssets) ? distAssets : devAssets;
 app.use("/assets", express.static(assetsDir));
 
+// ── Auth helper (used by dashboard + metrics) ───────────────────────
+
+function verifyDashboardAuth(req: express.Request, res: express.Response): boolean {
+  if (!ADMIN_PASSWORD) {
+    res.status(503).send("Dashboard disabled — no DASHBOARD_PASSWORD configured");
+    return false;
+  }
+
+  const clientIp = getClientIp(req);
+  const rl = checkRateLimit(`dashboard:${clientIp}`);
+  if (!rl.allowed) {
+    res.status(429).send("Too many attempts");
+    return false;
+  }
+
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith("Basic ")) {
+    res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
+    res.status(401).send("Authentication required");
+    return false;
+  }
+
+  const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
+  const colonIdx = decoded.indexOf(":");
+  const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
+
+  if (!constantTimeEqual(password, ADMIN_PASSWORD)) {
+    res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
+    res.status(401).send("Invalid credentials");
+    return false;
+  }
+
+  return true;
+}
+
 // ── Web Routes ──────────────────────────────────────────────────────
 
 app.get("/", (_req, res) => {
@@ -121,8 +162,18 @@ app.get("/health", async (_req, res) => {
   res.status(health.status === "unhealthy" ? 503 : 200).json(health);
 });
 
+app.get("/metrics", async (req, res) => {
+  if (!verifyDashboardAuth(req, res)) return;
+  const body = await getPrometheusMetrics();
+  res.type("text/plain; version=0.0.4; charset=utf-8").send(body);
+});
+
 app.get("/.well-known/mcp.json", (_req, res) => {
   res.json(wellKnownMcp());
+});
+
+app.get("/.well-known/agent-registration.json", (_req, res) => {
+  res.json(agentRegistrationJson());
 });
 
 // ── Docs ────────────────────────────────────────────────────────────
@@ -164,39 +215,6 @@ app.get("/sitemap.xml", (_req, res) => {
 
 // ── Dashboard (password-protected) ──────────────────────────────────
 
-function verifyDashboardAuth(req: express.Request, res: express.Response): boolean {
-  if (!ADMIN_PASSWORD) {
-    res.status(503).send("Dashboard disabled — no DASHBOARD_PASSWORD configured");
-    return false;
-  }
-
-  const clientIp = getClientIp(req);
-  const rl = checkRateLimit(`dashboard:${clientIp}`);
-  if (!rl.allowed) {
-    res.status(429).send("Too many attempts");
-    return false;
-  }
-
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Basic ")) {
-    res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
-    res.status(401).send("Authentication required");
-    return false;
-  }
-
-  const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
-  const colonIdx = decoded.indexOf(":");
-  const password = colonIdx === -1 ? "" : decoded.slice(colonIdx + 1).trim();
-
-  if (!constantTimeEqual(password, ADMIN_PASSWORD)) {
-    res.set("WWW-Authenticate", 'Basic realm="Syenite Admin"');
-    res.status(401).send("Invalid credentials");
-    return false;
-  }
-
-  return true;
-}
-
 app.get("/dashboard", async (req, res) => {
   if (!verifyDashboardAuth(req, res)) return;
   const stats = await getUsageStats();
@@ -215,20 +233,27 @@ const start = async () => {
     await initSchema();
     await seedApiKeyFromEnv();
   } catch (e) {
-    console.error("[syenite] DB init failed:", e instanceof Error ? e.message : e);
+    log.error("DB init failed", { error: e instanceof Error ? e.message : String(e) });
     process.exit(1);
   }
   if (!ADMIN_PASSWORD) {
-    console.warn("[syenite] WARNING: DASHBOARD_PASSWORD not set — dashboard is disabled");
+    log.warn("DASHBOARD_PASSWORD not set — dashboard and metrics are disabled");
   }
 
+  await warmCache();
+  startBackgroundRefresh();
+  startAlertChecker(60_000);
+
   app.listen(PORT, () => {
-    console.log(`Syenite MCP Server running on http://localhost:${PORT}`);
-    console.log(`  MCP endpoint:  POST http://localhost:${PORT}/mcp`);
-    console.log(`  Landing page:  http://localhost:${PORT}/`);
-    console.log(`  Docs:          http://localhost:${PORT}/docs`);
-    console.log(`  Health check:  http://localhost:${PORT}/health`);
-    console.log(`  Dashboard:     http://localhost:${PORT}/dashboard`);
+    log.info("server started", {
+      port: PORT,
+      endpoints: {
+        mcp: `POST http://localhost:${PORT}/mcp`,
+        health: `http://localhost:${PORT}/health`,
+        metrics: `http://localhost:${PORT}/metrics`,
+        dashboard: `http://localhost:${PORT}/dashboard`,
+      },
+    });
   });
 };
 start();

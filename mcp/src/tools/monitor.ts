@@ -1,38 +1,47 @@
 import { type Address, isAddress } from "viem";
 import { getAavePosition, getSparkPosition } from "../data/aave.js";
 import { getMorphoPosition } from "../data/morpho.js";
+import { getCompoundPosition } from "../data/compound.js";
+import type { SupportedChain } from "../data/client.js";
 import type { PositionData } from "../data/types.js";
 import { SyeniteError } from "../errors.js";
 
 export const monitorToolName = "lending.position.monitor";
 
-export const monitorToolDescription = `Check the health of any DeFi lending position on Aave v3, Morpho Blue, or Spark (Ethereum mainnet).
+export const monitorToolDescription = `Check the health of any DeFi lending position on Aave v3, Morpho Blue, or Spark across Ethereum, Arbitrum, and Base.
 Returns current LTV, health factor, liquidation price, distance to liquidation (% price drop needed), borrow rate, and estimated annual cost.
 Works with any wallet address. Scans all collateral types (BTC wrappers, ETH, LSTs) automatically.`;
 
 export async function handlePositionMonitor(params: {
   address: string;
   protocol?: string;
+  chain?: string;
 }): Promise<Record<string, unknown>> {
   if (!isAddress(params.address)) {
     throw SyeniteError.invalidInput(
-      `"${params.address}" is not a valid Ethereum address. Provide a 0x-prefixed 42-character hex address.`
+      `"${params.address}" is not a valid EVM address. Provide a 0x-prefixed 42-character hex address.`
     );
   }
 
   const address = params.address as Address;
   const protocol = params.protocol?.toLowerCase();
+  const chains = params.chain && params.chain !== "all"
+    ? [params.chain as SupportedChain]
+    : undefined;
 
   const positionPromises: Promise<PositionData[]>[] = [];
 
   if (!protocol || protocol === "aave-v3" || protocol === "aave") {
-    positionPromises.push(getAavePosition(address));
+    positionPromises.push(getAavePosition(address, undefined, chains));
   }
   if (!protocol || protocol === "morpho-blue" || protocol === "morpho") {
     positionPromises.push(getMorphoPosition(address));
   }
   if (!protocol || protocol === "spark") {
-    positionPromises.push(getSparkPosition(address));
+    positionPromises.push(getSparkPosition(address, undefined, chains));
+  }
+  if (!protocol || protocol === "compound-v3" || protocol === "compound") {
+    positionPromises.push(getCompoundPosition(address, undefined, chains));
   }
 
   const results = (await Promise.all(positionPromises)).flat();

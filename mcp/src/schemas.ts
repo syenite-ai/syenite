@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const MarketRate = z.object({
   protocol: z.string().describe("Protocol identifier (aave-v3, morpho-blue, spark)"),
+  chain: z.string().describe("Chain: ethereum, arbitrum, base"),
   market: z.string().describe("Human-readable market name"),
   collateral: z.string().describe("Collateral asset symbol"),
   borrowAPY: z.number().describe("Annual borrow rate (%)"),
@@ -55,9 +56,11 @@ export const ratesOutput = z.object({
   query: z.object({
     collateral: z.string(),
     borrowAsset: z.string(),
+    chain: z.string(),
   }),
   bestBorrowRate: z.object({
     protocol: z.string(),
+    chain: z.string(),
     market: z.string(),
     borrowAPY: z.number(),
   }).nullable().describe("Best rate found, or null if no markets match"),
@@ -254,6 +257,155 @@ export const yieldAssessOutput = z.object({
     category: z.string(),
   })),
   timestamp: z.string(),
+});
+
+// ── alerts.watch ─────────────────────────────────────────────────────
+
+export const alertWatchOutput = z.object({
+  watch: z.object({
+    id: z.string(),
+    address: z.string(),
+    protocol: z.string().optional(),
+    chain: z.string().optional(),
+    healthFactorThreshold: z.number(),
+    createdAt: z.string(),
+  }),
+  message: z.string(),
+  usage: z.string(),
+});
+
+export const alertCheckOutput = z.object({
+  alertCount: z.number(),
+  critical: z.number(),
+  warnings: z.number(),
+  alerts: z.array(z.object({
+    watchId: z.string(),
+    type: z.string(),
+    severity: z.enum(["warning", "critical"]),
+    message: z.string(),
+    data: z.record(z.string(), z.unknown()),
+    createdAt: z.string(),
+  })),
+  timestamp: z.string(),
+});
+
+export const alertListOutput = z.object({
+  watchCount: z.number(),
+  watches: z.array(z.object({
+    id: z.string(),
+    address: z.string(),
+    protocol: z.string(),
+    chain: z.string(),
+    healthFactorThreshold: z.number(),
+    createdAt: z.string(),
+    lastCheckedAt: z.string(),
+  })),
+  timestamp: z.string(),
+});
+
+export const alertRemoveOutput = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+// ── strategy.carry.screen ────────────────────────────────────────────
+
+export const carryScreenerOutput = z.object({
+  query: z.object({
+    collateral: z.string(),
+    borrowAsset: z.string(),
+    chain: z.string(),
+    minCarry: z.number().optional(),
+    positionSizeUSD: z.number(),
+  }),
+  summary: z.object({
+    totalMarketsScanned: z.number(),
+    positiveCarryCount: z.number(),
+    bestCarry: z.object({
+      market: z.string(),
+      netCarry: z.number(),
+      leveragedCarry: z.number(),
+      estimatedAnnualReturnUSD: z.number(),
+    }).nullable(),
+  }),
+  strategies: z.array(z.object({
+    protocol: z.string(),
+    chain: z.string(),
+    market: z.string(),
+    collateral: z.string(),
+    borrowAsset: z.string(),
+    supplyAPY: z.number(),
+    borrowAPY: z.number(),
+    netCarry: z.number().describe("Supply APY minus borrow APY"),
+    maxLTV: z.number(),
+    leveragedCarry: z.number().describe("Net carry amplified at safe leverage"),
+    liquidationPenalty: z.number(),
+    availableLiquidityUSD: z.number(),
+    utilization: z.number(),
+    estimatedAnnualReturnUSD: z.number(),
+  })),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+// ── prediction.trending ──────────────────────────────────────────────
+
+const PredictionOutcome = z.object({
+  name: z.string(),
+  probability: z.number().describe("Probability as percentage (0-100)"),
+});
+
+const PredictionMarketItem = z.object({
+  id: z.string(),
+  question: z.string(),
+  conditionId: z.string(),
+  outcomes: z.array(PredictionOutcome),
+  volume: z.number().describe("Trading volume in USDC"),
+  liquidity: z.number().describe("Available liquidity in USDC"),
+  bestBid: z.number(),
+  bestAsk: z.number(),
+  spread: z.number(),
+  lastTradePrice: z.number(),
+});
+
+const PredictionEvent = z.object({
+  id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  active: z.boolean(),
+  volume: z.number(),
+  liquidity: z.number(),
+  markets: z.array(PredictionMarketItem),
+});
+
+export const predictionTrendingOutput = z.object({
+  source: z.string(),
+  eventCount: z.number(),
+  events: z.array(PredictionEvent),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+export const predictionSearchOutput = z.object({
+  source: z.string(),
+  query: z.string(),
+  resultCount: z.number(),
+  events: z.array(PredictionEvent),
+  timestamp: z.string(),
+});
+
+export const predictionBookOutput = z.object({
+  tokenId: z.string(),
+  midPrice: z.number().optional(),
+  spread: z.number().optional(),
+  spreadBps: z.number().optional().describe("Spread in basis points"),
+  bidDepthUSD: z.number().optional(),
+  askDepthUSD: z.number().optional(),
+  bids: z.array(z.object({ price: z.number(), size: z.number() })).optional(),
+  asks: z.array(z.object({ price: z.number(), size: z.number() })).optional(),
+  error: z.string().optional(),
+  timestamp: z.string(),
+  note: z.string().optional(),
 });
 
 // ── swap.quote ──────────────────────────────────────────────────────

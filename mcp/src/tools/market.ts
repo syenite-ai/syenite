@@ -1,28 +1,39 @@
 import { getAaveRates, getSparkRates } from "../data/aave.js";
 import { getMorphoRates } from "../data/morpho.js";
+import { getCompoundRates } from "../data/compound.js";
+import { getFluidRates } from "../data/fluid.js";
+import type { SupportedChain } from "../data/client.js";
 import type { ProtocolRate } from "../data/types.js";
 
 export const marketToolName = "lending.market.overview";
 
-export const marketToolDescription = `Get an aggregate overview of DeFi lending markets across Aave v3, Morpho Blue, and Spark on Ethereum mainnet.
+export const marketToolDescription = `Get an aggregate overview of DeFi lending markets across Aave v3, Compound V3, Morpho Blue, and Spark on Ethereum, Arbitrum, and Base.
 Returns per-protocol totals: TVL, total borrowed, utilization ranges, rate ranges, and available liquidity.
 Supports all collateral types (BTC wrappers, ETH, LSTs). Use this for a high-level view of lending market conditions.`;
 
 export async function handleMarketOverview(params: {
   collateral?: string;
+  chain?: string;
 }): Promise<Record<string, unknown>> {
   const collateral = params.collateral ?? "all";
+  const chains = params.chain && params.chain !== "all"
+    ? [params.chain as SupportedChain]
+    : undefined;
 
-  const [aaveRates, morphoRates, sparkRates] = await Promise.allSettled([
-    getAaveRates(collateral),
+  const [aaveRates, morphoRates, sparkRates, compoundRates, fluidRates] = await Promise.allSettled([
+    getAaveRates(collateral, undefined, chains),
     getMorphoRates(collateral),
-    getSparkRates(collateral),
+    getSparkRates(collateral, undefined, chains),
+    getCompoundRates(collateral, undefined, chains),
+    getFluidRates(collateral, undefined, chains),
   ]);
 
   const allRates = [
     ...(aaveRates.status === "fulfilled" ? aaveRates.value : []),
     ...(morphoRates.status === "fulfilled" ? morphoRates.value : []),
     ...(sparkRates.status === "fulfilled" ? sparkRates.value : []),
+    ...(compoundRates.status === "fulfilled" ? compoundRates.value : []),
+    ...(fluidRates.status === "fulfilled" ? fluidRates.value : []),
   ];
 
   if (allRates.length === 0) {

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getPool } from "../data/db.js";
+import { getPool, hasDatabase } from "../data/db.js";
 
 function hashIp(ip: string): string {
   return createHash("sha256").update(ip).digest("hex").slice(0, 16);
@@ -13,6 +13,8 @@ export async function logToolCall(params: {
   success: boolean;
   errorMessage?: string;
 }): Promise<void> {
+  if (!hasDatabase()) return;
+
   const paramsHash = createHash("sha256")
     .update(JSON.stringify(params.toolParams))
     .digest("hex")

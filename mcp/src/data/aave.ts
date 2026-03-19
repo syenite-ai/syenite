@@ -1,19 +1,75 @@
 import { type Address, formatUnits } from "viem";
-import { getClient } from "./client.js";
+import { getClient, type SupportedChain } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
 import { getTokenPrice } from "./prices.js";
+import { log } from "../logging/logger.js";
 import {
   AAVE_V3,
+  AAVE_V3_ARBITRUM,
+  AAVE_V3_BASE,
   SPARK,
   TOKENS,
+  TOKENS_ARBITRUM,
+  TOKENS_BASE,
   TOKEN_DECIMALS,
+  TOKEN_DECIMALS_ARBITRUM,
+  TOKEN_DECIMALS_BASE,
   COLLATERAL_ASSETS,
+  COLLATERAL_ASSETS_ARBITRUM,
+  COLLATERAL_ASSETS_BASE,
   CACHE_TTL,
   RAY,
   type Protocol,
   type ProtocolRate,
   type PositionData,
 } from "./types.js";
+
+interface ChainDeployment {
+  chain: SupportedChain;
+  pool: Address;
+  poolDataProvider: Address;
+  tokens: Record<string, Address>;
+  tokenDecimals: Record<string, number>;
+  collateralAssets: Array<{ symbol: string; address: Address; category: string }>;
+}
+
+const AAVE_DEPLOYMENTS: Record<string, ChainDeployment> = {
+  ethereum: {
+    chain: "ethereum",
+    pool: AAVE_V3.pool,
+    poolDataProvider: AAVE_V3.poolDataProvider,
+    tokens: TOKENS,
+    tokenDecimals: TOKEN_DECIMALS,
+    collateralAssets: COLLATERAL_ASSETS,
+  },
+  arbitrum: {
+    chain: "arbitrum",
+    pool: AAVE_V3_ARBITRUM.pool,
+    poolDataProvider: AAVE_V3_ARBITRUM.poolDataProvider,
+    tokens: TOKENS_ARBITRUM,
+    tokenDecimals: TOKEN_DECIMALS_ARBITRUM,
+    collateralAssets: COLLATERAL_ASSETS_ARBITRUM,
+  },
+  base: {
+    chain: "base",
+    pool: AAVE_V3_BASE.pool,
+    poolDataProvider: AAVE_V3_BASE.poolDataProvider,
+    tokens: TOKENS_BASE,
+    tokenDecimals: TOKEN_DECIMALS_BASE,
+    collateralAssets: COLLATERAL_ASSETS_BASE,
+  },
+};
+
+const SPARK_DEPLOYMENTS: Record<string, ChainDeployment> = {
+  ethereum: {
+    chain: "ethereum",
+    pool: SPARK.pool,
+    poolDataProvider: SPARK.poolDataProvider,
+    tokens: TOKENS,
+    tokenDecimals: TOKEN_DECIMALS,
+    collateralAssets: COLLATERAL_ASSETS,
+  },
+};
 
 // ── Minimal ABIs ────────────────────────────────────────────────────
 
@@ -133,29 +189,28 @@ function rayToPercent(rayRate: bigint): number {
 
 // ── Shared Aave-fork fetcher (used by Aave v3 and Spark) ────────────
 
-export async function getAaveForkRates(
+async function getAaveForkRatesForDeployment(
   protocolName: Protocol,
-  poolAddress: Address,
-  dataProviderAddress: Address,
+  deployment: ChainDeployment,
   collateralFilter?: string,
   borrowAsset: string = "USDC"
 ): Promise<ProtocolRate[]> {
-  const cacheKey = `${protocolName}:rates:${collateralFilter ?? "all"}:${borrowAsset}`;
+  const cacheKey = `${protocolName}:${deployment.chain}:rates:${collateralFilter ?? "all"}:${borrowAsset}`;
   const cached = await cacheGet<ProtocolRate[]>(cacheKey);
   if (cached) return cached;
 
-  const client = getClient();
+  const client = getClient(deployment.chain);
 
   const assets =
     collateralFilter && collateralFilter !== "all"
-      ? COLLATERAL_ASSETS.filter((a) => a.symbol === collateralFilter || a.category === collateralFilter)
-      : COLLATERAL_ASSETS;
+      ? deployment.collateralAssets.filter((a) => a.symbol === collateralFilter || a.category === collateralFilter)
+      : deployment.collateralAssets;
 
-  const borrowAssetAddress = TOKENS[borrowAsset];
+  const borrowAssetAddress = deployment.tokens[borrowAsset];
   if (!borrowAssetAddress) return [];
 
   const borrowReserve = await client.readContract({
-    address: poolAddress,
+    address: deployment.pool,
     abi: poolAbi,
     functionName: "getReserveData",
     args: [borrowAssetAddress],
@@ -164,12 +219,12 @@ export async function getAaveForkRates(
   const borrowAssetSupplyAPY = rayToPercent(borrowReserve.currentLiquidityRate);
 
   const borrowDpData = await client.readContract({
-    address: dataProviderAddress,
+    address: deployment.poolDataProvider,
     abi: dataProviderAbi,
     functionName: "getReserveData",
     args: [borrowAssetAddress],
   });
-  const borrowDecimals = TOKEN_DECIMALS[borrowAsset] ?? 6;
+  const borrowDecimals = deployment.tokenDecimals[borrowAsset] ?? 6;
   const totalBorrowSupply = Number(formatUnits(borrowDpData[2], borrowDecimals));
   const totalBorrowed =
     Number(formatUnits(borrowDpData[3], borrowDecimals)) +
@@ -179,34 +234,36 @@ export async function getAaveForkRates(
     totalBorrowSupply > 0 ? (totalBorrowed / totalBorrowSupply) * 100 : 0;
 
   const results: ProtocolRate[] = [];
+  const displayName = protocolName === "aave-v3" ? "Aave v3" : "Spark";
+  const chainLabel = deployment.chain === "ethereum" ? "" : ` (${deployment.chain})`;
 
   for (const asset of assets) {
     try {
       const [configData, collateralReserve] = await Promise.all([
         client.readContract({
-          address: dataProviderAddress,
+          address: deployment.poolDataProvider,
           abi: dataProviderAbi,
           functionName: "getReserveConfigurationData",
           args: [asset.address],
         }),
         client.readContract({
-          address: poolAddress,
+          address: deployment.pool,
           abi: poolAbi,
           functionName: "getReserveData",
           args: [asset.address],
         }),
       ]);
 
-      if (!configData[8]) continue; // isActive
-      if (!configData[5]) continue; // usageAsCollateralEnabled
+      if (!configData[8]) continue;
+      if (!configData[5]) continue;
 
       const supplyAPY = rayToPercent(collateralReserve.currentLiquidityRate);
       const liquidationPenalty = (Number(configData[3]) - 10000) / 100;
 
-      const displayName = protocolName === "aave-v3" ? "Aave v3" : "Spark";
       results.push({
         protocol: protocolName,
-        market: `${displayName} ${asset.symbol}/${borrowAsset}`,
+        chain: deployment.chain,
+        market: `${displayName}${chainLabel} ${asset.symbol}/${borrowAsset}`,
         collateral: asset.symbol,
         borrowAsset,
         supplyAPY,
@@ -223,7 +280,9 @@ export async function getAaveForkRates(
         lastUpdated: new Date().toISOString(),
       });
     } catch (e) {
-      console.warn(`[syenite] ${protocolName} reserve fetch for ${asset.symbol} failed:`, e instanceof Error ? e.message : e);
+      log.warn(`${protocolName} reserve fetch for ${asset.symbol} on ${deployment.chain} failed`, {
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
   }
 
@@ -231,26 +290,67 @@ export async function getAaveForkRates(
   return results;
 }
 
-export function getAaveRates(collateralFilter?: string, borrowAsset?: string) {
-  return getAaveForkRates("aave-v3", AAVE_V3.pool, AAVE_V3.poolDataProvider, collateralFilter, borrowAsset);
-}
-
-export function getSparkRates(collateralFilter?: string, borrowAsset?: string) {
-  return getAaveForkRates("spark", SPARK.pool, SPARK.poolDataProvider, collateralFilter, borrowAsset);
-}
-
-async function getAaveForkPosition(
-  protocol: Protocol,
+export async function getAaveForkRates(
+  protocolName: Protocol,
   poolAddress: Address,
   dataProviderAddress: Address,
+  collateralFilter?: string,
+  borrowAsset: string = "USDC"
+): Promise<ProtocolRate[]> {
+  return getAaveForkRatesForDeployment(
+    protocolName,
+    {
+      chain: "ethereum",
+      pool: poolAddress,
+      poolDataProvider: dataProviderAddress,
+      tokens: TOKENS,
+      tokenDecimals: TOKEN_DECIMALS,
+      collateralAssets: COLLATERAL_ASSETS,
+    },
+    collateralFilter,
+    borrowAsset
+  );
+}
+
+export async function getAaveRates(
+  collateralFilter?: string,
+  borrowAsset?: string,
+  chains?: SupportedChain[]
+): Promise<ProtocolRate[]> {
+  const targetChains = chains ?? (Object.keys(AAVE_DEPLOYMENTS) as SupportedChain[]);
+  const results = await Promise.allSettled(
+    targetChains
+      .filter((c) => AAVE_DEPLOYMENTS[c])
+      .map((c) => getAaveForkRatesForDeployment("aave-v3", AAVE_DEPLOYMENTS[c], collateralFilter, borrowAsset))
+  );
+  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+}
+
+export async function getSparkRates(
+  collateralFilter?: string,
+  borrowAsset?: string,
+  chains?: SupportedChain[]
+): Promise<ProtocolRate[]> {
+  const targetChains = chains ?? (Object.keys(SPARK_DEPLOYMENTS) as SupportedChain[]);
+  const results = await Promise.allSettled(
+    targetChains
+      .filter((c) => SPARK_DEPLOYMENTS[c])
+      .map((c) => getAaveForkRatesForDeployment("spark", SPARK_DEPLOYMENTS[c], collateralFilter, borrowAsset))
+  );
+  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+}
+
+async function getAaveForkPositionForDeployment(
+  protocol: Protocol,
+  deployment: ChainDeployment,
   userAddress: Address,
   collateralSymbol?: string
 ): Promise<PositionData[]> {
-  const client = getClient();
+  const client = getClient(deployment.chain);
   const positions: PositionData[] = [];
 
   const accountData = await client.readContract({
-    address: poolAddress,
+    address: deployment.pool,
     abi: poolAbi,
     functionName: "getUserAccountData",
     args: [userAddress],
@@ -264,21 +364,23 @@ async function getAaveForkPosition(
 
   const assets =
     collateralSymbol && collateralSymbol !== "all"
-      ? COLLATERAL_ASSETS.filter((a) => a.symbol === collateralSymbol)
-      : COLLATERAL_ASSETS;
+      ? deployment.collateralAssets.filter((a) => a.symbol === collateralSymbol)
+      : deployment.collateralAssets;
 
   const displayName = protocol === "aave-v3" ? "Aave v3" : "Spark";
+  const chainLabel = deployment.chain === "ethereum" ? "" : ` (${deployment.chain})`;
+  const usdcAddress = deployment.tokens.USDC;
 
   for (const asset of assets) {
     try {
       const userReserve = await client.readContract({
-        address: dataProviderAddress,
+        address: deployment.poolDataProvider,
         abi: dataProviderAbi,
         functionName: "getUserReserveData",
         args: [asset.address, userAddress],
       });
 
-      const collDecimals = TOKEN_DECIMALS[asset.symbol] ?? 18;
+      const collDecimals = deployment.tokenDecimals[asset.symbol] ?? 18;
       const collateralAmount = Number(formatUnits(userReserve[0], collDecimals));
       if (collateralAmount === 0) continue;
 
@@ -295,17 +397,20 @@ async function getAaveForkPosition(
       const distanceToLiq =
         assetPrice > 0 ? ((assetPrice - liquidationPrice) / assetPrice) * 100 : 0;
 
-      const usdcReserve = await client.readContract({
-        address: poolAddress,
-        abi: poolAbi,
-        functionName: "getReserveData",
-        args: [TOKENS.USDC],
-      });
-      const borrowRate = rayToPercent(usdcReserve.currentVariableBorrowRate);
+      let borrowRate = 0;
+      if (usdcAddress) {
+        const usdcReserve = await client.readContract({
+          address: deployment.pool,
+          abi: poolAbi,
+          functionName: "getReserveData",
+          args: [usdcAddress],
+        });
+        borrowRate = rayToPercent(usdcReserve.currentVariableBorrowRate);
+      }
 
       positions.push({
         protocol,
-        market: `${displayName} ${asset.symbol}`,
+        market: `${displayName}${chainLabel} ${asset.symbol}`,
         address: userAddress,
         collateral: {
           asset: asset.symbol,
@@ -325,17 +430,39 @@ async function getAaveForkPosition(
         estimatedAnnualCost: totalDebtUSD * (borrowRate / 100),
       });
     } catch (e) {
-      console.warn(`[syenite] ${displayName} position for ${asset.symbol} failed:`, e instanceof Error ? e.message : e);
+      log.warn(`${displayName} position for ${asset.symbol} on ${deployment.chain} failed`, {
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
   }
 
   return positions;
 }
 
-export function getAavePosition(userAddress: Address, collateralSymbol?: string) {
-  return getAaveForkPosition("aave-v3", AAVE_V3.pool, AAVE_V3.poolDataProvider, userAddress, collateralSymbol);
+export async function getAavePosition(
+  userAddress: Address,
+  collateralSymbol?: string,
+  chains?: SupportedChain[]
+): Promise<PositionData[]> {
+  const targetChains = chains ?? (Object.keys(AAVE_DEPLOYMENTS) as SupportedChain[]);
+  const results = await Promise.allSettled(
+    targetChains
+      .filter((c) => AAVE_DEPLOYMENTS[c])
+      .map((c) => getAaveForkPositionForDeployment("aave-v3", AAVE_DEPLOYMENTS[c], userAddress, collateralSymbol))
+  );
+  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 }
 
-export function getSparkPosition(userAddress: Address, collateralSymbol?: string) {
-  return getAaveForkPosition("spark", SPARK.pool, SPARK.poolDataProvider, userAddress, collateralSymbol);
+export async function getSparkPosition(
+  userAddress: Address,
+  collateralSymbol?: string,
+  chains?: SupportedChain[]
+): Promise<PositionData[]> {
+  const targetChains = chains ?? (Object.keys(SPARK_DEPLOYMENTS) as SupportedChain[]);
+  const results = await Promise.allSettled(
+    targetChains
+      .filter((c) => SPARK_DEPLOYMENTS[c])
+      .map((c) => getAaveForkPositionForDeployment("spark", SPARK_DEPLOYMENTS[c], userAddress, collateralSymbol))
+  );
+  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 }

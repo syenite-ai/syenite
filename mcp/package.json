@@ -1,18 +1,26 @@
 {
   "name": "@syenite/mcp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "mcpName": "io.github.syenite-ai/syenite",
   "description": "The DeFi interface for AI agents — swap routing, bridge execution, yield intelligence, lending rates, and risk assessment via MCP",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
+    "syenite": "dist/stdio.js",
     "syenite-generate-key": "dist/scripts/generate-key.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc && node -e \"require('fs').cpSync('src/web/docs', 'dist/web/docs', { recursive: true })\" && node -e \"require('fs').cpSync('assets', 'dist/assets', { recursive: true })\"",
     "start": "node dist/index.js",
-    "generate-key": "tsx src/scripts/generate-key.ts"
+    "generate-key": "tsx src/scripts/generate-key.ts",
+    "register-agent": "tsx src/scripts/register-agent.ts",
+    "register-agent:ethereum": "tsx src/scripts/register-agent.ts --chain=ethereum",
+    "register-agent:arbitrum": "tsx src/scripts/register-agent.ts --chain=arbitrum",
+    "register-agent:bnb": "tsx src/scripts/register-agent.ts --chain=bnb",
+    "register-agent:dry-run": "tsx src/scripts/register-agent.ts --dry-run",
+    "bridge-funds": "tsx src/scripts/bridge-funds.ts",
+    "bridge-funds:dry-run": "tsx src/scripts/bridge-funds.ts --dry-run"
   },
   "keywords": [
     "mcp",
@@ -24,7 +32,13 @@
     "ai-agents",
     "aave",
     "morpho",
-    "lifi"
+    "lifi",
+    "prediction-markets",
+    "polymarket",
+    "compound",
+    "fluid",
+    "carry-trade",
+    "erc-8004"
   ],
   "license": "MIT",
   "repository": {
