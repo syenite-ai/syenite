@@ -408,6 +408,77 @@ export const predictionBookOutput = z.object({
   note: z.string().optional(),
 });
 
+// ── wallet.balances ─────────────────────────────────────────────────
+
+const ChainBalanceItem = z.object({
+  chain: z.string(),
+  native: z.object({
+    symbol: z.string(),
+    balance: z.string().describe("Formatted balance (e.g. '0.033')"),
+    balanceRaw: z.string().describe("Raw balance in smallest unit (wei)"),
+  }),
+  tokens: z.array(z.object({
+    symbol: z.string(),
+    balance: z.string(),
+    balanceRaw: z.string(),
+  })).describe("Non-zero ERC-20 token balances"),
+});
+
+export const walletBalancesOutput = z.object({
+  address: z.string(),
+  chainsQueried: z.array(z.string()),
+  balances: z.array(ChainBalanceItem),
+  hasAnyBalance: z.boolean().describe("True if any chain has a non-zero balance"),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+// ── gas.estimate ────────────────────────────────────────────────────
+
+const GasOperation = z.object({
+  gasUnits: z.number(),
+  costNative: z.string().describe("Cost in native token (e.g. '0.00042 ETH')"),
+  costApproxUSD: z.string().describe("Approximate USD cost"),
+});
+
+const ChainGasItem = z.object({
+  chain: z.string(),
+  nativeSymbol: z.string(),
+  gasPrice: z.object({
+    gwei: z.string(),
+    wei: z.string(),
+  }),
+  operations: z.record(z.string(), GasOperation),
+});
+
+export const gasEstimateOutput = z.object({
+  chainsQueried: z.array(z.string()),
+  estimates: z.array(ChainGasItem),
+  cheapestChain: z.record(z.string(), z.object({
+    chain: z.string(),
+    costUSD: z.string(),
+  })).describe("Cheapest chain for each operation type"),
+  availableOperations: z.array(z.string()),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+// ── swap.multi ──────────────────────────────────────────────────────
+
+export const swapMultiOutput = z.object({
+  requestCount: z.number(),
+  successCount: z.number(),
+  failedCount: z.number(),
+  totalCosts: z.object({
+    gasCostUSD: z.string(),
+    feesUSD: z.string(),
+    totalUSD: z.string(),
+  }),
+  quotes: z.array(z.record(z.string(), z.unknown())).describe("Individual quote results — each has index, status, and full quote data or error"),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
 // ── swap.quote ──────────────────────────────────────────────────────
 
 export const swapQuoteOutput = z.object({

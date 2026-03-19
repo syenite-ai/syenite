@@ -7,6 +7,9 @@ import { handleRiskAssess, riskToolDescription } from "./tools/risk.js";
 import { handleYieldOpportunities, yieldToolDescription } from "./tools/yield.js";
 import { handleYieldAssess, yieldAssessToolDescription } from "./tools/yield-assess.js";
 import { handleSwapQuote, handleSwapStatus, swapQuoteDescription, swapStatusDescription } from "./tools/swap.js";
+import { handleSwapMulti, swapMultiDescription } from "./tools/multi-swap.js";
+import { handleWalletBalances, walletBalancesDescription } from "./tools/wallet.js";
+import { handleGasEstimate, gasEstimateDescription } from "./tools/gas.js";
 import {
   handlePredictionTrending,
   handlePredictionSearch,
@@ -39,6 +42,9 @@ import {
   yieldAssessOutput,
   swapQuoteOutput,
   swapStatusOutput,
+  swapMultiOutput,
+  walletBalancesOutput,
+  gasEstimateOutput,
   predictionTrendingOutput,
   predictionSearchOutput,
   predictionBookOutput,
@@ -113,7 +119,10 @@ export function createMcpServer(clientIp: string): McpServer {
     description:
       "Swap routing, bridge execution, yield intelligence, lending rates, risk assessment, and position monitoring — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
     tools: [
+      { name: "wallet.balances", use: "Check native and token balances across chains for any EVM address. Verify funds before transacting." },
+      { name: "gas.estimate", use: "Current gas prices and operation costs across chains. Find the cheapest chain for any operation." },
       { name: "swap.quote", use: "Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, bridges). 30+ chains." },
+      { name: "swap.multi", use: "Batch multiple swap/bridge quotes in parallel. Split funds across chains or compare routes." },
       { name: "swap.status", use: "Track execution status of a cross-chain bridge transaction." },
       { name: "yield.opportunities", use: "Find the best yield for any asset across lending, staking, vaults, savings, and basis capture." },
       { name: "yield.assess", use: "Deep risk assessment for a specific yield strategy — smart contract, oracle, governance, liquidity, and depeg risk." },
@@ -394,6 +403,74 @@ Call this tool to learn what tools are available and how to use them.`,
     outputSchema: swapStatusOutput,
   }, withLogging(clientIp, "swap.status", (p) =>
     handleSwapStatus(p as { txHash: string; fromChain?: string; toChain?: string })
+  ));
+
+  // ── swap.multi ──────────────────────────────────────────────────────
+
+  const swapRequestItem = z.object({
+    fromToken: z.string().describe("Token to sell — symbol or address"),
+    toToken: z.string().describe("Token to buy — symbol or address"),
+    fromAmount: z.string().describe("Amount in smallest unit"),
+    fromAddress: z.string().describe("Sender wallet address"),
+    toAddress: z.string().optional().describe("Recipient address"),
+    fromChain: z.string().default("ethereum").describe("Source chain"),
+    toChain: z.string().optional().describe("Destination chain"),
+    slippage: z.number().optional(),
+    order: z.enum(["CHEAPEST", "FASTEST"]).optional(),
+  });
+
+  server.registerTool("swap.multi", {
+    description: swapMultiDescription,
+    inputSchema: {
+      requests: z.array(swapRequestItem).min(1).max(10).describe("Array of swap/bridge requests to quote in parallel"),
+    },
+    outputSchema: swapMultiOutput,
+  }, withLogging(
+    clientIp,
+    "swap.multi",
+    (p) => handleSwapMulti(p as { requests: Array<{
+      fromToken: string; toToken: string; fromAmount: string; fromAddress: string;
+      toAddress?: string; fromChain?: string; toChain?: string; slippage?: number; order?: string;
+    }> }),
+    (p) => ({ requests: `[${(p.requests as unknown[])?.length ?? 0} items]` })
+  ));
+
+  // ── wallet.balances ────────────────────────────────────────────────
+
+  server.registerTool("wallet.balances", {
+    description: walletBalancesDescription,
+    inputSchema: {
+      address: z.string().describe("EVM address to check"),
+      chains: z
+        .array(z.enum(["ethereum", "arbitrum", "base", "bsc"]))
+        .optional()
+        .describe("Chains to query (defaults to all: ethereum, arbitrum, base, bsc)"),
+    },
+    outputSchema: walletBalancesOutput,
+  }, withLogging(
+    clientIp,
+    "wallet.balances",
+    (p) => handleWalletBalances(p as { address: string; chains?: string[] }),
+    (p) => ({ address: "***", chains: p.chains })
+  ));
+
+  // ── gas.estimate ───────────────────────────────────────────────────
+
+  server.registerTool("gas.estimate", {
+    description: gasEstimateDescription,
+    inputSchema: {
+      chains: z
+        .array(z.enum(["ethereum", "arbitrum", "base", "bsc"]))
+        .optional()
+        .describe("Chains to check (defaults to all)"),
+      operations: z
+        .array(z.string())
+        .optional()
+        .describe("Operation types to estimate: transfer, erc20_transfer, swap, bridge, erc20_approve, lending_supply, lending_borrow, contract_register"),
+    },
+    outputSchema: gasEstimateOutput,
+  }, withLogging(clientIp, "gas.estimate", (p) =>
+    handleGasEstimate(p as { chains?: string[]; operations?: string[] })
   ));
 
   // ── strategy.carry.screen ──────────────────────────────────────────

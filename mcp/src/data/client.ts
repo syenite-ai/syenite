@@ -16,7 +16,10 @@ const ALCHEMY_SLUG: Partial<Record<SupportedChain, string>> = {
   base: "base-mainnet",
 };
 
-const PUBLIC_RPC: Partial<Record<SupportedChain, string>> = {
+const PUBLIC_RPC: Record<SupportedChain, string> = {
+  ethereum: "https://ethereum-rpc.publicnode.com",
+  arbitrum: "https://arb1.arbitrum.io/rpc",
+  base: "https://mainnet.base.org",
   bsc: "https://bsc-dataseed1.binance.org",
 };
 
