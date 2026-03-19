@@ -6,6 +6,7 @@ export interface WatchConfig {
   protocol?: string;
   chain?: string;
   healthFactorThreshold: number;
+  webhookUrl?: string;
   createdAt: string;
   lastCheckedAt?: string;
 }
@@ -18,6 +19,7 @@ export interface Alert {
   data: Record<string, unknown>;
   createdAt: string;
   acknowledged: boolean;
+  webhookDelivered?: boolean;
 }
 
 // In-memory alert store (future: persist to DB for server mode)
@@ -33,7 +35,7 @@ export function addWatch(config: Omit<WatchConfig, "id" | "createdAt">): WatchCo
     createdAt: new Date().toISOString(),
   };
   watches.set(id, watch);
-  log.info("position watch added", { id, address: config.address });
+  log.info("position watch added", { id, address: config.address, webhook: !!config.webhookUrl });
   return watch;
 }
 

@@ -268,6 +268,7 @@ export const alertWatchOutput = z.object({
     protocol: z.string().optional(),
     chain: z.string().optional(),
     healthFactorThreshold: z.number(),
+    webhookUrl: z.string().nullable().optional().describe("Webhook URL for push alerts, or null if not set"),
     createdAt: z.string(),
   }),
   message: z.string(),
@@ -612,6 +613,130 @@ export const txGuardOutput = z.object({
   skippedCount: z.number(),
   chain: z.string(),
   summary: z.string(),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+// ── lending.supply / borrow / withdraw / repay ─────────────────────
+
+const LendingTxRequest = z.object({
+  to: z.string().describe("Pool contract address"),
+  data: z.string().describe("Encoded calldata (hex)"),
+  value: z.string().describe("Native token value (always 0x0 for ERC-20 ops)"),
+  chainId: z.number(),
+});
+
+const LendingApproval = z.object({
+  note: z.string(),
+  tokenAddress: z.string(),
+  spender: z.string(),
+  amount: z.string(),
+  transactionRequest: LendingTxRequest,
+}).nullable().optional().describe("Present when token approval is required before the action");
+
+export const lendingSupplyOutput = z.object({
+  action: z.literal("supply"),
+  protocol: z.string(),
+  chain: z.string(),
+  asset: z.string(),
+  amount: z.string(),
+  amountWei: z.string(),
+  pool: z.string(),
+  execution: z.object({
+    instructions: z.string(),
+    transactionRequest: LendingTxRequest,
+  }),
+  approvalRequired: LendingApproval,
+  verification: z.string(),
+  note: z.string(),
+});
+
+export const lendingBorrowOutput = z.object({
+  action: z.literal("borrow"),
+  protocol: z.string(),
+  chain: z.string(),
+  asset: z.string(),
+  amount: z.string(),
+  amountWei: z.string(),
+  interestRateMode: z.string(),
+  pool: z.string(),
+  execution: z.object({
+    instructions: z.string(),
+    transactionRequest: LendingTxRequest,
+  }),
+  verification: z.string(),
+  note: z.string(),
+});
+
+export const lendingWithdrawOutput = z.object({
+  action: z.literal("withdraw"),
+  protocol: z.string(),
+  chain: z.string(),
+  asset: z.string(),
+  amount: z.string(),
+  pool: z.string(),
+  execution: z.object({
+    instructions: z.string(),
+    transactionRequest: LendingTxRequest,
+  }),
+  verification: z.string(),
+  note: z.string(),
+});
+
+export const lendingRepayOutput = z.object({
+  action: z.literal("repay"),
+  protocol: z.string(),
+  chain: z.string(),
+  asset: z.string(),
+  amount: z.string(),
+  amountWei: z.string(),
+  interestRateMode: z.string(),
+  pool: z.string(),
+  execution: z.object({
+    instructions: z.string(),
+    transactionRequest: LendingTxRequest,
+  }),
+  approvalRequired: LendingApproval,
+  verification: z.string(),
+  note: z.string(),
+});
+
+// ── tx.receipt ─────────────────────────────────────────────────────
+
+export const txReceiptOutput = z.object({
+  txHash: z.string(),
+  chain: z.string(),
+  status: z.enum(["confirmed", "reverted"]),
+  success: z.boolean(),
+  blockNumber: z.number(),
+  from: z.string(),
+  to: z.string(),
+  nonce: z.number().nullable(),
+  gas: z.object({
+    gasUsed: z.number(),
+    gasLimit: z.number().nullable(),
+    effectiveGasPrice: z.string(),
+    costNative: z.string(),
+    costUSD: z.string(),
+  }),
+  value: z.string(),
+  contractsInteracted: z.array(z.string()),
+  logs: z.object({
+    totalEvents: z.number(),
+    decoded: z.array(z.object({
+      address: z.string(),
+      event: z.string(),
+      topicCount: z.number(),
+      logIndex: z.number().nullable(),
+    })),
+  }),
+  tokenTransfers: z.array(z.object({
+    token: z.string(),
+    from: z.string(),
+    to: z.string(),
+    rawValue: z.string(),
+  })).optional().describe("ERC-20 Transfer events decoded from logs"),
+  explorerUrl: z.string(),
   timestamp: z.string(),
   note: z.string(),
 });

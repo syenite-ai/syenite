@@ -16,6 +16,17 @@ import { handleTxGuard, txGuardDescription } from "./tools/tx-guard.js";
 import { handlePredictionSignals, predictionSignalsDescription } from "./tools/prediction-signals.js";
 import { handleFindStrategy, findStrategyDescription } from "./tools/find-strategy.js";
 import {
+  handleLendingSupply,
+  handleLendingBorrow,
+  handleLendingWithdraw,
+  handleLendingRepay,
+  lendingSupplyDescription,
+  lendingBorrowDescription,
+  lendingWithdrawDescription,
+  lendingRepayDescription,
+} from "./tools/lending-execute.js";
+import { handleTxReceipt, txReceiptDescription } from "./tools/tx-receipt.js";
+import {
   handlePredictionTrending,
   handlePredictionSearch,
   handlePredictionBook,
@@ -63,6 +74,11 @@ import {
   alertCheckOutput,
   alertListOutput,
   alertRemoveOutput,
+  lendingSupplyOutput,
+  lendingBorrowOutput,
+  lendingWithdrawOutput,
+  lendingRepayOutput,
+  txReceiptOutput,
 } from "./schemas.js";
 
 function withLogging(
@@ -143,6 +159,11 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "lending.market.overview", use: "Aggregate market view — TVL, utilization, rate ranges per protocol." },
       { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
       { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
+      { name: "lending.supply", use: "Generate unsigned supply (deposit) calldata for Aave v3 or Spark. Sign and submit to deposit collateral." },
+      { name: "lending.borrow", use: "Generate unsigned borrow calldata. Variable rate only (stable deprecated). Check lending.risk.assess first." },
+      { name: "lending.withdraw", use: "Generate unsigned withdraw calldata. Use 'max' to withdraw all supplied assets." },
+      { name: "lending.repay", use: "Generate unsigned repay calldata. Use 'max' to repay all outstanding debt." },
+      { name: "tx.receipt", use: "Fetch and decode a transaction receipt — success/failure, gas cost, events, token transfers. Close the execution loop." },
       { name: "strategy.carry.screen", use: "Screen all markets for positive carry (supply APY > borrow APY). Ranks self-funding leveraged strategies." },
       { name: "find.strategy", use: "Composable strategy finder — scans yield, carry, leverage, prediction, and gas data to surface the best opportunities for a given asset." },
       { name: "prediction.trending", use: "Top prediction markets by volume — probabilities, liquidity, and spread." },
@@ -720,6 +741,95 @@ Call this tool to learn what tools are available and how to use them.`,
     })
   ));
 
+  // ── lending.supply ──────────────────────────────────────────────────
+
+  server.registerTool("lending.supply", {
+    description: lendingSupplyDescription,
+    inputSchema: {
+      protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
+      chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain where the pool lives"),
+      asset: z.string().describe('Token to supply: "USDC", "WETH", "wBTC", "tBTC", "DAI", etc.'),
+      amount: z.string().describe("Amount in human-readable units (e.g. '1000' for 1000 USDC)"),
+      onBehalfOf: z.string().describe("Address that will receive the aToken (usually your own address)"),
+    },
+    outputSchema: lendingSupplyOutput,
+  }, withLogging(
+    clientIp,
+    "lending.supply",
+    (p) => handleLendingSupply(p as { protocol: string; chain: string; asset: string; amount: string; onBehalfOf: string }),
+    (p) => ({ protocol: p.protocol, chain: p.chain, asset: p.asset, amount: p.amount, onBehalfOf: "***" })
+  ));
+
+  // ── lending.borrow ──────────────────────────────────────────────────
+
+  server.registerTool("lending.borrow", {
+    description: lendingBorrowDescription,
+    inputSchema: {
+      protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
+      chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain"),
+      asset: z.string().describe('Asset to borrow: "USDC", "USDT", "DAI", "GHO"'),
+      amount: z.string().describe("Borrow amount in human-readable units"),
+      onBehalfOf: z.string().describe("Address with collateral deposited"),
+    },
+    outputSchema: lendingBorrowOutput,
+  }, withLogging(
+    clientIp,
+    "lending.borrow",
+    (p) => handleLendingBorrow(p as { protocol: string; chain: string; asset: string; amount: string; onBehalfOf: string }),
+    (p) => ({ protocol: p.protocol, chain: p.chain, asset: p.asset, amount: p.amount, onBehalfOf: "***" })
+  ));
+
+  // ── lending.withdraw ────────────────────────────────────────────────
+
+  server.registerTool("lending.withdraw", {
+    description: lendingWithdrawDescription,
+    inputSchema: {
+      protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
+      chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain"),
+      asset: z.string().describe("Asset to withdraw"),
+      amount: z.string().describe('Amount in human-readable units, or "max" to withdraw all'),
+      to: z.string().describe("Recipient address for withdrawn tokens"),
+    },
+    outputSchema: lendingWithdrawOutput,
+  }, withLogging(
+    clientIp,
+    "lending.withdraw",
+    (p) => handleLendingWithdraw(p as { protocol: string; chain: string; asset: string; amount: string; to: string }),
+    (p) => ({ protocol: p.protocol, chain: p.chain, asset: p.asset, amount: p.amount, to: "***" })
+  ));
+
+  // ── lending.repay ──────────────────────────────────────────────────
+
+  server.registerTool("lending.repay", {
+    description: lendingRepayDescription,
+    inputSchema: {
+      protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
+      chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain"),
+      asset: z.string().describe("Asset to repay"),
+      amount: z.string().describe('Repay amount in human-readable units, or "max" for full repayment'),
+      onBehalfOf: z.string().describe("Address whose debt to repay"),
+    },
+    outputSchema: lendingRepayOutput,
+  }, withLogging(
+    clientIp,
+    "lending.repay",
+    (p) => handleLendingRepay(p as { protocol: string; chain: string; asset: string; amount: string; onBehalfOf: string }),
+    (p) => ({ protocol: p.protocol, chain: p.chain, asset: p.asset, amount: p.amount, onBehalfOf: "***" })
+  ));
+
+  // ── tx.receipt ─────────────────────────────────────────────────────
+
+  server.registerTool("tx.receipt", {
+    description: txReceiptDescription,
+    inputSchema: {
+      txHash: z.string().describe("Transaction hash to look up"),
+      chain: z.string().default("ethereum").describe("Chain: ethereum, arbitrum, base, bsc (or chain ID)"),
+    },
+    outputSchema: txReceiptOutput,
+  }, withLogging(clientIp, "tx.receipt", (p) =>
+    handleTxReceipt(p as { txHash: string; chain?: string })
+  ));
+
   // ── alerts.watch ──────────────────────────────────────────────────
 
   server.registerTool("alerts.watch", {
@@ -740,13 +850,17 @@ Call this tool to learn what tools are available and how to use them.`,
         .max(5.0)
         .default(1.5)
         .describe("Alert when health factor drops below this value (default 1.5)"),
+      webhookUrl: z
+        .string()
+        .optional()
+        .describe("HTTP(S) URL to POST alert payloads to in real-time. Enables push-based alerting instead of polling."),
     },
     outputSchema: alertWatchOutput,
   }, withLogging(
     clientIp,
     "alerts.watch",
-    (p) => handleAlertWatch(p as { address: string; protocol?: string; chain?: string; healthFactorThreshold?: number }),
-    (p) => ({ address: "***", protocol: p.protocol, chain: p.chain, healthFactorThreshold: p.healthFactorThreshold })
+    (p) => handleAlertWatch(p as { address: string; protocol?: string; chain?: string; healthFactorThreshold?: number; webhookUrl?: string }),
+    (p) => ({ address: "***", protocol: p.protocol, chain: p.chain, healthFactorThreshold: p.healthFactorThreshold, webhookUrl: p.webhookUrl ? "[set]" : undefined })
   ));
 
   // ── alerts.check ──────────────────────────────────────────────────

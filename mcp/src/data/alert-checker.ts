@@ -2,7 +2,8 @@ import { type Address } from "viem";
 import { getAavePosition, getSparkPosition } from "./aave.js";
 import { getMorphoPosition } from "./morpho.js";
 import { getCompoundPosition } from "./compound.js";
-import { listWatches, addAlert, getWatch } from "./alerts.js";
+import { listWatches, addAlert, getWatch, type Alert } from "./alerts.js";
+import { deliverWebhook } from "./webhook.js";
 import { log } from "../logging/logger.js";
 import type { SupportedChain } from "./client.js";
 import type { PositionData } from "./types.js";
@@ -45,8 +46,10 @@ async function runCheck(): Promise<void> {
       for (const pos of positions) {
         if (pos.healthFactor === Infinity) continue;
 
+        let alertPayload: Omit<Alert, "createdAt" | "acknowledged"> | null = null;
+
         if (pos.healthFactor < 1.1) {
-          addAlert({
+          alertPayload = {
             watchId: watch.id,
             type: "health_factor_critical",
             severity: "critical",
@@ -59,9 +62,9 @@ async function runCheck(): Promise<void> {
               liquidationPrice: pos.liquidationPrice,
               distanceToLiquidation: pos.distanceToLiquidation,
             },
-          });
+          };
         } else if (pos.healthFactor < watch.healthFactorThreshold) {
-          addAlert({
+          alertPayload = {
             watchId: watch.id,
             type: "health_factor_low",
             severity: "warning",
@@ -74,7 +77,19 @@ async function runCheck(): Promise<void> {
               liquidationPrice: pos.liquidationPrice,
               distanceToLiquidation: pos.distanceToLiquidation,
             },
-          });
+          };
+        }
+
+        if (alertPayload) {
+          addAlert(alertPayload);
+          if (watch.webhookUrl) {
+            deliverWebhook(watch.webhookUrl, alertPayload).catch((err) => {
+              log.warn("webhook delivery failed", {
+                watchId: watch.id,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            });
+          }
         }
       }
 

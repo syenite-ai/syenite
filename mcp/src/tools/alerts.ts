@@ -11,7 +11,8 @@ import { SyeniteError } from "../errors.js";
 
 export const alertWatchDescription = `Register a lending position for continuous monitoring.
 Sets a health factor threshold — when the position drops below it, alerts are generated.
-Alerts can be polled via alerts.check. Use this for automated risk management.`;
+Alerts can be polled via alerts.check, or pushed to a webhook URL in real-time.
+Provide webhookUrl to receive POST requests with alert payloads as they fire. Use this for automated risk management.`;
 
 export const alertCheckDescription = `Check for active alerts on watched positions.
 Returns any health factor warnings or critical alerts since last acknowledgment.
@@ -27,6 +28,7 @@ export async function handleAlertWatch(params: {
   protocol?: string;
   chain?: string;
   healthFactorThreshold?: number;
+  webhookUrl?: string;
 }): Promise<Record<string, unknown>> {
   if (!isAddress(params.address)) {
     throw SyeniteError.invalidInput(
@@ -34,17 +36,43 @@ export async function handleAlertWatch(params: {
     );
   }
 
+  if (params.webhookUrl) {
+    try {
+      const url = new URL(params.webhookUrl);
+      if (!["http:", "https:"].includes(url.protocol)) {
+        throw new Error("must be http or https");
+      }
+    } catch {
+      throw SyeniteError.invalidInput(
+        `Invalid webhookUrl: "${params.webhookUrl}". Must be a valid HTTP/HTTPS URL.`
+      );
+    }
+  }
+
   const watch = addWatch({
     address: params.address,
     protocol: params.protocol,
     chain: params.chain,
     healthFactorThreshold: params.healthFactorThreshold ?? 1.5,
+    webhookUrl: params.webhookUrl,
   });
 
+  const webhookNote = watch.webhookUrl
+    ? ` Webhook alerts will POST to ${watch.webhookUrl}.`
+    : "";
+
   return {
-    watch,
-    message: `Now watching ${params.address}. Alerts will fire when health factor drops below ${watch.healthFactorThreshold}.`,
-    usage: "Poll alerts.check to retrieve alerts. Use alerts.remove to stop watching.",
+    watch: {
+      id: watch.id,
+      address: watch.address,
+      protocol: watch.protocol,
+      chain: watch.chain,
+      healthFactorThreshold: watch.healthFactorThreshold,
+      webhookUrl: watch.webhookUrl ?? null,
+      createdAt: watch.createdAt,
+    },
+    message: `Now watching ${params.address}. Alerts will fire when health factor drops below ${watch.healthFactorThreshold}.${webhookNote}`,
+    usage: "Poll alerts.check to retrieve alerts, or receive them via webhook. Use alerts.remove to stop watching.",
   };
 }
 
