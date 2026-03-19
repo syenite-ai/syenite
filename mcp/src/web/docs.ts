@@ -21,6 +21,8 @@ export const DOC_SLUGS = [
   "position-alerts-and-carry",
   "prediction-markets",
   "seo-and-indexing",
+  "tx-trust-layer",
+  "mcp-trust-speed-security",
 ] as const;
 
 export type DocSlug = (typeof DOC_SLUGS)[number];

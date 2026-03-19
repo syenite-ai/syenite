@@ -35,6 +35,7 @@
 
   <h2>Unsigned transactions only</h2>
   <p>Execution is intent-only. The server computes the optimal route and calldata; the client holds the key and signs. For cross-chain bridges, <code>swap.status</code> tracks progress but does not move funds. This keeps Syenite in the role of a router and data provider, not a custodian or executor.</p>
+  <p>Before signing, you can run <code>tx.verify</code>, <code>tx.simulate</code>, and <code>tx.guard</code> on any unsigned transaction (including quotes from Syenite or elsewhere). See <a href="/docs/tx-trust-layer">Transaction trust layer</a> and <a href="/docs/mcp-trust-speed-security">MCP trust, speed, and security</a>.</p>
 
   <h2>Rate limits and availability</h2>
   <p>Open access (no API key) is rate-limited to 30 requests per minute per IP. Limits reduce abuse and keep the service stable for everyone. For higher throughput, use an API key (see the MCP README or dashboard). Health is exposed at <code>/health</code> for monitoring.</p>
