@@ -3,6 +3,8 @@ import { getMakerDSRYield } from "../data/yield-savings.js";
 import { getStakingYields } from "../data/yield-staking.js";
 import { getVaultYields } from "../data/yield-vaults.js";
 import { getStructuredYields } from "../data/yield-structured.js";
+import { getMetaMorphoYields } from "../data/yield-metamorpho.js";
+import { getPendleYields } from "../data/yield-pendle.js";
 import type { YieldOpportunity } from "../data/types.js";
 import { SyeniteError } from "../errors.js";
 
@@ -69,11 +71,18 @@ const PROTOCOL_DEEP_RISK: Record<string, {
     depeg: "DAI peg risk. DAI is backed by diverse collateral including USDC — inherits some centralized stablecoin risk.",
   },
   Morpho: {
-    smartContract: "MetaMorpho vaults are ERC4626 wrappers over Morpho Blue markets. Audited. Curator manages market allocation.",
-    oracle: "Inherits oracle risk from underlying Morpho Blue markets. Diversified across multiple markets.",
-    governance: "Vault curator (e.g., Steakhouse, Gauntlet) manages allocation. No core protocol governance risk.",
-    liquidity: "Withdrawal depends on underlying market liquidity. Generally instant but can queue during high utilization.",
-    depeg: "Supply-side exposure. Risk limited to borrower defaults in underlying Morpho Blue markets.",
+    smartContract: "MetaMorpho vaults are ERC-4626 wrappers over Morpho Blue markets. Immutable core. Curator allocates supply across whitelisted Morpho Blue markets.",
+    oracle: "Inherits oracle risk from each underlying Morpho Blue market. Diversified across the curator's market composition.",
+    governance: "Vault curator (e.g. Steakhouse, Gauntlet, Re7, MEV Capital) manages allocation. No core protocol governance risk. Read the curator's published risk framework before committing.",
+    liquidity: "Withdrawal depends on underlying market liquidity. Generally instant but can queue during high utilization in any single market.",
+    depeg: "Supply-side exposure. Risk limited to borrower defaults and collateral drawdown in the underlying Morpho Blue markets.",
+  },
+  Pendle: {
+    smartContract: "Pendle v2 audited (Ackee, Chainsecurity, WatchPug). Permissionless market creation per underlying yield-bearing asset. Rebase-compatible standard.",
+    oracle: "PT valuation is driven by the AMM and redeemable 1:1 for underlying at maturity. YT implied APY derives from AMM pricing — can diverge from realised yield.",
+    governance: "Pendle governance (vePENDLE) controls fee routing and market parameters. Individual markets are immutable once deployed.",
+    liquidity: "PT/YT tradable on the Pendle AMM before maturity — exit liquidity varies by market. PT redemption is instant at maturity. YT goes to 0 at maturity.",
+    depeg: "PT holds fixed-rate claim to underlying — secondary-market price can drop below 1:1 before maturity. YT is pure yield — value decays to 0. Underlying (e.g. sUSDe, eETH) carries its own depeg risk.",
   },
   Yearn: {
     smartContract: "Multi-strategy vaults with risk stacking. Audited but high complexity. Multiple underlying protocol dependencies.",
@@ -101,12 +110,14 @@ export async function handleYieldAssess(params: {
   const amount = params.amount ?? 0;
   const asset = params.asset ?? "all";
 
-  const [lending, savings, staking, vaults, structured] = await Promise.allSettled([
+  const [lending, savings, staking, vaults, structured, metaMorpho, pendle] = await Promise.allSettled([
     getLendingSupplyYields(asset),
     getMakerDSRYield(),
     getStakingYields(),
     getVaultYields(),
     getStructuredYields(),
+    getMetaMorphoYields(),
+    getPendleYields(true),
   ]);
 
   const allYields: YieldOpportunity[] = [
@@ -115,6 +126,8 @@ export async function handleYieldAssess(params: {
     ...(staking.status === "fulfilled" ? staking.value : []),
     ...(vaults.status === "fulfilled" ? vaults.value : []),
     ...(structured.status === "fulfilled" ? structured.value : []),
+    ...(metaMorpho.status === "fulfilled" ? metaMorpho.value : []),
+    ...(pendle.status === "fulfilled" ? pendle.value : []),
   ];
 
   const protocolFilter = protocol.toLowerCase();
@@ -130,13 +143,17 @@ export async function handleYieldAssess(params: {
     );
   }
 
-  const deepRisk = PROTOCOL_DEEP_RISK[match.protocol] ?? {
+  const baseRisk = PROTOCOL_DEEP_RISK[match.protocol] ?? {
     smartContract: "No detailed risk data available.",
     oracle: "Unknown oracle configuration.",
     governance: "Unknown governance model.",
     liquidity: "Unknown liquidity profile.",
     depeg: "Unknown peg risk.",
   };
+  const isMetaMorpho = match.product.startsWith("MetaMorpho ");
+  const deepRisk = isMetaMorpho
+    ? { ...baseRisk, smartContract: `${baseRisk.smartContract} ${match.riskNotes}` }
+    : baseRisk;
 
   const positionVsTVL = match.tvlUSD > 0 && amount > 0
     ? (amount / match.tvlUSD) * 100

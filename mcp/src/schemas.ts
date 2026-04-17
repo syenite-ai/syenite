@@ -26,7 +26,9 @@ const YieldOpportunityItem = z.object({
   category: z.enum(["lending-supply", "liquid-staking", "vault", "savings-rate", "basis-capture"]),
   risk: z.enum(["low", "medium", "high"]),
   riskNotes: z.string(),
-  lockup: z.string().describe("Lock period (e.g. 'none', '7 days')"),
+  lockup: z.string().describe("Lock period (e.g. 'none', '7 days', 'matures 2026-06-25')"),
+  maturity: z.string().optional().describe("ISO-8601 maturity timestamp for fixed-term instruments (Pendle PT/YT)"),
+  tags: z.array(z.string()).optional().describe("Tags: 'fixed-yield', 'yt', 'leveraged-variable'"),
 });
 
 // ── syenite.help ────────────────────────────────────────────────────
@@ -816,5 +818,58 @@ export const swapStatusOutput = z.object({
   amountReceived: z.string().optional().describe("Present when transfer is complete"),
   bridge: z.string().optional(),
   message: z.string().describe("Human-readable status explanation"),
+  note: z.string(),
+});
+
+// ── v0.6 Track B — MetaMorpho vault execution ──────────────────────
+
+const MetaMorphoTxRequest = z.object({
+  to: z.string().describe("Destination contract address"),
+  data: z.string().describe("Encoded calldata"),
+  value: z.string().describe("Native token value — '0' for ERC-20 deposits"),
+  gasLimit: z.string(),
+  chainId: z.number(),
+});
+
+const MetaMorphoVaultRef = z.object({
+  address: z.string(),
+  name: z.string(),
+  curator: z.string(),
+  asset: z.string(),
+});
+
+export const metaMorphoSupplyOutput = z.object({
+  protocol: z.string(),
+  product: z.string(),
+  chain: z.string(),
+  vault: MetaMorphoVaultRef,
+  amount: z.object({
+    human: z.string(),
+    raw: z.string(),
+    decimals: z.number(),
+  }),
+  transactionRequest: MetaMorphoTxRequest,
+  approvalRequired: z.object({
+    note: z.string(),
+    tokenSymbol: z.string(),
+    spender: z.string(),
+    amount: z.string(),
+  }),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+export const metaMorphoWithdrawOutput = z.object({
+  protocol: z.string(),
+  product: z.string(),
+  chain: z.string(),
+  vault: MetaMorphoVaultRef,
+  shares: z.object({
+    human: z.string(),
+    raw: z.string(),
+    decimals: z.number(),
+  }),
+  transactionRequest: MetaMorphoTxRequest,
+  timestamp: z.string(),
   note: z.string(),
 });

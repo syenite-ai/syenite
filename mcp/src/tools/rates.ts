@@ -1,5 +1,5 @@
 import { getAaveRates, getSparkRates } from "../data/aave.js";
-import { getMorphoRates } from "../data/morpho.js";
+import { getMorphoRatesMultiChain } from "../data/morpho.js";
 import { getCompoundRates } from "../data/compound.js";
 import { getFluidRates } from "../data/fluid.js";
 import { getSolanaLendingRates } from "../data/solana/yield.js";
@@ -32,7 +32,7 @@ export async function handleRatesQuery(params: {
   const evmTasks = includeEvm
     ? [
         getAaveRates(collateral, borrowAsset, evmChains),
-        getMorphoRates(collateral, borrowAsset),
+        getMorphoRatesMultiChain(collateral, borrowAsset, evmChains),
         getSparkRates(collateral, borrowAsset, evmChains),
         getCompoundRates(collateral, borrowAsset, evmChains),
         getFluidRates(collateral, borrowAsset, evmChains),

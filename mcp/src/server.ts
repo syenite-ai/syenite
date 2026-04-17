@@ -36,6 +36,12 @@ import {
 } from "./tools/prediction.js";
 import { handleCarryScreener, carryScreenerDescription } from "./tools/carry.js";
 import {
+  handleMetaMorphoSupply,
+  handleMetaMorphoWithdraw,
+  metaMorphoSupplyDescription,
+  metaMorphoWithdrawDescription,
+} from "./tools/metamorpho-execute.js";
+import {
   handleAlertWatch,
   handleAlertCheck,
   handleAlertList,
@@ -79,6 +85,8 @@ import {
   lendingWithdrawOutput,
   lendingRepayOutput,
   txReceiptOutput,
+  metaMorphoSupplyOutput,
+  metaMorphoWithdrawOutput,
 } from "./schemas.js";
 
 function extractDimension(
@@ -349,10 +357,14 @@ Call this tool to learn what tools are available and how to use them.`,
         .enum(["low", "medium", "high"])
         .default("high")
         .describe('Maximum risk level to show: "low", "medium", or "high" (default, shows all)'),
+      tags: z
+        .array(z.string())
+        .optional()
+        .describe('Tag filters: ["fixed-yield"] isolates Pendle PT; ["yt","leveraged-variable"] surfaces Pendle YT (hidden by default)'),
     },
     outputSchema: yieldOpportunitiesOutput,
   }, withLogging(clientIp, "yield.opportunities", (p) =>
-    handleYieldOpportunities(p as { asset?: string; category?: string; riskTolerance?: string })
+    handleYieldOpportunities(p as { asset?: string; category?: string; riskTolerance?: string; tags?: string[] })
   ));
 
   // ── yield.assess ────────────────────────────────────────────────
@@ -916,6 +928,55 @@ Call this tool to learn what tools are available and how to use them.`,
     outputSchema: alertRemoveOutput,
   }, withLogging(clientIp, "alerts.remove", (p) =>
     handleAlertRemove(p as { watchId: string })
+  ));
+
+  // ── metamorpho.supply (ERC-4626 deposit into curated vault) ────────
+
+  server.registerTool("metamorpho.supply", {
+    description: metaMorphoSupplyDescription,
+    inputSchema: {
+      vault: z
+        .string()
+        .describe('Target MetaMorpho vault — address (0x...) or name fragment (e.g. "Steakhouse USDC")'),
+      amount: z
+        .string()
+        .describe("Amount to deposit in human units (e.g. '1000' for 1000 USDC)"),
+      receiver: z
+        .string()
+        .describe("Address that receives the vault shares"),
+    },
+    outputSchema: metaMorphoSupplyOutput,
+  }, withLogging(
+    clientIp,
+    "metamorpho.supply",
+    (p) => handleMetaMorphoSupply(p as { vault: string; amount: string; receiver: string }),
+    (p) => ({ vault: p.vault, amount: p.amount, receiver: "***" })
+  ));
+
+  // ── metamorpho.withdraw (ERC-4626 redeem from curated vault) ───────
+
+  server.registerTool("metamorpho.withdraw", {
+    description: metaMorphoWithdrawDescription,
+    inputSchema: {
+      vault: z
+        .string()
+        .describe('MetaMorpho vault — address or name fragment'),
+      shares: z
+        .string()
+        .describe("Share amount in human units, or 'max' to redeem all"),
+      receiver: z
+        .string()
+        .describe("Address that receives the withdrawn underlying"),
+      owner: z
+        .string()
+        .describe("Owner of the shares (must have authorized the caller if different)"),
+    },
+    outputSchema: metaMorphoWithdrawOutput,
+  }, withLogging(
+    clientIp,
+    "metamorpho.withdraw",
+    (p) => handleMetaMorphoWithdraw(p as { vault: string; shares: string; receiver: string; owner: string }),
+    (p) => ({ vault: p.vault, shares: p.shares, receiver: "***", owner: "***" })
   ));
 
   return server;

@@ -1,9 +1,10 @@
 import { getAaveRates, getSparkRates } from "../data/aave.js";
-import { getMorphoRates } from "../data/morpho.js";
+import { getMorphoRatesMultiChain } from "../data/morpho.js";
 import { getCompoundRates } from "../data/compound.js";
 import { getFluidRates } from "../data/fluid.js";
+import { getPendleMarkets } from "../data/pendle.js";
 import type { SupportedChain } from "../data/client.js";
-import type { ProtocolRate } from "../data/types.js";
+import type { ProtocolRate, PendleMarket } from "../data/types.js";
 
 export const carryScreenerDescription = `Screen for positive carry strategies across all DeFi lending markets.
 Calculates net carry = collateral supply APY - borrow APY for every market.
@@ -42,12 +43,13 @@ export async function handleCarryScreener(params: {
   const minCarry = params.minCarry ?? -Infinity;
   const positionSize = params.positionSizeUSD ?? 100_000;
 
-  const [aave, morpho, spark, compound, fluid] = await Promise.allSettled([
+  const [aave, morpho, spark, compound, fluid, pendle] = await Promise.allSettled([
     getAaveRates(collateral, borrowAsset, chains),
-    getMorphoRates(collateral, borrowAsset),
+    getMorphoRatesMultiChain(collateral, borrowAsset, chains),
     getSparkRates(collateral, borrowAsset, chains),
     getCompoundRates(collateral, borrowAsset, chains),
     getFluidRates(collateral, borrowAsset, chains),
+    getPendleMarkets({}),
   ]);
 
   const allRates: ProtocolRate[] = [
@@ -57,6 +59,7 @@ export async function handleCarryScreener(params: {
     ...(compound.status === "fulfilled" ? compound.value : []),
     ...(fluid.status === "fulfilled" ? fluid.value : []),
   ];
+  const pendleMarkets: PendleMarket[] = pendle.status === "fulfilled" ? pendle.value : [];
 
   const strategies: CarryStrategy[] = allRates
     .map((r) => {
@@ -81,17 +84,51 @@ export async function handleCarryScreener(params: {
         availableLiquidityUSD: round(r.availableLiquidityUSD),
         utilization: round(r.utilization),
       };
-    })
-    .filter((s) => s.netCarry >= minCarry)
-    .sort((a, b) => b.netCarry - a.netCarry);
+    });
 
-  const positiveCarry = strategies.filter((s) => s.netCarry > 0);
-  const bestStrategy = strategies[0] ?? null;
+  // Cheapest per-chain borrow rate for the requested borrow asset — drives Pendle carry.
+  const cheapestBorrow = new Map<string, { apy: number; liquidity: number }>();
+  for (const r of allRates) {
+    if (r.borrowAsset !== borrowAsset) continue;
+    const prev = cheapestBorrow.get(r.chain);
+    if (!prev || r.borrowAPY < prev.apy) {
+      cheapestBorrow.set(r.chain, { apy: r.borrowAPY, liquidity: r.availableLiquidityUSD });
+    }
+  }
+
+  for (const pm of pendleMarkets) {
+    if (pm.ptFixedAPY <= 0) continue;
+    const borrow = cheapestBorrow.get(pm.chain);
+    if (!borrow) continue;
+    const netCarry = pm.ptFixedAPY - borrow.apy;
+    const maturityLabel = pm.maturity.slice(0, 10);
+    strategies.push({
+      protocol: "pendle",
+      chain: pm.chain,
+      market: `Pendle PT-${pm.underlying} vs cheapest ${borrowAsset} borrow (matures ${maturityLabel})`,
+      collateral: `PT-${pm.underlying}`,
+      borrowAsset,
+      supplyAPY: round(pm.ptFixedAPY),
+      borrowAPY: round(borrow.apy),
+      netCarry: round(netCarry),
+      maxLTV: 0,
+      leveragedCarry: round(netCarry),
+      liquidationPenalty: 0,
+      availableLiquidityUSD: round(Math.min(pm.liquidityUSD, borrow.liquidity)),
+      utilization: 0,
+    });
+  }
+
+  strategies.sort((a, b) => b.netCarry - a.netCarry);
+  const filtered = strategies.filter((s) => s.netCarry >= minCarry);
+
+  const positiveCarry = filtered.filter((s) => s.netCarry > 0);
+  const bestStrategy = filtered[0] ?? null;
 
   return {
     query: { collateral, borrowAsset, chain: params.chain ?? "all", minCarry: params.minCarry, positionSizeUSD: positionSize },
     summary: {
-      totalMarketsScanned: allRates.length,
+      totalMarketsScanned: allRates.length + pendleMarkets.length,
       positiveCarryCount: positiveCarry.length,
       bestCarry: bestStrategy
         ? {
@@ -102,12 +139,12 @@ export async function handleCarryScreener(params: {
           }
         : null,
     },
-    strategies: strategies.map((s) => ({
+    strategies: filtered.map((s) => ({
       ...s,
       estimatedAnnualReturnUSD: round(positionSize * (s.netCarry / 100)),
     })),
     timestamp: new Date().toISOString(),
-    note: `Net carry = supply APY - borrow APY. Leveraged carry assumes safe LTV at 70% of max. Annual return calculated on ${positionSize.toLocaleString()} USD position.`,
+    note: `Net carry = supply APY - borrow APY. For Pendle PT rows, supply APY is PT fixed yield and borrow APY is the cheapest same-chain ${borrowAsset} borrow. Leveraged carry assumes safe LTV at 70% of max. Annual return calculated on ${positionSize.toLocaleString()} USD position.`,
   };
 }
 

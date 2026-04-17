@@ -41,6 +41,8 @@ describe("Tool Registration Completeness", () => {
     "lending.market.overview",
     "lending.position.monitor",
     "lending.risk.assess",
+    "lending.supply",
+    "lending.withdraw",
     "yield.opportunities",
     "yield.assess",
     "swap.quote",
@@ -56,7 +58,7 @@ describe("Tool Registration Completeness", () => {
   ];
 
   it(`registers exactly ${expectedTools.length} tools`, () => {
-    expect(expectedTools.length).toBe(17);
+    expect(expectedTools.length).toBe(19);
   });
 
   it("all tool names follow namespace convention", () => {

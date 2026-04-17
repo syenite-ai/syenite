@@ -14,6 +14,7 @@ const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
   arbitrum: "ETH",
   base: "ETH",
   bsc: "BNB",
+  optimism: "ETH",
 };
 
 const STABLECOINS: Record<SupportedChain, Array<{ symbol: string; address: Address; decimals: number }>> = {
@@ -32,6 +33,10 @@ const STABLECOINS: Record<SupportedChain, Array<{ symbol: string; address: Addre
   bsc: [
     { symbol: "USDT", address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
     { symbol: "USDC", address: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 },
+  ],
+  optimism: [
+    { symbol: "USDC", address: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", decimals: 6 },
+    { symbol: "USDT", address: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", decimals: 6 },
   ],
 };
 

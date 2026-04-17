@@ -14,6 +14,7 @@ const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
   arbitrum: "ETH",
   base: "ETH",
   bsc: "BNB",
+  optimism: "ETH",
 };
 
 // Typical gas units for common DeFi operations

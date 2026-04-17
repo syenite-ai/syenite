@@ -26,6 +26,7 @@ const CHAIN_EXPLORERS: Record<SupportedChain, string> = {
   arbitrum: "https://arbiscan.io",
   base: "https://basescan.org",
   bsc: "https://bscscan.com",
+  optimism: "https://optimistic.etherscan.io",
 };
 
 const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
@@ -33,6 +34,7 @@ const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
   arbitrum: "ETH",
   base: "ETH",
   bsc: "BNB",
+  optimism: "ETH",
 };
 
 const NATIVE_PRICES: Record<SupportedChain, number> = {
@@ -40,6 +42,7 @@ const NATIVE_PRICES: Record<SupportedChain, number> = {
   arbitrum: 3500,
   base: 3500,
   bsc: 600,
+  optimism: 3500,
 };
 
 const KNOWN_EVENTS: Record<string, string> = {
