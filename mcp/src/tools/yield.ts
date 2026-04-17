@@ -3,40 +3,56 @@ import { getMakerDSRYield } from "../data/yield-savings.js";
 import { getStakingYields } from "../data/yield-staking.js";
 import { getVaultYields } from "../data/yield-vaults.js";
 import { getStructuredYields } from "../data/yield-structured.js";
+import { getSolanaYields } from "../data/solana/yield.js";
 import type { YieldOpportunity } from "../data/types.js";
 
 export const yieldToolName = "yield.opportunities";
 
-export const yieldToolDescription = `Find the best DeFi yield opportunities for any asset across blue-chip protocols on Ethereum.
-Aggregates yields from lending supply (Aave, Morpho, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), vaults (MetaMorpho, Yearn), and basis capture (Ethena sUSDe).
-Returns opportunities ranked by APY with risk level, TVL, lockup period, and protocol details. Filter by asset, category, or risk tolerance.`;
+export const yieldToolDescription = `Find the best DeFi yield opportunities for any asset across blue-chip protocols on Ethereum and Solana.
+Aggregates yields from EVM lending supply (Aave, Morpho, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), vaults (MetaMorpho, Yearn), and basis capture (Ethena sUSDe); and from Solana lending (Kamino, MarginFi), liquid staking (Jito, Marinade, Sanctum), and basis capture (Drift).
+Pass chains: ["ethereum"], ["solana"], or both. Returns opportunities ranked by APY with risk level, TVL, lockup period, and protocol details. Filter by asset, category, or risk tolerance.`;
 
 const RISK_ORDER: Record<string, number> = { low: 1, medium: 2, high: 3 };
+
+const EVM_CHAINS = new Set([
+  "ethereum", "arbitrum", "base", "bsc", "optimism", "polygon", "avalanche", "linea", "scroll", "gnosis", "fantom", "zksync",
+]);
+
+function pickChains(chains: string[] | undefined): { includeEvm: boolean; includeSolana: boolean } {
+  if (!chains || chains.length === 0) return { includeEvm: true, includeSolana: false };
+  const lower = chains.map((c) => c.toLowerCase());
+  return {
+    includeEvm: lower.some((c) => EVM_CHAINS.has(c)),
+    includeSolana: lower.includes("solana"),
+  };
+}
 
 export async function handleYieldOpportunities(params: {
   asset?: string;
   category?: string;
   riskTolerance?: string;
+  chains?: string[];
 }): Promise<Record<string, unknown>> {
   const asset = params.asset ?? "all";
   const category = params.category ?? "all";
   const maxRisk = RISK_ORDER[params.riskTolerance ?? "high"] ?? 3;
+  const { includeEvm, includeSolana } = pickChains(params.chains);
 
-  const [lending, savings, staking, vaults, structured] = await Promise.allSettled([
-    getLendingSupplyYields(asset),
-    getMakerDSRYield(),
-    getStakingYields(),
-    getVaultYields(),
-    getStructuredYields(),
-  ]);
+  const evmTasks = includeEvm
+    ? [
+        getLendingSupplyYields(asset),
+        getMakerDSRYield(),
+        getStakingYields(),
+        getVaultYields(),
+        getStructuredYields(),
+      ]
+    : [];
+  const solanaTask = includeSolana ? [getSolanaYields()] : [];
+  const results = await Promise.allSettled([...evmTasks, ...solanaTask]);
 
-  let allYields: YieldOpportunity[] = [
-    ...(lending.status === "fulfilled" ? lending.value : []),
-    ...(savings.status === "fulfilled" ? savings.value : []),
-    ...(staking.status === "fulfilled" ? staking.value : []),
-    ...(vaults.status === "fulfilled" ? vaults.value : []),
-    ...(structured.status === "fulfilled" ? structured.value : []),
-  ];
+  let allYields: YieldOpportunity[] = results.flatMap((r) =>
+    r.status === "fulfilled" ? (r.value as YieldOpportunity[]) : [],
+  );
 
   if (asset && asset !== "all") {
     const filter = asset.toLowerCase();
@@ -44,7 +60,8 @@ export async function handleYieldOpportunities(params: {
       const yAsset = y.asset.toLowerCase();
       if (yAsset === filter) return true;
       if (filter === "eth" && ["eth", "weth"].includes(yAsset)) return true;
-      if (filter === "stables" && ["usdc", "usdt", "dai", "gho", "usde"].includes(yAsset)) return true;
+      if (filter === "sol" && ["sol", "wsol", "msol", "jitosol", "bsol", "jupsol", "hsol", "inf"].includes(yAsset)) return true;
+      if (filter === "stables" && ["usdc", "usdt", "dai", "gho", "usde", "pyusd", "usds"].includes(yAsset)) return true;
       return false;
     });
   }

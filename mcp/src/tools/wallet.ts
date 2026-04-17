@@ -1,10 +1,12 @@
 import { formatEther, formatUnits, erc20Abi, type Address } from "viem";
 import { getClient, ALL_LENDING_CHAINS, type SupportedChain } from "../data/client.js";
+import { fetchSolanaBalances } from "../data/solana/balances.js";
+import { isSolanaAddress } from "../data/solana/client.js";
 import { SyeniteError } from "../errors.js";
 import { log } from "../logging/logger.js";
 
-export const walletBalancesDescription = `Check native and token balances for any EVM address across supported chains (Ethereum, Arbitrum, Base, BNB Chain).
-Returns native gas token balance, common stablecoin balances, and USD-equivalent totals per chain.
+export const walletBalancesDescription = `Check native and token balances for any EVM address across supported chains (Ethereum, Arbitrum, Base, BNB Chain) or a Solana address.
+Returns native gas token balance, common stablecoin balances, and USD-equivalent totals per chain. Accepts an EVM 0x-address or a Solana base58 pubkey and routes automatically.
 Use this to verify an address has sufficient funds before executing swaps, bridges, or on-chain operations.`;
 
 const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
@@ -43,33 +45,85 @@ export async function handleWalletBalances(params: {
   address: string;
   chains?: string[];
 }): Promise<Record<string, unknown>> {
-  const address = params.address as Address;
-  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    throw SyeniteError.invalidInput("Invalid EVM address");
+  const address = params.address;
+  const isEvm = /^0x[a-fA-F0-9]{40}$/.test(address);
+  const isSolana = !isEvm && isSolanaAddress(address);
+
+  if (!isEvm && !isSolana) {
+    throw SyeniteError.invalidInput("Invalid address. Expected EVM 0x-address (42 chars) or Solana base58 pubkey.");
   }
 
-  const requestedChains = params.chains?.length
-    ? params.chains.filter((c): c is SupportedChain => ALL_LENDING_CHAINS.includes(c as SupportedChain))
-    : ALL_LENDING_CHAINS;
+  const requestedChainsLower = params.chains?.map((c) => c.toLowerCase()) ?? [];
+  const solanaRequested =
+    requestedChainsLower.includes("solana") || (isSolana && requestedChainsLower.length === 0);
+  const evmRequested = isEvm && (requestedChainsLower.length === 0 || requestedChainsLower.some((c) => c !== "solana"));
 
-  if (requestedChains.length === 0) {
-    throw SyeniteError.invalidInput(`No valid chains. Supported: ${ALL_LENDING_CHAINS.join(", ")}`);
+  if (isSolana && !solanaRequested) {
+    throw SyeniteError.invalidInput("Solana address provided but chains does not include 'solana'.");
+  }
+  if (isEvm && !evmRequested && !solanaRequested) {
+    throw SyeniteError.invalidInput("EVM address provided but no supported EVM chains requested.");
+  }
+  if (isEvm && solanaRequested && !evmRequested) {
+    throw SyeniteError.invalidInput("Solana chain requested but address is EVM format.");
   }
 
-  const chainResults = await Promise.allSettled(
-    requestedChains.map((chain) => fetchChainBalances(chain, address))
-  );
+  const evmChains: SupportedChain[] = evmRequested
+    ? (requestedChainsLower.length > 0
+        ? (requestedChainsLower.filter((c): c is SupportedChain =>
+            ALL_LENDING_CHAINS.includes(c as SupportedChain),
+          ))
+        : ALL_LENDING_CHAINS)
+    : [];
+
+  const chainsQueried: string[] = [...evmChains];
+  if (solanaRequested && isSolana) chainsQueried.push("solana");
+
+  if (chainsQueried.length === 0) {
+    throw SyeniteError.invalidInput(`No valid chains. Supported: ${ALL_LENDING_CHAINS.join(", ")}, solana`);
+  }
 
   const balances: ChainBalance[] = [];
-  for (let i = 0; i < requestedChains.length; i++) {
-    const result = chainResults[i];
-    if (result.status === "fulfilled") {
-      balances.push(result.value);
-    } else {
-      log.warn("Balance fetch failed", { chain: requestedChains[i], error: (result.reason as Error).message });
+
+  if (evmChains.length > 0 && isEvm) {
+    const evmAddr = address as Address;
+    const chainResults = await Promise.allSettled(
+      evmChains.map((chain) => fetchChainBalances(chain, evmAddr)),
+    );
+    for (let i = 0; i < evmChains.length; i++) {
+      const result = chainResults[i];
+      if (result.status === "fulfilled") {
+        balances.push(result.value);
+      } else {
+        log.warn("Balance fetch failed", { chain: evmChains[i], error: (result.reason as Error).message });
+        balances.push({
+          chain: evmChains[i],
+          native: { symbol: NATIVE_SYMBOLS[evmChains[i]], balance: "error", balanceRaw: "0" },
+          tokens: [],
+        });
+      }
+    }
+  }
+
+  if (solanaRequested && isSolana) {
+    try {
+      const sol = await fetchSolanaBalances(address);
       balances.push({
-        chain: requestedChains[i],
-        native: { symbol: NATIVE_SYMBOLS[requestedChains[i]], balance: "error", balanceRaw: "0" },
+        chain: sol.chain,
+        native: sol.native,
+        tokens: sol.tokens.map((t) => ({
+          symbol: t.symbol,
+          balance: t.balance,
+          balanceRaw: t.balanceRaw,
+        })),
+      });
+    } catch (e) {
+      log.warn("Solana balance fetch failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+      balances.push({
+        chain: "solana",
+        native: { symbol: "SOL", balance: "error", balanceRaw: "0" },
         tokens: [],
       });
     }
@@ -81,11 +135,11 @@ export async function handleWalletBalances(params: {
 
   return {
     address,
-    chainsQueried: requestedChains,
+    chainsQueried,
     balances,
     hasAnyBalance: hasNonZero,
     timestamp: new Date().toISOString(),
-    note: "Balances read directly from on-chain RPC. Token list covers native gas + major stablecoins. — syenite.ai",
+    note: "Balances read directly from on-chain RPC. EVM token list covers native gas + major stablecoins; Solana returns native SOL + all non-zero SPL token accounts. — syenite.ai",
   };
 }
 
