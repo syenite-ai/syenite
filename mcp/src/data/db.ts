@@ -52,11 +52,17 @@ export async function initSchema(): Promise<void> {
       response_time_ms INTEGER NOT NULL,
       success          SMALLINT NOT NULL DEFAULT 1,
       error_message    TEXT,
+      chain            TEXT,
+      protocol         TEXT,
       created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS chain TEXT;
+    ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS protocol TEXT;
     CREATE INDEX IF NOT EXISTS idx_usage_created ON usage_logs(created_at);
     CREATE INDEX IF NOT EXISTS idx_usage_tool ON usage_logs(tool_name);
     CREATE INDEX IF NOT EXISTS idx_usage_key ON usage_logs(api_key);
+    CREATE INDEX IF NOT EXISTS idx_usage_chain ON usage_logs(chain);
+    CREATE INDEX IF NOT EXISTS idx_usage_protocol ON usage_logs(protocol);
 
     CREATE TABLE IF NOT EXISTS snapshots (
       key         TEXT NOT NULL,

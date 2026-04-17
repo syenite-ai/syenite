@@ -1,19 +1,90 @@
 import type { UsageStats } from "../logging/usage.js";
 
-export function dashboardHtml(stats: UsageStats): string {
-  const toolRows = stats.byTool
+function escape(raw: string): string {
+  return raw.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
+function renderByTool(byTool: UsageStats["byTool"]): string {
+  return byTool
     .map(
       (t) =>
-        `<tr><td><code>${t.tool}</code></td><td>${t.count.toLocaleString()}</td></tr>`
+        `<tr><td><code>${escape(t.tool)}</code></td><td>${t.count.toLocaleString()}</td><td>${t.errors.toLocaleString()}</td></tr>`
     )
     .join("");
+}
 
-  const userRows = stats.topUsers
+function renderTopUsers(topUsers: UsageStats["topUsers"]): string {
+  return topUsers
     .map(
       (u) =>
-        `<tr><td><code>${u.key.slice(0, 12)}\u2026</code></td><td>${u.count.toLocaleString()}</td></tr>`
+        `<tr><td><code>${escape(u.key.slice(0, 12))}\u2026</code></td><td>${u.count.toLocaleString()}</td></tr>`
     )
     .join("");
+}
+
+function renderChainRows(byChain: UsageStats["byChain"]): string {
+  return byChain
+    .map(
+      (c) =>
+        `<tr><td><code>${escape(c.chain)}</code></td><td>${c.calls.toLocaleString()}</td><td>${c.clients.toLocaleString()}</td><td>${c.errors.toLocaleString()}</td></tr>`
+    )
+    .join("");
+}
+
+function renderProtocolRows(byProtocol: UsageStats["byProtocol"]): string {
+  return byProtocol
+    .map(
+      (p) =>
+        `<tr><td><code>${escape(p.protocol)}</code></td><td>${p.calls.toLocaleString()}</td><td>${p.clients.toLocaleString()}</td><td>${p.errors.toLocaleString()}</td></tr>`
+    )
+    .join("");
+}
+
+function renderSessionRows(sessions: UsageStats["sessions"]): string {
+  return sessions
+    .map((s) => {
+      const seq = s.toolSequence.map((t) => escape(t)).join(" \u2192 ");
+      return `<tr><td><code>${escape(s.clientKey.slice(0, 12))}\u2026</code></td><td>${escape(s.sessionStart)}</td><td>${s.uniqueTools}</td><td>${seq}</td></tr>`;
+    })
+    .join("");
+}
+
+function renderErrorRows(errors: UsageStats["recentErrors"]): string {
+  return errors
+    .map(
+      (e) =>
+        `<tr><td><code>${escape(e.tool)}</code></td><td>${escape(e.at)}</td><td>${escape(e.message)}</td></tr>`
+    )
+    .join("");
+}
+
+export function dashboardHtml(stats: UsageStats): string {
+  const toolRows = renderByTool(stats.byTool);
+  const userRows = renderTopUsers(stats.topUsers);
+  const chainRows = renderChainRows(stats.byChain);
+  const protocolRows = renderProtocolRows(stats.byProtocol);
+  const sessionRows = renderSessionRows(stats.sessions);
+  const errorRows = renderErrorRows(stats.recentErrors);
+  const retention = stats.retention;
+  const retPct2 = retention.totalClients > 0
+    ? Math.round((retention.returningClients2d / retention.totalClients) * 1000) / 10
+    : 0;
+  const retPct7 = retention.totalClients > 0
+    ? Math.round((retention.returningClients7d / retention.totalClients) * 1000) / 10
+    : 0;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -272,8 +343,8 @@ export function dashboardHtml(stats: UsageStats): string {
   <h2>by tool</h2>
   <div class="table-wrap">
     <table>
-      <tr><th>tool</th><th>calls</th></tr>
-      ${toolRows || '<tr><td colspan="2" style="color:var(--muted)">no data yet</td></tr>'}
+      <tr><th>tool</th><th>calls</th><th>errors</th></tr>
+      ${toolRows || '<tr><td colspan="3" style="color:var(--muted)">no data yet</td></tr>'}
     </table>
   </div>
 
@@ -282,6 +353,54 @@ export function dashboardHtml(stats: UsageStats): string {
     <table>
       <tr><th>client</th><th>calls</th></tr>
       ${userRows || '<tr><td colspan="2" style="color:var(--muted)">no data yet</td></tr>'}
+    </table>
+  </div>
+
+  <h2>by chain \u00b7 last 30d</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>chain</th><th>calls</th><th>clients</th><th>errors</th></tr>
+      ${chainRows || '<tr><td colspan="4" style="color:var(--muted)">no data yet</td></tr>'}
+    </table>
+  </div>
+
+  <h2>by protocol \u00b7 last 30d</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>protocol</th><th>calls</th><th>clients</th><th>errors</th></tr>
+      ${protocolRows || '<tr><td colspan="4" style="color:var(--muted)">no data yet</td></tr>'}
+    </table>
+  </div>
+
+  <h2>retention \u00b7 last 30d</h2>
+  <div class="grid">
+    <div class="stat">
+      <div class="stat-label">total clients</div>
+      <div class="stat-value">${retention.totalClients.toLocaleString()}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">returning \u22652 days</div>
+      <div class="stat-value">${retention.returningClients2d.toLocaleString()}<span class="stat-unit"> (${retPct2}%)</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">returning \u22657 days</div>
+      <div class="stat-value">${retention.returningClients7d.toLocaleString()}<span class="stat-unit"> (${retPct7}%)</span></div>
+    </div>
+  </div>
+
+  <h2>recent sessions \u00b7 last 7d</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>client</th><th>started</th><th>tools</th><th>sequence</th></tr>
+      ${sessionRows || '<tr><td colspan="4" style="color:var(--muted)">no data yet</td></tr>'}
+    </table>
+  </div>
+
+  <h2>recent errors \u00b7 last 7d</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>tool</th><th>at</th><th>message</th></tr>
+      ${errorRows || '<tr><td colspan="3" style="color:var(--muted)">no errors recorded</td></tr>'}
     </table>
   </div>
 
