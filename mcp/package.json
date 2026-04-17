@@ -22,7 +22,11 @@
     "register-agent:bnb": "tsx src/scripts/register-agent.ts --chain=bnb",
     "register-agent:dry-run": "tsx src/scripts/register-agent.ts --dry-run",
     "bridge-funds": "tsx src/scripts/bridge-funds.ts",
-    "bridge-funds:dry-run": "tsx src/scripts/bridge-funds.ts --dry-run"
+    "bridge-funds:dry-run": "tsx src/scripts/bridge-funds.ts --dry-run",
+    "migrate:usage-logs-v06": "tsx src/scripts/migrate-usage-logs-v06.ts",
+    "hash-legacy-ips": "tsx src/scripts/hash-legacy-ips.ts",
+    "hash-legacy-ips:dry-run": "tsx src/scripts/hash-legacy-ips.ts --dry-run",
+    "read-v0.6-signal": "tsx src/scripts/read-v0.6-signal.ts"
   },
   "keywords": [
     "mcp",

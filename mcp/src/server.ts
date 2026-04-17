@@ -81,6 +81,23 @@ import {
   txReceiptOutput,
 } from "./schemas.js";
 
+function extractDimension(
+  params: Record<string, unknown>,
+  key: "chain" | "protocol"
+): string | undefined {
+  const direct = params[key];
+  if (typeof direct === "string" && direct.length > 0 && direct !== "all") {
+    return direct.toLowerCase();
+  }
+  if (key === "chain") {
+    const fromChain = params.fromChain;
+    if (typeof fromChain === "string" && fromChain.length > 0) {
+      return fromChain.toLowerCase();
+    }
+  }
+  return undefined;
+}
+
 function withLogging(
   clientIp: string,
   toolName: string,
@@ -89,6 +106,8 @@ function withLogging(
 ) {
   return async (params: Record<string, unknown>) => {
     const start = Date.now();
+    const chain = extractDimension(params, "chain");
+    const protocol = extractDimension(params, "protocol");
     try {
       const result = await handler(params);
       const elapsed = Date.now() - start;
@@ -99,6 +118,8 @@ function withLogging(
         toolParams: redactParams ? redactParams(params) : params,
         responseTimeMs: elapsed,
         success: true,
+        chain,
+        protocol,
       });
       return {
         structuredContent: result,
@@ -117,6 +138,8 @@ function withLogging(
         responseTimeMs: elapsed,
         success: false,
         errorMessage: msg,
+        chain,
+        protocol,
       });
       return {
         content: [{
