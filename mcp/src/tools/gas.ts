@@ -1,10 +1,12 @@
 import { formatEther, formatGwei } from "viem";
 import { getClient, ALL_LENDING_CHAINS, type SupportedChain } from "../data/client.js";
+import { getRecentPrioritizationFees } from "../data/solana/client.js";
 import { SyeniteError } from "../errors.js";
 import { log } from "../logging/logger.js";
 
-export const gasEstimateDescription = `Estimate current gas costs across supported chains (Ethereum, Arbitrum, Base, BNB Chain).
+export const gasEstimateDescription = `Estimate current gas costs across supported chains (Ethereum, Arbitrum, Base, BNB Chain) and Solana priority fees.
 Returns gas prices, estimated costs for common operations (transfer, swap, bridge, contract call), and the native token needed.
+For Solana, returns recent prioritization fees in micro-lamports/CU (sampled from the last few slots).
 Use this before executing transactions to ensure the wallet has enough native gas, or to pick the cheapest chain for an operation.`;
 
 const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
@@ -44,12 +46,14 @@ export async function handleGasEstimate(params: {
   chains?: string[];
   operations?: string[];
 }): Promise<Record<string, unknown>> {
-  const requestedChains = params.chains?.length
-    ? params.chains.filter((c): c is SupportedChain => ALL_LENDING_CHAINS.includes(c as SupportedChain))
+  const lowerChains = params.chains?.map((c) => c.toLowerCase()) ?? [];
+  const solanaRequested = lowerChains.includes("solana");
+  const requestedChains = lowerChains.length > 0
+    ? lowerChains.filter((c): c is SupportedChain => ALL_LENDING_CHAINS.includes(c as SupportedChain))
     : ALL_LENDING_CHAINS;
 
-  if (requestedChains.length === 0) {
-    throw SyeniteError.invalidInput(`No valid chains. Supported: ${ALL_LENDING_CHAINS.join(", ")}`);
+  if (requestedChains.length === 0 && !solanaRequested) {
+    throw SyeniteError.invalidInput(`No valid chains. Supported: ${ALL_LENDING_CHAINS.join(", ")}, solana`);
   }
 
   const requestedOps = params.operations?.length
@@ -88,13 +92,50 @@ export async function handleGasEstimate(params: {
     }
   }
 
-  return {
-    chainsQueried: requestedChains,
+  const chainsQueried: string[] = [...requestedChains];
+  let solanaBlock: Record<string, unknown> | null = null;
+  if (solanaRequested) {
+    solanaBlock = await fetchSolanaGas();
+    chainsQueried.push("solana");
+  }
+
+  const result: Record<string, unknown> = {
+    chainsQueried,
     estimates,
     cheapestChain: cheapest,
     availableOperations: Object.keys(GAS_ESTIMATES),
     timestamp: new Date().toISOString(),
-    note: "Gas prices are current on-chain values. USD estimates use approximate native token prices. Actual costs vary with transaction complexity. — syenite.ai",
+    note: "Gas prices are current on-chain values. USD estimates use approximate native token prices. For Solana, prioritization fees are reported in micro-lamports per compute unit (µLamports/CU). Actual costs vary with transaction complexity. — syenite.ai",
+  };
+
+  if (solanaBlock) result.solana = solanaBlock;
+
+  return result;
+}
+
+async function fetchSolanaGas(): Promise<Record<string, unknown>> {
+  const fees = await getRecentPrioritizationFees();
+  if (fees.length === 0) {
+    return {
+      chain: "solana",
+      nativeSymbol: "SOL",
+      priorityFeeMicroLamports: { min: 0, median: 0, p75: 0, max: 0, samples: 0 },
+      note: "No recent prioritization fee data available. Default priority fee of 0 µLamports/CU is safe for low-traffic slots; raise during congestion.",
+    };
+  }
+  const sorted = [...fees].sort((a, b) => a - b);
+  const pct = (p: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.floor(sorted.length * p)))];
+  return {
+    chain: "solana",
+    nativeSymbol: "SOL",
+    priorityFeeMicroLamports: {
+      min: sorted[0],
+      median: pct(0.5),
+      p75: pct(0.75),
+      max: sorted[sorted.length - 1],
+      samples: sorted.length,
+    },
+    note: "Values in µLamports/CU from getRecentPrioritizationFees RPC. Multiply by your tx compute-unit limit (typically 200k–1.4M CU) and divide by 1e6 to get total lamports; divide by 1e9 for SOL.",
   };
 }
 

@@ -422,7 +422,7 @@ const ChainBalanceItem = z.object({
     symbol: z.string(),
     balance: z.string(),
     balanceRaw: z.string(),
-  })).describe("Non-zero ERC-20 token balances"),
+  })).describe("Non-zero token balances (ERC-20 on EVM chains, SPL on Solana)"),
 });
 
 export const walletBalancesOutput = z.object({
@@ -460,6 +460,18 @@ export const gasEstimateOutput = z.object({
     costUSD: z.string(),
   })).describe("Cheapest chain for each operation type"),
   availableOperations: z.array(z.string()),
+  solana: z.object({
+    chain: z.string(),
+    nativeSymbol: z.string(),
+    priorityFeeMicroLamports: z.object({
+      min: z.number(),
+      median: z.number(),
+      p75: z.number(),
+      max: z.number(),
+      samples: z.number(),
+    }),
+    note: z.string(),
+  }).optional().describe("Present when chains includes 'solana' — prioritization fees in µLamports/CU from getRecentPrioritizationFees"),
   timestamp: z.string(),
   note: z.string(),
 });
@@ -775,6 +787,12 @@ export const swapQuoteOutput = z.object({
       gasLimit: z.string(),
       chainId: z.number(),
     }),
+    solana: z.object({
+      swapTransactionBase64: z.string().nullable().describe("Base64-encoded Solana VersionedTransaction (not EVM calldata)"),
+      lastValidBlockHeight: z.number().nullable(),
+      prioritizationFeeLamports: z.number().nullable(),
+      note: z.string(),
+    }).optional().describe("Present only when fromChain or toChain is 'solana' — a Solana-signed VersionedTransaction"),
   }),
   approvalRequired: z.object({
     note: z.string(),

@@ -2,7 +2,18 @@ import { getAddress, type Address } from "viem";
 
 // ── Protocol types ──────────────────────────────────────────────────
 
-export type Protocol = "aave-v3" | "morpho-blue" | "spark" | "compound-v3" | "fluid" | "venus" | "euler-v2" | "liquity-v2";
+export type Protocol =
+  | "aave-v3"
+  | "morpho-blue"
+  | "spark"
+  | "compound-v3"
+  | "fluid"
+  | "venus"
+  | "euler-v2"
+  | "liquity-v2"
+  | "kamino"
+  | "marginfi"
+  | "drift";
 
 // ── Contract addresses (Ethereum mainnet) ───────────────────────────
 // All addresses normalized via getAddress() to ensure correct EIP-55 checksums
