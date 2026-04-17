@@ -1,19 +1,21 @@
 import { createPublicClient, http, type PublicClient, type Chain } from "viem";
-import { mainnet, arbitrum, base, bsc } from "viem/chains";
+import { mainnet, arbitrum, base, bsc, optimism } from "viem/chains";
 
-export type SupportedChain = "ethereum" | "arbitrum" | "base" | "bsc";
+export type SupportedChain = "ethereum" | "arbitrum" | "base" | "bsc" | "optimism";
 
 const CHAIN_DEFS: Record<SupportedChain, Chain> = {
   ethereum: mainnet,
   arbitrum,
   base,
   bsc,
+  optimism,
 };
 
 const ALCHEMY_SLUG: Partial<Record<SupportedChain, string>> = {
   ethereum: "eth-mainnet",
   arbitrum: "arb-mainnet",
   base: "base-mainnet",
+  optimism: "opt-mainnet",
 };
 
 const PUBLIC_RPC: Record<SupportedChain, string> = {
@@ -21,6 +23,7 @@ const PUBLIC_RPC: Record<SupportedChain, string> = {
   arbitrum: "https://arb1.arbitrum.io/rpc",
   base: "https://mainnet.base.org",
   bsc: "https://bsc-dataseed1.binance.org",
+  optimism: "https://mainnet.optimism.io",
 };
 
 const clients = new Map<SupportedChain, PublicClient>();
@@ -49,3 +52,6 @@ export function getClient(chain: SupportedChain = "ethereum"): PublicClient {
 }
 
 export const ALL_LENDING_CHAINS: SupportedChain[] = ["ethereum", "arbitrum", "base", "bsc"];
+
+/** Chains that have a Morpho Blue deployment. */
+export const MORPHO_CHAINS: SupportedChain[] = ["ethereum", "base", "arbitrum", "optimism"];

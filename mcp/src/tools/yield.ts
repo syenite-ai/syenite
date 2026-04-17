@@ -3,31 +3,45 @@ import { getMakerDSRYield } from "../data/yield-savings.js";
 import { getStakingYields } from "../data/yield-staking.js";
 import { getVaultYields } from "../data/yield-vaults.js";
 import { getStructuredYields } from "../data/yield-structured.js";
+import { getMetaMorphoYields } from "../data/yield-metamorpho.js";
+import { getPendleYields } from "../data/yield-pendle.js";
 import type { YieldOpportunity } from "../data/types.js";
 
 export const yieldToolName = "yield.opportunities";
 
-export const yieldToolDescription = `Find the best DeFi yield opportunities for any asset across blue-chip protocols on Ethereum.
-Aggregates yields from lending supply (Aave, Morpho, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), vaults (MetaMorpho, Yearn), and basis capture (Ethena sUSDe).
-Returns opportunities ranked by APY with risk level, TVL, lockup period, and protocol details. Filter by asset, category, or risk tolerance.`;
+export const yieldToolDescription = `Find the best DeFi yield opportunities for any asset across blue-chip protocols.
+Aggregates yields from lending supply (Aave, Morpho Blue on Ethereum/Base/Arbitrum/Optimism, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), curated vaults (MetaMorpho, Yearn), fixed-yield (Pendle PT), and basis capture (Ethena sUSDe).
+Returns opportunities ranked by APY with risk level, TVL, lockup period, and protocol details. Filter by asset, category, or risk tolerance. Pass tags=["fixed-yield"] to isolate fixed-rate PTs, or tags=["yt","leveraged-variable"] to surface Pendle YT markets (hidden by default).`;
 
 const RISK_ORDER: Record<string, number> = { low: 1, medium: 2, high: 3 };
+
+const YT_TAGS = new Set(["yt", "leveraged-variable", "leveraged"]);
+
+function wantsYT(tags: string[] | undefined): boolean {
+  if (!tags || tags.length === 0) return false;
+  return tags.some((t) => YT_TAGS.has(t.toLowerCase()));
+}
 
 export async function handleYieldOpportunities(params: {
   asset?: string;
   category?: string;
   riskTolerance?: string;
+  tags?: string[];
 }): Promise<Record<string, unknown>> {
   const asset = params.asset ?? "all";
   const category = params.category ?? "all";
   const maxRisk = RISK_ORDER[params.riskTolerance ?? "high"] ?? 3;
+  const includeYT = wantsYT(params.tags);
+  const requestedTags = (params.tags ?? []).map((t) => t.toLowerCase());
 
-  const [lending, savings, staking, vaults, structured] = await Promise.allSettled([
+  const [lending, savings, staking, vaults, structured, metaMorpho, pendle] = await Promise.allSettled([
     getLendingSupplyYields(asset),
     getMakerDSRYield(),
     getStakingYields(),
     getVaultYields(),
     getStructuredYields(),
+    getMetaMorphoYields(),
+    getPendleYields(includeYT),
   ]);
 
   let allYields: YieldOpportunity[] = [
@@ -36,6 +50,8 @@ export async function handleYieldOpportunities(params: {
     ...(staking.status === "fulfilled" ? staking.value : []),
     ...(vaults.status === "fulfilled" ? vaults.value : []),
     ...(structured.status === "fulfilled" ? structured.value : []),
+    ...(metaMorpho.status === "fulfilled" ? metaMorpho.value : []),
+    ...(pendle.status === "fulfilled" ? pendle.value : []),
   ];
 
   if (asset && asset !== "all") {
@@ -51,6 +67,12 @@ export async function handleYieldOpportunities(params: {
 
   if (category && category !== "all") {
     allYields = allYields.filter((y) => y.category === category);
+  }
+
+  if (requestedTags.length > 0) {
+    allYields = allYields.filter((y) =>
+      (y.tags ?? []).some((t) => requestedTags.includes(t.toLowerCase()))
+    );
   }
 
   allYields = allYields.filter((y) => RISK_ORDER[y.risk] <= maxRisk);
@@ -94,6 +116,8 @@ export async function handleYieldOpportunities(params: {
       risk: y.risk,
       riskNotes: y.riskNotes,
       lockup: y.lockup,
+      ...(y.maturity ? { maturity: y.maturity } : {}),
+      ...(y.tags && y.tags.length > 0 ? { tags: y.tags } : {}),
     })),
     timestamp: new Date().toISOString(),
     note: "All yields sourced from on-chain data. Yields marked 'estimated' will improve to trailing-7d accuracy as historical data accumulates (typically 24-48h after deployment). Variable rates change with market conditions. Higher APY generally correlates with higher risk.",

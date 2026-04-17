@@ -210,6 +210,29 @@ export const YEARN_VAULTS: Array<{ address: Address; label: string; asset: strin
 
 // Pendle PT markets deprecated — expired maturities, pending update.
 
+// ── Multi-chain Morpho Blue contract addresses ──────────────────────
+// Source: https://docs.morpho.org/addresses/
+
+export const MORPHO_BLUE_BY_CHAIN: Record<string, Address> = {
+  ethereum: getAddress("0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb"),
+  base: getAddress("0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"),
+  arbitrum: getAddress("0x6c247b1F6182318877311737BaC0844bAa518F5e"),
+  optimism: getAddress("0xce95AfbB8EA029495c66020883F87aaE8864AF92"),
+};
+
+// ── Pendle — REST API endpoints ─────────────────────────────────────
+
+export const PENDLE_API_BASE = "https://api-v2.pendle.finance/core/v1";
+
+/** Pendle supports these chain IDs for PT/YT markets. */
+export const PENDLE_CHAINS: Record<string, number> = {
+  ethereum: 1,
+  arbitrum: 42161,
+  base: 8453,
+  bsc: 56,
+  optimism: 10,
+};
+
 // ── Multi-chain token addresses ──────────────────────────────────────
 
 export const TOKENS_ARBITRUM: Record<string, Address> = {
@@ -415,6 +438,42 @@ export interface YieldOpportunity {
   riskNotes: string;
   lockup: string;
   lastUpdated: string;
+  /** ISO-8601 maturity timestamp (Pendle PT/YT). */
+  maturity?: string;
+  /** Optional tags used by filtering: "fixed-yield", "yt", "leveraged-variable". */
+  tags?: string[];
+}
+
+// ── MetaMorpho / Pendle data shapes ─────────────────────────────────
+
+export interface VaultData {
+  address: Address;
+  name: string;
+  curator: string;
+  asset: string;
+  chain: string;
+  netAPY: number;
+  tvlUSD: number;
+  feeBps: number;
+  marketCount: number;
+  topMarkets: Array<{ id: string; allocation: number; collateral: string }>;
+  lastUpdated: string;
+}
+
+export interface PendleMarket {
+  chain: string;
+  address: Address;
+  name: string;
+  underlying: string;
+  maturity: string;
+  maturityTimestamp: number;
+  ptFixedAPY: number;
+  ytImpliedAPY: number;
+  underlyingAPY: number;
+  tvlUSD: number;
+  liquidityUSD: number;
+  ptTokenAddress?: Address;
+  ytTokenAddress?: Address;
 }
 
 export const SECONDS_PER_YEAR = 365.25 * 24 * 60 * 60;

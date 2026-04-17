@@ -1,5 +1,5 @@
 import { getAaveRates, getSparkRates } from "../data/aave.js";
-import { getMorphoRates } from "../data/morpho.js";
+import { getMorphoRatesMultiChain } from "../data/morpho.js";
 import { getCompoundRates } from "../data/compound.js";
 import { getFluidRates } from "../data/fluid.js";
 import type { SupportedChain } from "../data/client.js";
@@ -25,7 +25,7 @@ export async function handleRatesQuery(params: {
 
   const [aaveRates, morphoRates, sparkRates, compoundRates, fluidRates] = await Promise.allSettled([
     getAaveRates(collateral, borrowAsset, chains),
-    getMorphoRates(collateral, borrowAsset),
+    getMorphoRatesMultiChain(collateral, borrowAsset, chains),
     getSparkRates(collateral, borrowAsset, chains),
     getCompoundRates(collateral, borrowAsset, chains),
     getFluidRates(collateral, borrowAsset, chains),
