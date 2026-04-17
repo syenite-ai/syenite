@@ -14,3 +14,4 @@ docs/internal/
 .mcpregistry_registry_token
 test
 awesome-blockchain-mcps/
+.claude/worktrees/
