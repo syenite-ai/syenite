@@ -296,10 +296,14 @@ export const alertListOutput = z.object({
   watchCount: z.number(),
   watches: z.array(z.object({
     id: z.string(),
+    type: z.enum(["lending", "prediction"]),
     address: z.string(),
     protocol: z.string(),
     chain: z.string(),
     healthFactorThreshold: z.number(),
+    question: z.string().optional(),
+    slug: z.string().optional(),
+    conditions: z.record(z.string(), z.unknown()).optional(),
     createdAt: z.string(),
     lastCheckedAt: z.string(),
   })),
@@ -872,4 +876,197 @@ export const metaMorphoWithdrawOutput = z.object({
   transactionRequest: MetaMorphoTxRequest,
   timestamp: z.string(),
   note: z.string(),
+});
+
+// ── v0.6 Track C ────────────────────────────────────────────────────
+
+const HistoryStatsShape = z.object({
+  pointCount: z.number(),
+  openPrice: z.number(),
+  closePrice: z.number(),
+  minPrice: z.number(),
+  maxPrice: z.number(),
+  changePct: z.number(),
+}).nullable();
+
+export const predictionMarketOutput = z.object({
+  source: z.string().optional(),
+  identifier: z.string().optional().describe("Present when the market was not found"),
+  error: z.string().optional(),
+  market: z.object({
+    id: z.string(),
+    slug: z.string(),
+    conditionId: z.string(),
+    question: z.string(),
+    description: z.string(),
+    resolutionCriteria: z.string(),
+    active: z.boolean(),
+    closed: z.boolean(),
+    endDate: z.string().nullable(),
+    hoursToClose: z.number().nullable(),
+    outcomes: z.array(z.object({
+      name: z.string(),
+      tokenId: z.string().nullable(),
+      currentPrice: z.number(),
+      probabilityPct: z.number(),
+    })),
+  }).optional(),
+  oddsHistory: z.object({
+    "24h": HistoryStatsShape,
+    "7d": HistoryStatsShape,
+    "30d": HistoryStatsShape,
+  }).optional(),
+  volume: z.object({
+    total: z.number(),
+    volume24h: z.number(),
+  }).optional(),
+  liquidity: z.object({
+    totalUSD: z.number(),
+    bestBid: z.number(),
+    bestAsk: z.number(),
+    spread: z.number(),
+    spreadBps: z.number(),
+    bidDepthUSD: z.number(),
+    askDepthUSD: z.number(),
+    flow: z.object({
+      direction: z.enum(["bid-heavy", "ask-heavy", "balanced"]),
+      ratio: z.number(),
+    }),
+  }).optional(),
+  impliedProbabilityPct: z.number().nullable().optional(),
+  fairValue: z.object({ note: z.string() }).optional(),
+  timestamp: z.string(),
+  note: z.string().optional(),
+});
+
+const PredictionConditionsSchema = z.object({
+  oddsThresholdPct: z.number().min(0).max(100).optional(),
+  oddsMovePct: z.object({
+    delta: z.number().positive(),
+    windowMinutes: z.number().positive(),
+  }).optional(),
+  liquidityDropPct: z.number().min(0).max(100).optional(),
+  resolutionApproachingHours: z.number().positive().optional(),
+  volumeSpikeMultiple: z.number().gt(1).optional(),
+});
+
+export const predictionWatchOutput = z.object({
+  watch: z.object({
+    id: z.string(),
+    type: z.literal("prediction"),
+    marketId: z.string().optional(),
+    conditionId: z.string().optional(),
+    slug: z.string().optional(),
+    question: z.string().optional(),
+    conditions: PredictionConditionsSchema.optional(),
+    webhookUrl: z.string().optional(),
+    createdAt: z.string(),
+  }),
+  message: z.string(),
+  usage: z.string(),
+});
+
+export const predictionPositionOutput = z.object({
+  source: z.string(),
+  address: z.string(),
+  summary: z.object({
+    positionCount: z.number(),
+    totalInitialValueUSD: z.number(),
+    totalCurrentValueUSD: z.number(),
+    totalUnrealizedPnlUSD: z.number(),
+    totalRealizedPnlUSD: z.number(),
+  }),
+  positions: z.array(z.object({
+    marketId: z.string(),
+    tokenId: z.string(),
+    question: z.string(),
+    slug: z.string(),
+    outcome: z.string(),
+    outcomeIndex: z.number(),
+    size: z.number(),
+    avgPrice: z.number(),
+    currentPrice: z.number(),
+    initialValueUSD: z.number(),
+    currentValueUSD: z.number(),
+    realizedPnlUSD: z.number(),
+    unrealizedPnlUSD: z.number(),
+    percentPnl: z.number(),
+    endDate: z.string().nullable(),
+    hoursToResolve: z.number().nullable(),
+    redeemable: z.boolean(),
+  })),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+export const predictionQuoteOutput = z.object({
+  tokenId: z.string(),
+  side: z.enum(["buy", "sell"]),
+  outcome: z.enum(["YES", "NO"]),
+  size: z.number(),
+  orderType: z.enum(["market", "limit"]).optional(),
+  midPrice: z.number().optional(),
+  avgFillPrice: z.number().optional(),
+  expectedFill: z.object({
+    size: z.number(),
+    totalCostUSD: z.number(),
+    levelsConsumed: z.number(),
+    fullyFilled: z.boolean(),
+  }).optional(),
+  slippagePct: z.number().optional(),
+  slippageBps: z.number().optional(),
+  depthAvailable: z.number().optional(),
+  fees: z.object({
+    makerBps: z.number(),
+    takerBps: z.number(),
+    estimatedUSD: z.number(),
+    note: z.string(),
+  }).optional(),
+  limitCheck: z.object({
+    limitPrice: z.number(),
+    respectsLimit: z.boolean(),
+  }).nullable().optional(),
+  warnings: z.array(z.string()).optional(),
+  error: z.string().optional(),
+  timestamp: z.string(),
+  note: z.string().optional(),
+});
+
+export const predictionOrderOutput = z.object({
+  source: z.string(),
+  mode: z.literal("eip712_offchain_order"),
+  notice: z.string(),
+  order: z.object({
+    tokenId: z.string(),
+    outcome: z.enum(["YES", "NO"]),
+    side: z.enum(["buy", "sell"]),
+    size: z.number(),
+    price: z.number(),
+    midPriceAtQuote: z.number(),
+    maker: z.string(),
+    expiration: z.number(),
+    chainId: z.number(),
+    verifyingContract: z.string(),
+  }),
+  typedData: z.object({
+    domain: z.record(z.string(), z.unknown()),
+    types: z.record(z.string(), z.array(z.object({ name: z.string(), type: z.string() }))),
+    primaryType: z.string(),
+    message: z.record(z.string(), z.union([z.string(), z.number()])),
+  }),
+  submission: z.object({
+    endpoint: z.string(),
+    method: z.string(),
+    body: z.record(z.string(), z.unknown()),
+    authHeaders: z.array(z.string()),
+    docs: z.string(),
+  }),
+  approvalRequired: z.object({
+    note: z.string(),
+    tokenAddress: z.string(),
+    spender: z.string(),
+    amount: z.string(),
+    chainId: z.number(),
+  }),
+  timestamp: z.string(),
 });

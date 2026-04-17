@@ -51,6 +51,12 @@ import {
   alertListDescription,
   alertRemoveDescription,
 } from "./tools/alerts.js";
+import { handlePredictionMarket, predictionMarketDescription } from "./tools/prediction-market.js";
+import { handlePredictionWatch, predictionWatchDescription } from "./tools/prediction-watch.js";
+import { handlePredictionPosition, predictionPositionDescription } from "./tools/prediction-position.js";
+import { handlePredictionQuote, predictionQuoteDescription } from "./tools/prediction-quote.js";
+import { handlePredictionOrder, predictionOrderDescription } from "./tools/prediction-order.js";
+import type { PredictionConditions } from "./data/alerts.js";
 import { logToolCall } from "./logging/usage.js";
 import { recordToolCall } from "./logging/metrics.js";
 import { SyeniteError } from "./errors.js";
@@ -87,6 +93,11 @@ import {
   txReceiptOutput,
   metaMorphoSupplyOutput,
   metaMorphoWithdrawOutput,
+  predictionMarketOutput,
+  predictionWatchOutput,
+  predictionPositionOutput,
+  predictionQuoteOutput,
+  predictionOrderOutput,
 } from "./schemas.js";
 
 function extractDimension(
@@ -201,10 +212,15 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "prediction.search", use: "Search prediction markets by topic." },
       { name: "prediction.book", use: "Order book depth and spread for a specific outcome token." },
       { name: "prediction.signals", use: "Detect actionable signals — wide spreads, extreme probabilities, volume spikes, mispricing." },
+      { name: "prediction.market", use: "Deep drill-down on a single market — odds history, liquidity depth, resolution criteria, one-sided flow." },
+      { name: "prediction.watch", use: "Monitor a market for odds threshold, movement, liquidity drop, resolution, or volume spikes." },
+      { name: "prediction.position", use: "List an agent's Polymarket positions across markets — size, PnL, time-to-resolve." },
+      { name: "prediction.quote", use: "Size-aware buy/sell quote walking the CLOB book — fill price, slippage, available depth." },
+      { name: "prediction.order", use: "Prepare a Polymarket CLOB order (EIP-712) for signing plus the USDC approval tx." },
       { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
-      { name: "alerts.check", use: "Poll for active alerts (health factor warnings, rate spikes)." },
-      { name: "alerts.list", use: "List all active position watches." },
-      { name: "alerts.remove", use: "Remove a position watch." },
+      { name: "alerts.check", use: "Poll for active alerts (lending health factor + prediction triggers)." },
+      { name: "alerts.list", use: "List all active position and prediction market watches." },
+      { name: "alerts.remove", use: "Remove a watch." },
     ],
     swapAndBridge: {
       chains: "Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, and 25+ more",
@@ -977,6 +993,119 @@ Call this tool to learn what tools are available and how to use them.`,
     "metamorpho.withdraw",
     (p) => handleMetaMorphoWithdraw(p as { vault: string; shares: string; receiver: string; owner: string }),
     (p) => ({ vault: p.vault, shares: p.shares, receiver: "***", owner: "***" })
+  ));
+
+  // ── prediction.market ─────────────────────────────────────────────
+
+  server.registerTool("prediction.market", {
+    description: predictionMarketDescription,
+    inputSchema: {
+      slug: z.string().optional().describe("Polymarket market slug"),
+      conditionId: z.string().optional().describe("Polymarket condition ID (0x-prefixed)"),
+      marketId: z.string().optional().describe("Polymarket market ID"),
+    },
+    outputSchema: predictionMarketOutput,
+  }, withLogging(clientIp, "prediction.market", (p) =>
+    handlePredictionMarket(p as { slug?: string; conditionId?: string; marketId?: string })
+  ));
+
+  // ── prediction.watch ──────────────────────────────────────────────
+
+  const predictionConditionsInput = z.object({
+    oddsThresholdPct: z.number().min(0).max(100).optional(),
+    oddsMovePct: z.object({
+      delta: z.number().positive(),
+      windowMinutes: z.number().positive(),
+    }).optional(),
+    liquidityDropPct: z.number().min(0).max(100).optional(),
+    resolutionApproachingHours: z.number().positive().optional(),
+    volumeSpikeMultiple: z.number().gt(1).optional(),
+  });
+
+  server.registerTool("prediction.watch", {
+    description: predictionWatchDescription,
+    inputSchema: {
+      slug: z.string().optional().describe("Polymarket market slug"),
+      conditionId: z.string().optional().describe("Polymarket condition ID"),
+      conditions: predictionConditionsInput.describe("At least one condition required"),
+      webhookUrl: z.string().url().optional().describe("Optional HTTPS webhook for alert delivery"),
+    },
+    outputSchema: predictionWatchOutput,
+  }, withLogging(clientIp, "prediction.watch", (p) =>
+    handlePredictionWatch(p as {
+      slug?: string;
+      conditionId?: string;
+      conditions: PredictionConditions;
+      webhookUrl?: string;
+    })
+  ));
+
+  // ── prediction.position ───────────────────────────────────────────
+
+  server.registerTool("prediction.position", {
+    description: predictionPositionDescription,
+    inputSchema: {
+      address: z.string().describe("Polygon EOA address holding Polymarket positions"),
+    },
+    outputSchema: predictionPositionOutput,
+  }, withLogging(
+    clientIp,
+    "prediction.position",
+    (p) => handlePredictionPosition(p as { address: string }),
+    (p) => ({ address: "***" + String(p.address).slice(-4) })
+  ));
+
+  // ── prediction.quote ──────────────────────────────────────────────
+
+  server.registerTool("prediction.quote", {
+    description: predictionQuoteDescription,
+    inputSchema: {
+      tokenId: z.string().describe("Polymarket outcome token ID"),
+      side: z.enum(["buy", "sell"]),
+      outcome: z.enum(["YES", "NO"]).describe("Informational — used for display only"),
+      size: z.number().positive().describe("Order size in shares"),
+      orderType: z.enum(["market", "limit"]).default("market"),
+      limitPrice: z.number().min(0).max(1).optional().describe("Required for limit orders (USDC per share)"),
+    },
+    outputSchema: predictionQuoteOutput,
+  }, withLogging(clientIp, "prediction.quote", (p) =>
+    handlePredictionQuote(p as {
+      tokenId: string;
+      side: "buy" | "sell";
+      outcome: "YES" | "NO";
+      size: number;
+      orderType?: "market" | "limit";
+      limitPrice?: number;
+    })
+  ));
+
+  // ── prediction.order ──────────────────────────────────────────────
+
+  server.registerTool("prediction.order", {
+    description: predictionOrderDescription,
+    inputSchema: {
+      tokenId: z.string().describe("Polymarket outcome token ID"),
+      side: z.enum(["buy", "sell"]),
+      outcome: z.enum(["YES", "NO"]),
+      size: z.number().positive().describe("Shares"),
+      price: z.number().min(0).max(1).describe("Limit price in USDC per share (0-1)"),
+      maker: z.string().describe("Polygon EOA that will sign the EIP-712 order"),
+      expiration: z.number().optional().describe("Unix seconds (0 = GTC, default)"),
+    },
+    outputSchema: predictionOrderOutput,
+  }, withLogging(
+    clientIp,
+    "prediction.order",
+    (p) => handlePredictionOrder(p as {
+      tokenId: string;
+      side: "buy" | "sell";
+      outcome: "YES" | "NO";
+      size: number;
+      price: number;
+      maker: string;
+      expiration?: number;
+    }),
+    (p) => ({ ...p, maker: "***" + String(p.maker).slice(-4) })
   ));
 
   return server;
