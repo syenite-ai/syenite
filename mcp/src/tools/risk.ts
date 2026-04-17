@@ -85,7 +85,13 @@ export async function handleRiskAssess(params: {
     throw SyeniteError.invalidInput("collateralAmount must be positive.");
   }
 
-  const assetPrice = await getTokenPrice(collateral);
+  let assetPrice: number;
+  try {
+    assetPrice = await getTokenPrice(collateral);
+  } catch (e) {
+    if (e instanceof SyeniteError) throw e;
+    throw SyeniteError.upstream(`Failed to fetch price for ${collateral}: ${e instanceof Error ? e.message : String(e)}`);
+  }
   const collateralUSD = collateralAmount * assetPrice;
   const borrowAmount = collateralUSD * (targetLTV / 100);
 

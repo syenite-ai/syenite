@@ -1,4 +1,5 @@
 import { CHAIN_IDS, CHAIN_NAMES, type SwapQuote, type SwapStatus } from "./types.js";
+import { SyeniteError } from "../errors.js";
 
 const LIFI_BASE = "https://li.quest/v1";
 
@@ -16,7 +17,7 @@ function resolveChainId(chain: string): number {
   if (CHAIN_IDS[lower] !== undefined) return CHAIN_IDS[lower];
   const asNum = parseInt(chain, 10);
   if (!isNaN(asNum)) return asNum;
-  throw new Error(`Unknown chain: "${chain}". Supported: ${Object.keys(CHAIN_IDS).join(", ")}`);
+  throw SyeniteError.invalidInput(`Unknown chain: "${chain}". Supported: ${Object.keys(CHAIN_IDS).join(", ")}`);
 }
 
 function chainName(id: number): string {
@@ -55,10 +56,16 @@ export async function getLifiQuote(params: {
     ...(params.toAddress && { toAddress: params.toAddress }),
   });
 
-  const resp = await fetch(`${LIFI_BASE}/quote?${qs.toString()}`, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(15_000),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(`${LIFI_BASE}/quote?${qs.toString()}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw SyeniteError.upstream(`Li.Fi quote request failed: ${msg}`);
+  }
 
   if (!resp.ok) {
     const body = await resp.text();
@@ -67,7 +74,7 @@ export async function getLifiQuote(params: {
       const parsed = JSON.parse(body);
       message = parsed.message ?? message;
     } catch {}
-    throw new Error(message);
+    throw SyeniteError.upstream(message);
   }
 
   const data = await resp.json();
@@ -165,10 +172,16 @@ export async function getLifiStatus(params: {
     toChain: toChainId.toString(),
   });
 
-  const resp = await fetch(`${LIFI_BASE}/status?${qs.toString()}`, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(15_000),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(`${LIFI_BASE}/status?${qs.toString()}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw SyeniteError.upstream(`Li.Fi status request failed: ${msg}`);
+  }
 
   if (!resp.ok) {
     const body = await resp.text();
@@ -177,7 +190,7 @@ export async function getLifiStatus(params: {
       const parsed = JSON.parse(body);
       message = parsed.message ?? message;
     } catch {}
-    throw new Error(message);
+    throw SyeniteError.upstream(message);
   }
 
   const data = await resp.json();

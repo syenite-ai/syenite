@@ -759,6 +759,23 @@ export const txReceiptOutput = z.object({
   note: z.string(),
 });
 
+// ── token.price ─────────────────────────────────────────────────────
+
+export const tokenPriceOutput = z.object({
+  prices: z.array(z.object({
+    symbol: z.string().describe("Token symbol"),
+    priceUSD: z.number().describe("Current USD price from Chainlink"),
+    feed: z.string().nullable().describe("Chainlink feed pair (e.g. BTC/USD)"),
+  })),
+  errors: z.array(z.object({
+    symbol: z.string(),
+    error: z.string(),
+  })).optional().describe("Present when some symbols failed to resolve"),
+  supportedTokens: z.array(z.string()).describe("All token symbols with Chainlink feeds"),
+  source: z.string(),
+  timestamp: z.string(),
+});
+
 // ── swap.quote ──────────────────────────────────────────────────────
 
 export const swapQuoteOutput = z.object({

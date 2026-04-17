@@ -26,6 +26,7 @@ import {
   lendingRepayDescription,
 } from "./tools/lending-execute.js";
 import { handleTxReceipt, txReceiptDescription } from "./tools/tx-receipt.js";
+import { handleTokenPrice, tokenPriceDescription } from "./tools/token-price.js";
 import {
   handlePredictionTrending,
   handlePredictionSearch,
@@ -91,6 +92,7 @@ import {
   lendingWithdrawOutput,
   lendingRepayOutput,
   txReceiptOutput,
+  tokenPriceOutput,
   metaMorphoSupplyOutput,
   metaMorphoWithdrawOutput,
   predictionMarketOutput,
@@ -879,6 +881,19 @@ Call this tool to learn what tools are available and how to use them.`,
     outputSchema: txReceiptOutput,
   }, withLogging(clientIp, "tx.receipt", (p) =>
     handleTxReceipt(p as { txHash: string; chain?: string })
+  ));
+
+  // ── token.price ────────────────────────────────────────────────────
+
+  server.registerTool("token.price", {
+    description: tokenPriceDescription,
+    inputSchema: {
+      symbol: z.string().default("WETH").describe("Token symbol (e.g. wBTC, WETH, USDC). Ignored when symbols is provided."),
+      symbols: z.array(z.string()).optional().describe("Batch: array of token symbols to price in one call (up to 20)"),
+    },
+    outputSchema: tokenPriceOutput,
+  }, withLogging(clientIp, "token.price", (p) =>
+    handleTokenPrice(p as { symbol: string; symbols?: string[] })
   ));
 
   // ── alerts.watch ──────────────────────────────────────────────────

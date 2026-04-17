@@ -2,6 +2,7 @@ import { type Address } from "viem";
 import { getClient } from "./client.js";
 import { cacheGet, cacheSet } from "./cache.js";
 import { CHAINLINK_FEEDS, CACHE_TTL, TOKEN_PRICE_FEED } from "./types.js";
+import { SyeniteError } from "../errors.js";
 
 const chainlinkAbi = [
   {
@@ -37,25 +38,32 @@ export async function getPrice(pair: string): Promise<PriceResult> {
   if (cached) return cached;
 
   const feed = CHAINLINK_FEEDS[pair];
-  if (!feed) throw new Error(`No Chainlink feed for ${pair}`);
+  if (!feed) throw SyeniteError.notFound(`No Chainlink feed for ${pair}`);
 
   const client = getClient();
-  const [roundData, decimals] = await Promise.all([
-    client.readContract({
-      address: feed,
-      abi: chainlinkAbi,
-      functionName: "latestRoundData",
-    }),
-    client.readContract({
-      address: feed,
-      abi: chainlinkAbi,
-      functionName: "decimals",
-    }),
-  ]);
+  let roundData: readonly [bigint, bigint, bigint, bigint, bigint];
+  let decimals: number;
+  try {
+    [roundData, decimals] = await Promise.all([
+      client.readContract({
+        address: feed,
+        abi: chainlinkAbi,
+        functionName: "latestRoundData",
+      }),
+      client.readContract({
+        address: feed,
+        abi: chainlinkAbi,
+        functionName: "decimals",
+      }),
+    ]);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw SyeniteError.upstream(`Chainlink price feed ${pair} RPC failed: ${msg}`);
+  }
 
   const answer = Number(roundData[1]);
   if (answer <= 0) {
-    throw new Error(`Chainlink feed ${pair} returned non-positive price: ${answer}`);
+    throw SyeniteError.upstream(`Chainlink feed ${pair} returned non-positive price: ${answer}`);
   }
 
   const updatedAt = Number(roundData[3]);
@@ -97,7 +105,7 @@ export async function getStablePrice(
 /** Get USD price for any known token via its mapped Chainlink feed */
 export async function getTokenPrice(symbol: string): Promise<number> {
   const feedPair = TOKEN_PRICE_FEED[symbol];
-  if (!feedPair) throw new Error(`No price feed mapping for ${symbol}`);
+  if (!feedPair) throw SyeniteError.invalidInput(`No price feed for "${symbol}". Supported: ${Object.keys(TOKEN_PRICE_FEED).join(", ")}`);
   const { price } = await getPrice(feedPair);
   return price;
 }

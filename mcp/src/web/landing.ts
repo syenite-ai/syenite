@@ -599,6 +599,17 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+    <p class="section-label">prices</p>
+
+    <div class="tool">
+      <div class="tool-name">token.price</div>
+      <p class="tool-desc">Current USD price for any supported token via Chainlink on-chain oracles. Same feeds used by Aave, Morpho, and Spark for liquidation triggers. Batch up to 20 tokens per call.</p>
+      <div class="params">
+        <span class="pn">symbol</span><span class="pt">string</span><span class="pd">Token symbol (e.g. wBTC, WETH, USDC)</span>
+        <span class="pn">symbols</span><span class="pt">string[]</span><span class="pd">Optional batch: array of symbols</span>
+      </div>
+    </div>
+
     <p class="section-label">alerts</p>
 
     <div class="tool">
