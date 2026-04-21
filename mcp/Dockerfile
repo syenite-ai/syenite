@@ -1,5 +1,6 @@
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 WORKDIR /app
+RUN npm install -g npm@11
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.json ./
@@ -7,9 +8,10 @@ COPY src/ src/
 COPY assets/ assets/
 RUN npx tsc && cp -r src/web/docs dist/web/docs && cp -r assets dist/assets
 
-FROM node:20-slim
+FROM node:22-slim
 RUN apt-get update && apt-get install -y --no-install-recommends dumb-init && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+RUN npm install -g npm@11
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist/ dist/
