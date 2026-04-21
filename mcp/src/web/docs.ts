@@ -21,6 +21,10 @@ export const DOC_SLUGS = [
   "erc-8004-agent-registration",
   "mcp-defi-discovery",
   "seo-and-indexing",
+  "compare-aave-morpho-compound",
+  "defi-agent-quickstart",
+  "position-alerts-webhook-setup",
+  "mcp-server-defi-tools",
 ] as const;
 
 export type DocSlug = (typeof DOC_SLUGS)[number];

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set Up DeFi Position Alerts with Webhooks — Syenite</title>
+  <meta name="description" content="Monitor DeFi lending positions with Syenite alerts. Set LTV and health factor thresholds, configure webhooks for liquidation warnings, and poll alert state via MCP tools.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="https://syenite.ai/docs/position-alerts-webhook-setup">
+  <meta property="og:title" content="Set Up DeFi Position Alerts with Webhooks — Syenite">
+  <meta property="og:description" content="Monitor DeFi lending positions with Syenite alerts. Set LTV and health factor thresholds, configure webhooks for liquidation warnings, and poll alert state via MCP tools.">
+  <meta property="og:url" content="https://syenite.ai/docs/position-alerts-webhook-setup">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Set Up DeFi Position Alerts with Webhooks — Syenite">
+  <meta name="twitter:description" content="Monitor DeFi lending positions with Syenite alerts. Set LTV and health factor thresholds, configure webhooks for liquidation warnings, and poll alert state via MCP tools.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    ol{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    ol li{margin-bottom:0.5rem;}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:0.75rem 0 1.5rem;}
+    th{font-family:var(--mono);font-weight:500;color:var(--muted);text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.75rem;text-transform:lowercase;letter-spacing:0.05em;}
+    td{padding:0.5rem 0.75rem;border-bottom:1px solid #141414;color:#888;vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Syenite", "item": "https://syenite.ai"},
+      {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://syenite.ai/docs"},
+      {"@type": "ListItem", "position": 3, "name": "Set Up DeFi Position Alerts with Webhooks", "item": "https://syenite.ai/docs/position-alerts-webhook-setup"}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How often are alerts checked?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Syenite checks watched positions on each call to alerts.check. The tool does not push alerts independently — your agent or polling script calls alerts.check on a schedule. For active positions, polling every 1–5 minutes is recommended."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What webhook formats are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Syenite returns alert data as structured JSON from alerts.check. Your agent or backend is responsible for forwarding that data to a webhook endpoint. The JSON payload includes alert type, severity, current health factor, threshold, and position details."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I get SMS or email alerts?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Syenite does not send SMS or email directly. Your integration layer (a backend script, a Zapier workflow, or an agent with notification tools) reads alerts.check output and routes notifications to SMS, email, or Slack as needed."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens when a position is liquidated?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Syenite alerts are designed to warn before liquidation, not after. If a health factor drops below 1.0, the position is already liquidatable on-chain. Set your healthFactorThreshold to at least 1.3–1.5 to receive warnings with time to act."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Set Up DeFi Position Alerts with Webhooks</h1>
+  <p>Syenite's alert tools let an agent watch lending positions across Aave v3, Morpho Blue, and Spark. When a health factor drops toward a threshold or an LTV approaches a liquidation boundary, the agent can surface a warning and suggest remediation before the position is at risk. This page covers what alerts monitor, how to set them up, and how to forward alert data to a webhook.</p>
+
+  <h2>what position alerts monitor</h2>
+  <p>Syenite monitors three conditions for registered positions:</p>
+  <ul>
+    <li><strong>Health factor threshold</strong> — alerts when health factor drops below a set value (default 1.5). Health factor below 1.0 means the position is liquidatable.</li>
+    <li><strong>LTV proximity</strong> — alerts when the current loan-to-value ratio approaches the maximum LTV defined by the protocol's liquidation parameters.</li>
+    <li><strong>Rate changes</strong> — alerts when borrow APR on the monitored protocol shifts materially, affecting the cost of maintaining the position.</li>
+  </ul>
+
+  <h2>alert types and thresholds</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Alert type</th>
+        <th>Trigger condition</th>
+        <th>Recommended threshold</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Health factor warning</td>
+        <td>Health factor falls below threshold</td>
+        <td>1.5 (warning) / 1.2 (critical)</td>
+      </tr>
+      <tr>
+        <td>LTV proximity</td>
+        <td>LTV within 10% of max liquidation LTV</td>
+        <td>Protocol-dependent; check max LTV in risk.assess</td>
+      </tr>
+      <tr>
+        <td>Rate spike</td>
+        <td>Borrow APR increases by more than N% in 24 hours</td>
+        <td>2% absolute change (adjust to position size)</td>
+      </tr>
+      <tr>
+        <td>Liquidation proximity</td>
+        <td>Position within 5% of liquidation price</td>
+        <td>Immediate notification required</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>step-by-step setup</h2>
+  <h3>Step 1: register the position</h3>
+  <p>Call <code>alerts.watch</code> with the wallet address, protocol, chain, and health factor threshold. Returns a watch ID.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"alerts.watch"</span>,
+<span class="k">"arguments"</span>: {
+  <span class="k">"address"</span>: <span class="s">"0xYourWalletAddress"</span>,
+  <span class="k">"protocol"</span>: <span class="s">"aave-v3"</span>,
+  <span class="k">"chain"</span>: <span class="s">"ethereum"</span>,
+  <span class="k">"healthFactorThreshold"</span>: 1.5
+}</code></pre>
+  <p>Save the returned <code>watchId</code> — you will use it to poll for alerts and remove the watch when done.</p>
+
+  <h3>Step 2: poll for alerts</h3>
+  <p>Call <code>alerts.check</code> on a schedule (every 1–5 minutes for active positions). Pass the watch ID to filter results. Set <code>acknowledge: true</code> to clear the alert after processing.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"alerts.check"</span>,
+<span class="k">"arguments"</span>: {
+  <span class="k">"watchId"</span>: <span class="s">"watch_abc123"</span>,
+  <span class="k">"acknowledge"</span>: false
+}</code></pre>
+  <p>The response includes <code>alertCount</code>, <code>critical</code>, <code>warning</code>, and an array of alert objects. Each alert has <code>type</code>, <code>severity</code>, <code>message</code>, and <code>data</code> (current health factor, threshold, position details).</p>
+
+  <h3>Step 3: forward to a webhook</h3>
+  <p>The <code>alerts.check</code> response is JSON. Your backend script or agent reads it and forwards to your notification endpoint. Example using curl in a polling script:</p>
+  <pre><code><span class="k">#!/bin/bash</span>
+<span class="s">RESPONSE</span>=$(curl -s -X POST https://syenite.ai/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"alerts.check","arguments":{"watchId":"watch_abc123"}}}')
+
+<span class="k">ALERT_COUNT</span>=$(echo $RESPONSE | jq '.result.content[0].text | fromjson | .alertCount')
+
+if [ "$ALERT_COUNT" -gt "0" ]; then
+  curl -s -X POST https://your-webhook.example.com/defi-alerts \
+    -H "Content-Type: application/json" \
+    -d "$RESPONSE"
+fi</code></pre>
+
+  <h3>Step 4: remove the watch when done</h3>
+  <p>Call <code>alerts.remove</code> with the watch ID to stop monitoring and free server-side state.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"alerts.remove"</span>,
+<span class="k">"arguments"</span>: { <span class="k">"watchId"</span>: <span class="s">"watch_abc123"</span> }</code></pre>
+
+  <h2>faq</h2>
+  <h3>How often are alerts checked?</h3>
+  <p>Syenite checks watched positions on each call to <code>alerts.check</code>. The tool does not push alerts independently — your agent or polling script calls <code>alerts.check</code> on a schedule. For active positions, polling every 1–5 minutes is recommended.</p>
+
+  <h3>What webhook formats are supported?</h3>
+  <p>Syenite returns alert data as structured JSON from <code>alerts.check</code>. Your agent or backend is responsible for forwarding that data to a webhook endpoint. The JSON payload includes alert type, severity, current health factor, threshold, and position details.</p>
+
+  <h3>Can I get SMS or email alerts?</h3>
+  <p>Syenite does not send SMS or email directly. Your integration layer (a backend script, a Zapier workflow, or an agent with notification tools) reads <code>alerts.check</code> output and routes notifications to SMS, email, or Slack as needed.</p>
+
+  <h3>What happens when a position is liquidated?</h3>
+  <p>Syenite alerts are designed to warn before liquidation, not after. If a health factor drops below 1.0, the position is already liquidatable on-chain. Set your <code>healthFactorThreshold</code> to at least 1.3–1.5 to receive warnings with time to act.</p>
+
+  <h2>related</h2>
+  <p><a href="/docs/position-alerts-and-carry">Position alerts and carry screening</a> covers the full alerts workflow including carry screening. <a href="/docs/lending-rates-and-risk">Lending rates and risk</a> explains how to assess a position before opening it. <a href="/docs/lending-execution">Lending execution</a> covers supply, borrow, withdraw, and repay calldata.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

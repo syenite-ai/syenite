@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Build a DeFi AI Agent with Syenite — Syenite</title>
+  <meta name="description" content="Build a DeFi AI agent with Syenite MCP: lending bots, yield optimizers, alert systems, and prediction market traders. MCP config, tool examples, and execution model in one guide.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="https://syenite.ai/docs/defi-agent-quickstart">
+  <meta property="og:title" content="Build a DeFi AI Agent with Syenite — Syenite">
+  <meta property="og:description" content="Build a DeFi AI agent with Syenite MCP: lending bots, yield optimizers, alert systems, and prediction market traders. MCP config, tool examples, and execution model in one guide.">
+  <meta property="og:url" content="https://syenite.ai/docs/defi-agent-quickstart">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Build a DeFi AI Agent with Syenite — Syenite">
+  <meta name="twitter:description" content="Build a DeFi AI agent with Syenite MCP: lending bots, yield optimizers, alert systems, and prediction market traders. MCP config, tool examples, and execution model in one guide.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    .callout{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin:1rem 0 1.5rem;font-size:0.88rem;color:#777;}
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Syenite", "item": "https://syenite.ai"},
+      {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://syenite.ai/docs"},
+      {"@type": "ListItem", "position": 3, "name": "Build a DeFi AI Agent with Syenite", "item": "https://syenite.ai/docs/defi-agent-quickstart"}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Does Syenite execute transactions on my behalf?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Syenite tools that prepare transactions (lending.supply, lending.borrow, swap.quote) return unsigned calldata. Your agent or wallet submits the transaction. Syenite never holds keys or sends transactions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which agent frameworks work with Syenite?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Any framework that supports MCP works: Cursor, Claude Desktop, LangChain with MCP support, the OpenAI Agents SDK, and Coinbase AgentKit. Add the MCP server URL https://syenite.ai/mcp and the tools become available."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is an API key required?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No API key is required for standard use. The server is rate-limited to 30 requests per minute per IP. For production agents making more frequent calls, contact Syenite for a production key."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Build a DeFi AI Agent with Syenite</h1>
+  <p>Syenite is an MCP server that gives AI agents structured access to DeFi: lending rates, yield opportunities, swap quotes, position alerts, and prediction markets — all through tool calls. An agent that can read data and prepare transactions is the foundation for lending bots, yield optimizers, alert systems, and more.</p>
+
+  <h2>what you can build</h2>
+  <ul>
+    <li><strong>Lending bot</strong> — compares rates across Aave, Morpho, and Spark, assesses risk, and prepares supply or borrow transactions for the best available market.</li>
+    <li><strong>Yield optimizer</strong> — scans vault yields and carry opportunities; suggests rebalancing when a better yield is available.</li>
+    <li><strong>Prediction market trader</strong> — queries open prediction markets, reads pricing and liquidity, and prepares trade calldata.</li>
+    <li><strong>Alert system</strong> — monitors lending positions for health factor degradation and notifies the agent or user before liquidation risk materializes.</li>
+  </ul>
+
+  <h2>quick start: add the mcp server</h2>
+  <p>No API key required. Add the server URL to your MCP client config:</p>
+  <pre><code>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"syenite"</span>: {
+      <span class="k">"url"</span>: <span class="s">"https://syenite.ai/mcp"</span>
+    }
+  }
+}</code></pre>
+  <p>Works in Cursor, Claude Desktop, and any MCP client. Rate limit: 30 requests per minute per IP. Call <code>syenite.help</code> to confirm the connection and see the full tool list.</p>
+
+  <h2>lending</h2>
+  <p>Query borrow and supply rates across protocols, assess risk for a proposed position, and prepare supply/borrow/repay calldata. The full lending workflow covers rate comparison, risk assessment, and execution in sequence.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"lending.rates.query"</span>,
+<span class="k">"arguments"</span>: { <span class="k">"collateral"</span>: <span class="s">"wBTC"</span>, <span class="k">"borrowAsset"</span>: <span class="s">"USDC"</span> }</code></pre>
+  <p>See <a href="/docs/lending-rates-and-risk">lending rates and risk</a> and <a href="/docs/lending-execution">lending execution</a> for full parameter references.</p>
+
+  <h2>yield</h2>
+  <p>Discover yield opportunities across vaults and protocols. Filter by asset, chain, and minimum APY. Results include protocol, APY, TVL, and risk tier so an agent can rank and recommend opportunities.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"yield.opportunities"</span>,
+<span class="k">"arguments"</span>: { <span class="k">"asset"</span>: <span class="s">"USDC"</span>, <span class="k">"chain"</span>: <span class="s">"ethereum"</span> }</code></pre>
+  <p>See <a href="/docs/yield-opportunities">yield opportunities</a> for details.</p>
+
+  <h2>swap</h2>
+  <p>Get swap quotes and bridge estimates across chains. The tool returns expected output, price impact, gas estimate, and unsigned transaction calldata. The agent presents the quote; execution requires a wallet signature.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"swap.quote"</span>,
+<span class="k">"arguments"</span>: { <span class="k">"from"</span>: <span class="s">"ETH"</span>, <span class="k">"to"</span>: <span class="s">"USDC"</span>, <span class="k">"amount"</span>: <span class="s">"1"</span>, <span class="k">"chain"</span>: <span class="s">"ethereum"</span> }</code></pre>
+  <p>See <a href="/docs/swap-and-bridge">swap and bridge</a> for full parameter reference.</p>
+
+  <h2>alerts</h2>
+  <p>Register a wallet address for position monitoring. The agent polls for alerts and surfaces warnings before health factors reach liquidation thresholds. Works with any Aave v3, Morpho, or Spark position.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"alerts.watch"</span>,
+<span class="k">"arguments"</span>: { <span class="k">"address"</span>: <span class="s">"0x..."</span>, <span class="k">"healthFactorThreshold"</span>: <span class="s">1.5</span> }</code></pre>
+  <p>See <a href="/docs/position-alerts-and-carry">position alerts and carry screening</a> for the full monitoring workflow.</p>
+
+  <h2>prediction markets</h2>
+  <p>Query open prediction markets, read current pricing and liquidity depth, and prepare trade calldata. The agent can evaluate market odds and present trades for user confirmation.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"prediction.markets.query"</span>,
+<span class="k">"arguments"</span>: { <span class="k">"status"</span>: <span class="s">"open"</span>, <span class="k">"chain"</span>: <span class="s">"polygon"</span> }</code></pre>
+  <p>See <a href="/docs/prediction-and-strategy">prediction markets and strategy</a> for details.</p>
+
+  <h2>execution model</h2>
+  <div class="callout">
+    Tools that prepare transactions return unsigned calldata. The agent never submits transactions directly — it passes calldata to the user's wallet for signing and broadcast. Syenite does not hold keys or custody assets.
+  </div>
+  <p>This design means an agent can reason over rates, risk, and yield without any custody risk. The agent handles intelligence; the wallet handles execution. For more on the trust model, see <a href="/docs/tx-trust-layer">transaction trust layer</a> and <a href="/docs/security-and-production">security and production use</a>.</p>
+
+  <h2>faq</h2>
+  <h3>Does Syenite execute transactions on my behalf?</h3>
+  <p>No. Syenite tools that prepare transactions return unsigned calldata. Your agent or wallet submits the transaction. Syenite never holds keys or sends transactions.</p>
+
+  <h3>Which agent frameworks work with Syenite?</h3>
+  <p>Any framework that supports MCP works: Cursor, Claude Desktop, LangChain with MCP support, the OpenAI Agents SDK, and Coinbase AgentKit. Add the MCP server URL <code>https://syenite.ai/mcp</code> and the tools become available.</p>
+
+  <h3>Is an API key required?</h3>
+  <p>No API key is required for standard use. The server is rate-limited to 30 requests per minute per IP. For production agents making more frequent calls, contact Syenite for a production key.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

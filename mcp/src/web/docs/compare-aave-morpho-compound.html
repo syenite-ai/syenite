@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compare Aave, Morpho, and Compound Lending Rates — Syenite</title>
+  <meta name="description" content="Compare Aave v3, Morpho Blue, Compound v3, and Spark borrow and supply rates in real time. Understand why rates differ and how Syenite's lending.rates tool surfaces the best rate.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="https://syenite.ai/docs/compare-aave-morpho-compound">
+  <meta property="og:title" content="Compare Aave, Morpho, and Compound Lending Rates — Syenite">
+  <meta property="og:description" content="Compare Aave v3, Morpho Blue, Compound v3, and Spark borrow and supply rates in real time. Understand why rates differ and how Syenite's lending.rates tool surfaces the best rate.">
+  <meta property="og:url" content="https://syenite.ai/docs/compare-aave-morpho-compound">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Compare Aave, Morpho, and Compound Lending Rates — Syenite">
+  <meta name="twitter:description" content="Compare Aave v3, Morpho Blue, Compound v3, and Spark borrow and supply rates in real time. Understand why rates differ and how Syenite's lending.rates tool surfaces the best rate.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:0.75rem 0 1.5rem;}
+    th{font-family:var(--mono);font-weight:500;color:var(--muted);text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.75rem;text-transform:lowercase;letter-spacing:0.05em;}
+    td{padding:0.5rem 0.75rem;border-bottom:1px solid #141414;color:#888;vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Syenite", "item": "https://syenite.ai"},
+      {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://syenite.ai/docs"},
+      {"@type": "ListItem", "position": 3, "name": "Compare Aave, Morpho, and Compound Lending Rates", "item": "https://syenite.ai/docs/compare-aave-morpho-compound"}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Why are Morpho rates often better than Aave?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Morpho Blue uses isolated, vault-specific markets rather than a single shared liquidity pool. This reduces counterparty risk for lenders, which lets curators attract supply at lower rates. Borrowers benefit when a vault is well-capitalized and utilization is low."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the difference between Aave v3 and Compound v3?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Both use shared liquidity pools and variable interest rate models, but they differ in governance and risk parameters. Aave v3 has a broader collateral list and is available on more chains. Compound v3 (Comet) restructured to a single-borrow-asset model per deployment, which simplifies risk but limits flexibility."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Spark and how does it relate to MakerDAO?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Spark is a lending protocol affiliated with Sky (formerly MakerDAO). It uses DAI and USDC as primary borrow assets and is optimized for the Maker ecosystem. Rates on Spark can be influenced by Maker governance decisions, including the DAI Savings Rate."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How often do rates change across protocols?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Rates update continuously as utilization in each market changes. Syenite caches on-chain rate data for 15–60 seconds to balance freshness with performance. Always fetch rates immediately before executing a borrow or supply transaction."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Compare Aave, Morpho, and Compound Lending Rates</h1>
+  <p>Borrow APRs for the same asset can vary by 1–3 percentage points across Aave v3, Morpho Blue, Compound v3, and Spark at any given time. Each protocol uses a different liquidity model, risk framework, and governance structure — which means the best rate for a wBTC/USDC borrow on Monday may not be the best rate on Friday. Real-time comparison is the only reliable method.</p>
+
+  <h2>protocol overview</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Protocol</th>
+        <th>Type</th>
+        <th>Typical Borrow APR</th>
+        <th>Typical Supply APY</th>
+        <th>Best for</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Aave v3</td>
+        <td>Pooled, variable</td>
+        <td>3–8% (USDC)</td>
+        <td>2–6% (USDC)</td>
+        <td>General borrowing, liquid markets, broad collateral list</td>
+      </tr>
+      <tr>
+        <td>Morpho Blue</td>
+        <td>Vault-isolated, variable</td>
+        <td>2–7% (USDC)</td>
+        <td>3–7% (USDC)</td>
+        <td>Curated risk, often better rates when vault utilization is moderate</td>
+      </tr>
+      <tr>
+        <td>Compound v3</td>
+        <td>Pooled, variable</td>
+        <td>3–7% (USDC)</td>
+        <td>2–5% (USDC)</td>
+        <td>Reliable, established protocol; single-borrow-asset model per deployment</td>
+      </tr>
+      <tr>
+        <td>Spark</td>
+        <td>Pooled, variable</td>
+        <td>3–6% (DAI/USDC)</td>
+        <td>3–5% (DAI/USDC)</td>
+        <td>Maker-affiliated, DAI and USDC focus, governance-influenced rates</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>APR and APY ranges are illustrative. Actual rates depend on utilization, collateral, and chain. Always fetch live data before acting.</p>
+
+  <h2>why rates differ across protocols</h2>
+  <p>Interest rates in DeFi lending protocols follow utilization curves: when a pool is nearly full, rates spike to attract more supply; when utilization is low, rates drop to attract borrowers. Each protocol has its own curve parameters, governance-set base rates, and liquidity depth — so identical collateral and borrow assets produce different rates depending on which protocol you query.</p>
+  <p>Morpho Blue's vault-isolated model means each market's utilization is independent. A wBTC/USDC vault with low utilization will offer lower borrow rates than Aave's shared wBTC pool if Aave's pool is heavily utilized. The reverse holds when the Morpho vault is near capacity.</p>
+
+  <h2>real-time comparison with syenite</h2>
+  <p>Syenite's <code>lending.rates.query</code> tool fetches live borrow and supply rates from Aave v3, Morpho Blue, and Spark simultaneously. Pass <code>collateral</code> and <code>borrowAsset</code> to get a ranked comparison in one call.</p>
+  <pre><code><span class="k">"tool"</span>: <span class="s">"lending.rates.query"</span>,
+<span class="k">"arguments"</span>: {
+  <span class="k">"collateral"</span>: <span class="s">"wBTC"</span>,
+  <span class="k">"borrowAsset"</span>: <span class="s">"USDC"</span>
+}</code></pre>
+  <p>The response includes borrow APR, supply APY, utilization, available liquidity, and liquidation parameters for each protocol. Data is pulled from on-chain contracts and cached for 15–60 seconds.</p>
+
+  <h2>when to use syenite's rates tool</h2>
+  <p>Use <code>lending.rates.query</code> before every borrow or supply decision that involves more than one protocol. Even a 0.5% rate difference compounds meaningfully over months on a large position. The tool eliminates manual comparison across protocol UIs and gives agents a single, structured response they can reason over.</p>
+  <p>After comparing rates, call <code>lending.risk.assess</code> with your chosen protocol and target LTV to get liquidation price, safety margin, and annual cost before committing to a position. See <a href="/docs/lending-rates-and-risk">lending rates and risk</a> for the full workflow.</p>
+
+  <h2>faq</h2>
+  <h3>Why are Morpho rates often better than Aave?</h3>
+  <p>Morpho Blue uses isolated, vault-specific markets rather than a single shared liquidity pool. This reduces counterparty risk for lenders, which lets curators attract supply at lower rates. Borrowers benefit when a vault is well-capitalized and utilization is low.</p>
+
+  <h3>What is the difference between Aave v3 and Compound v3?</h3>
+  <p>Both use shared liquidity pools and variable interest rate models, but they differ in governance and risk parameters. Aave v3 has a broader collateral list and is available on more chains. Compound v3 (Comet) restructured to a single-borrow-asset model per deployment, which simplifies risk but limits flexibility.</p>
+
+  <h3>What is Spark and how does it relate to MakerDAO?</h3>
+  <p>Spark is a lending protocol affiliated with Sky (formerly MakerDAO). It uses DAI and USDC as primary borrow assets and is optimized for the Maker ecosystem. Rates on Spark can be influenced by Maker governance decisions, including the DAI Savings Rate.</p>
+
+  <h3>How often do rates change across protocols?</h3>
+  <p>Rates update continuously as utilization in each market changes. Syenite caches on-chain rate data for 15–60 seconds to balance freshness with performance. Always fetch rates immediately before executing a borrow or supply transaction.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>

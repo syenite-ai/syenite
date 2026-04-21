@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCP Server DeFi Tools — Syenite Reference</title>
+  <meta name="description" content="Full reference for Syenite MCP server DeFi tools: lending rates, yield, swap, alerts, prediction markets, and wallet tools. Install, connect, and call from any MCP-compatible client.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="https://syenite.ai/docs/mcp-server-defi-tools">
+  <meta property="og:title" content="MCP Server DeFi Tools — Syenite Reference">
+  <meta property="og:description" content="Full reference for Syenite MCP server DeFi tools: lending rates, yield, swap, alerts, prediction markets, and wallet tools. Install, connect, and call from any MCP-compatible client.">
+  <meta property="og:url" content="https://syenite.ai/docs/mcp-server-defi-tools">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MCP Server DeFi Tools — Syenite Reference">
+  <meta name="twitter:description" content="Full reference for Syenite MCP server DeFi tools: lending rates, yield, swap, alerts, prediction markets, and wallet tools. Install, connect, and call from any MCP-compatible client.">
+  <style>
+    :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);line-height:1.7;color:var(--text);background:var(--bg);padding:0 1.25rem;}
+    .wrap{max-width:680px;margin:0 auto;padding:4rem 0 3rem;}
+    h1,h2,h3{font-family:var(--mono);font-weight:500;}
+    h1{font-size:clamp(1.75rem,5vw,2.25rem);color:var(--heading);}
+    h2{font-size:0.8rem;color:var(--muted);text-transform:lowercase;letter-spacing:0.1em;margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+    h3{font-size:0.85rem;color:#666;margin:1.25rem 0 0.5rem;font-weight:400;}
+    p{margin-bottom:0.75rem;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--accent-hover);}
+    pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;overflow-x:auto;font-size:0.8rem;line-height:1.65;margin:0.75rem 0 1.5rem;}
+    code{font-family:var(--mono);font-size:0.85em;}
+    pre code{color:#888;}
+    .k{color:var(--accent);}.s{color:var(--green);}
+    :not(pre)>code{background:#1a1a1a;padding:0.15em 0.35em;border-radius:3px;font-size:0.82em;color:#aaa;}
+    .foot{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.75rem;color:#3a3a3a;}
+    .foot a{color:var(--muted);}
+    ul{color:#888;margin-bottom:1rem;padding-left:1.25rem;}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:0.75rem 0 1.5rem;}
+    th{font-family:var(--mono);font-weight:500;color:var(--muted);text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.75rem;text-transform:lowercase;letter-spacing:0.05em;}
+    td{padding:0.5rem 0.75rem;border-bottom:1px solid #141414;color:#888;vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+    td code{font-size:0.78rem;}
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Syenite", "item": "https://syenite.ai"},
+      {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://syenite.ai/docs"},
+      {"@type": "ListItem", "position": 3, "name": "MCP Server DeFi Tools Reference", "item": "https://syenite.ai/docs/mcp-server-defi-tools"}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is an MCP server?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MCP (Model Context Protocol) is an open standard that lets AI models call external tools. An MCP server exposes a set of named tools at a single endpoint. Clients like Cursor, Claude Desktop, and the OpenAI Agents SDK send tool-call requests; the server executes them and returns structured results."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which chains does Syenite support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Lending tools support Ethereum mainnet, Arbitrum, and Base. Swap and bridge tools support 30+ EVM chains. Wallet balance queries work on any EVM chain. Check the tool-specific docs for per-tool chain coverage."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need an API key to use Syenite?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No API key is needed for standard use. The endpoint https://syenite.ai/mcp is open with a rate limit of 30 requests per minute per IP. For production workloads requiring higher throughput, contact Syenite."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does Syenite submit transactions on my behalf?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Transaction tools return unsigned calldata. Your wallet or signing infrastructure submits the transaction. Syenite never holds private keys or custody of assets."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <h1>MCP Server DeFi Tools — Syenite Reference</h1>
+  <p>This page is a reference for developers connecting to Syenite for the first time. It covers what an MCP server is, why DeFi tools via MCP are useful for agents, the full tool list, and how to install and connect.</p>
+
+  <h2>what is an mcp server</h2>
+  <p>MCP (Model Context Protocol) is an open standard that lets AI models call external tools. An MCP server exposes a set of named tools at a single HTTPS endpoint. Clients — Cursor, Claude Desktop, the OpenAI Agents SDK, LangChain with MCP support, Coinbase AgentKit — send JSON-RPC <code>tools/call</code> requests; the server executes the tool and returns a structured result. One MCP server can expose dozens of tools, so a single endpoint URL gives an agent access to an entire capability surface without per-tool API wiring.</p>
+
+  <h2>why defi tools via mcp</h2>
+  <p>DeFi data is structured and action-oriented: interest rates, health factors, swap quotes, and yield APYs are all numeric values that agents can reason over. DeFi actions (supply, borrow, swap) produce unsigned transaction calldata that agents can prepare without custody risk. MCP is the natural transport for this: agent-native, composable, real-time, and framework-agnostic.</p>
+  <p>Syenite bundles lending intelligence (rates, risk, position monitoring), yield discovery, swap and bridge quotes, wallet tools, and prediction market access under one endpoint. An agent that connects once can execute any DeFi workflow without additional API integrations.</p>
+
+  <h2>full tool reference</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tool name</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Chains</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>syenite.help</code></td>
+        <td>Service info, tool list, supported chains, and yield sources. No parameters.</td>
+        <td>Meta</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>lending.rates.query</code></td>
+        <td>Live borrow and supply rates across Aave v3, Morpho Blue, and Spark for a given collateral and borrow asset.</td>
+        <td>Lending</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>lending.market.overview</code></td>
+        <td>Aggregate market view: TVL, utilization, rate ranges, and available liquidity per protocol.</td>
+        <td>Lending</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>lending.risk.assess</code></td>
+        <td>Risk assessment for a proposed position: liquidation price, safety margin, annual cost, risk score.</td>
+        <td>Lending</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>lending.position.monitor</code></td>
+        <td>Current position details for a wallet: health factor, LTV, collateral value, borrow balance.</td>
+        <td>Lending</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>lending.supply</code></td>
+        <td>Returns unsigned calldata to supply collateral to Aave v3 or Spark.</td>
+        <td>Lending execution</td>
+        <td>Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>lending.borrow</code></td>
+        <td>Returns unsigned calldata to borrow against supplied collateral.</td>
+        <td>Lending execution</td>
+        <td>Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>lending.withdraw</code></td>
+        <td>Returns unsigned calldata to withdraw supplied collateral.</td>
+        <td>Lending execution</td>
+        <td>Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>lending.repay</code></td>
+        <td>Returns unsigned calldata to repay a borrow position.</td>
+        <td>Lending execution</td>
+        <td>Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>yield.opportunities</code></td>
+        <td>Discover yield opportunities across vaults, LSTs, savings rates, and basis trades.</td>
+        <td>Yield</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>yield.assess</code></td>
+        <td>Risk/return assessment for a specific yield opportunity: protocol risk, liquidity, APY sustainability.</td>
+        <td>Yield</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>swap.quote</code></td>
+        <td>Optimal swap quote: expected output, price impact, gas estimate, unsigned calldata.</td>
+        <td>Swap</td>
+        <td>30+ EVM chains</td>
+      </tr>
+      <tr>
+        <td><code>swap.multi</code></td>
+        <td>Batch swap quotes for multiple pairs in one call.</td>
+        <td>Swap</td>
+        <td>30+ EVM chains</td>
+      </tr>
+      <tr>
+        <td><code>swap.status</code></td>
+        <td>Bridge or cross-chain swap status by transaction hash.</td>
+        <td>Swap</td>
+        <td>30+ EVM chains</td>
+      </tr>
+      <tr>
+        <td><code>wallet.balances</code></td>
+        <td>Multi-chain token balances for a wallet address.</td>
+        <td>Wallet</td>
+        <td>Any EVM chain</td>
+      </tr>
+      <tr>
+        <td><code>gas.estimate</code></td>
+        <td>Gas cost estimate for swaps, bridges, and contract calls.</td>
+        <td>Wallet</td>
+        <td>Any EVM chain</td>
+      </tr>
+      <tr>
+        <td><code>tx.verify</code></td>
+        <td>Pre-signing transaction verification: contract check, approval scope, risk flags.</td>
+        <td>Trust layer</td>
+        <td>Any EVM chain</td>
+      </tr>
+      <tr>
+        <td><code>tx.simulate</code></td>
+        <td>Simulate transaction outcome before signing: state diff, token movements.</td>
+        <td>Trust layer</td>
+        <td>Any EVM chain</td>
+      </tr>
+      <tr>
+        <td><code>tx.guard</code></td>
+        <td>Policy-based transaction guard: block or flag transactions that violate spend limits or allowlist rules.</td>
+        <td>Trust layer</td>
+        <td>Any EVM chain</td>
+      </tr>
+      <tr>
+        <td><code>tx.receipt</code></td>
+        <td>Post-signing transaction confirmation and decoded receipt.</td>
+        <td>Trust layer</td>
+        <td>Any EVM chain</td>
+      </tr>
+      <tr>
+        <td><code>alerts.watch</code></td>
+        <td>Register a position for health factor and LTV monitoring.</td>
+        <td>Alerts</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>alerts.check</code></td>
+        <td>Poll for active alerts on watched positions.</td>
+        <td>Alerts</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>alerts.list</code></td>
+        <td>List all active watches for the session.</td>
+        <td>Alerts</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>alerts.remove</code></td>
+        <td>Stop monitoring a position by watch ID.</td>
+        <td>Alerts</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>strategy.carry.screen</code></td>
+        <td>Screen for positive-carry strategies: supply APY exceeds borrow APY.</td>
+        <td>Strategy</td>
+        <td>Ethereum, Arbitrum, Base</td>
+      </tr>
+      <tr>
+        <td><code>prediction.trending</code></td>
+        <td>Trending prediction markets by volume and open interest.</td>
+        <td>Prediction</td>
+        <td>Polygon, Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>prediction.search</code></td>
+        <td>Search prediction markets by keyword or category.</td>
+        <td>Prediction</td>
+        <td>Polygon, Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>prediction.book</code></td>
+        <td>Order book depth and liquidity for a prediction market.</td>
+        <td>Prediction</td>
+        <td>Polygon, Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>prediction.signals</code></td>
+        <td>Market signals and sentiment indicators for prediction markets.</td>
+        <td>Prediction</td>
+        <td>Polygon, Ethereum</td>
+      </tr>
+      <tr>
+        <td><code>find.strategy</code></td>
+        <td>Composite strategy search across lending, yield, and prediction tools.</td>
+        <td>Strategy</td>
+        <td>Multi-chain</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>install and connect</h2>
+  <p>Endpoint: <code>https://syenite.ai/mcp</code>. No API key required for standard use. Rate limit: 30 requests per minute per IP.</p>
+  <h3>Cursor / Claude Desktop</h3>
+  <pre><code>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"syenite"</span>: {
+      <span class="k">"url"</span>: <span class="s">"https://syenite.ai/mcp"</span>
+    }
+  }
+}</code></pre>
+  <h3>OpenAI Agents SDK</h3>
+  <pre><code>from openai.agents import MCPServer
+
+server = MCPServer(url=<span class="s">"https://syenite.ai/mcp"</span>)
+agent = Agent(tools=[server])</code></pre>
+  <h3>Verify the connection</h3>
+  <p>Call <code>syenite.help</code> with no arguments. It returns the server version, full tool list, supported chains, and data freshness information. If you see a valid response, the connection is working.</p>
+
+  <h2>faq</h2>
+  <h3>What is an MCP server?</h3>
+  <p>MCP (Model Context Protocol) is an open standard that lets AI models call external tools. An MCP server exposes a set of named tools at a single endpoint. Clients like Cursor, Claude Desktop, and the OpenAI Agents SDK send tool-call requests; the server executes them and returns structured results.</p>
+
+  <h3>Which chains does Syenite support?</h3>
+  <p>Lending tools support Ethereum mainnet, Arbitrum, and Base. Swap and bridge tools support 30+ EVM chains. Wallet balance queries work on any EVM chain. Check the tool-specific docs for per-tool chain coverage.</p>
+
+  <h3>Do I need an API key to use Syenite?</h3>
+  <p>No API key is needed for standard use. The endpoint <code>https://syenite.ai/mcp</code> is open with a rate limit of 30 requests per minute per IP. For production workloads requiring higher throughput, contact Syenite.</p>
+
+  <h3>Does Syenite submit transactions on my behalf?</h3>
+  <p>No. Transaction tools return unsigned calldata. Your wallet or signing infrastructure submits the transaction. Syenite never holds private keys or custody of assets.</p>
+
+  <h2>related docs</h2>
+  <p><a href="/docs/quick-start">Quick start</a> — first tool call in 5 minutes. <a href="/docs/lending-rates-and-risk">Lending rates and risk</a> — full lending workflow. <a href="/docs/yield-opportunities">Yield opportunities</a> — vault and LST yield discovery. <a href="/docs/swap-and-bridge">Swap and bridge</a> — swap quotes and cross-chain. <a href="/docs/position-alerts-and-carry">Position alerts and carry</a> — health factor monitoring. <a href="/docs/security-and-production">Security and production</a> — production deployment guide.</p>
+
+  <footer class="foot">
+    <a href="/docs">Docs</a> · <a href="/">syenite</a>
+  </footer>
+</div>
+</body>
+</html>
