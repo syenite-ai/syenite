@@ -1,0 +1,17 @@
+name: Syenite
+description: >-
+  Composable DeFi intelligence for AI agents. Swap and bridge routing across 30+ chains,
+  yield and lending (Aave, Morpho, Spark, MetaMorpho vaults), prediction markets
+  (Polymarket CLOB orders and signals), carry strategy screening, wallet and gas tools,
+  and a trust layer (tx.simulate, tx.verify, tx.guard) for verification before signing.
+  No API key required.
+homepage: https://syenite.ai
+icon: https://syenite.ai/assets/icon.png
+
+startCommand:
+  type: http
+  url: https://syenite.ai/mcp
+  configSchema:
+    type: object
+    properties: {}
+    additionalProperties: false

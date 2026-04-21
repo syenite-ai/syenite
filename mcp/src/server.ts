@@ -179,7 +179,7 @@ export function createMcpServer(clientIp: string): McpServer {
       name: "syenite",
       version: "0.6.0",
     },
-    { capabilities: { tools: {} } }
+    { capabilities: { tools: {}, prompts: {} } }
   );
 
   // ── syenite.help ──────────────────────────────────────────────────
@@ -253,6 +253,7 @@ export function createMcpServer(clientIp: string): McpServer {
   server.registerTool("syenite.help", {
     description: `Get information about Syenite — the DeFi interface for AI agents. Swap/bridge routing, yield and lending, prediction markets, strategy search, alerts, wallet/gas, and trust-layer verification before signing.
 Call this tool to learn what tools are available and how to use them.`,
+    annotations: { title: "Syenite Help", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     outputSchema: helpOutput,
   }, async () => ({
     structuredContent: helpData,
@@ -263,6 +264,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.rates.query", {
     description: ratesToolDescription,
+    annotations: { title: "Lending Rates", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       collateral: z
         .string()
@@ -286,6 +288,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.market.overview", {
     description: marketToolDescription,
+    annotations: { title: "Market Overview", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       collateral: z
         .string()
@@ -305,6 +308,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.position.monitor", {
     description: monitorToolDescription,
+    annotations: { title: "Position Monitor", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       address: z.string().describe("EVM address to check (works on all supported chains)"),
       protocol: z
@@ -328,6 +332,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.risk.assess", {
     description: riskToolDescription,
+    annotations: { title: "Risk Assessment", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       collateral: z
         .string()
@@ -367,6 +372,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("yield.opportunities", {
     description: yieldToolDescription,
+    annotations: { title: "Yield Opportunities", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       asset: z
         .string()
@@ -394,6 +400,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("yield.assess", {
     description: yieldAssessToolDescription,
+    annotations: { title: "Yield Risk Assessment", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       protocol: z
         .string()
@@ -420,6 +427,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("swap.quote", {
     description: swapQuoteDescription,
+    annotations: { title: "Swap / Bridge Quote", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       fromToken: z
         .string()
@@ -481,6 +489,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("swap.status", {
     description: swapStatusDescription,
+    annotations: { title: "Swap Status", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       txHash: z
         .string()
@@ -515,6 +524,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("swap.multi", {
     description: swapMultiDescription,
+    annotations: { title: "Batch Swap Quotes", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       requests: z.array(swapRequestItem).min(1).max(10).describe("Array of swap/bridge requests to quote in parallel"),
     },
@@ -533,6 +543,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("wallet.balances", {
     description: walletBalancesDescription,
+    annotations: { title: "Wallet Balances", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       address: z.string().describe("EVM address to check"),
       chains: z
@@ -552,6 +563,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("gas.estimate", {
     description: gasEstimateDescription,
+    annotations: { title: "Gas Estimate", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       chains: z
         .array(z.enum(["ethereum", "arbitrum", "base", "bsc"]))
@@ -579,6 +591,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("tx.simulate", {
     description: txSimulateDescription,
+    annotations: { title: "Simulate Transaction", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       transaction: txTransactionSchema,
       chain: z.string().optional().describe("Chain name or ID (defaults to tx chainId or ethereum)"),
@@ -601,6 +614,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("tx.verify", {
     description: txVerifyDescription,
+    annotations: { title: "Verify Contract", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       to: z.string().describe("Contract address to verify"),
       chain: z.string().describe("Chain name: ethereum, arbitrum, base, bsc"),
@@ -625,6 +639,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("tx.guard", {
     description: txGuardDescription,
+    annotations: { title: "Transaction Guard", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     inputSchema: {
       transaction: z.object({
         to: z.string().describe("Target address"),
@@ -652,6 +667,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("strategy.carry.screen", {
     description: carryScreenerDescription,
+    annotations: { title: "Carry Screener", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       collateral: z
         .string()
@@ -689,6 +705,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.trending", {
     description: predictionTrendingDescription,
+    annotations: { title: "Trending Markets", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       limit: z
         .number()
@@ -706,6 +723,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.search", {
     description: predictionSearchDescription,
+    annotations: { title: "Search Prediction Markets", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       query: z
         .string()
@@ -726,6 +744,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.book", {
     description: predictionBookDescription,
+    annotations: { title: "Order Book", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       tokenId: z
         .string()
@@ -740,6 +759,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.signals", {
     description: predictionSignalsDescription,
+    annotations: { title: "Prediction Signals", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       minStrength: z
         .number()
@@ -767,6 +787,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("find.strategy", {
     description: findStrategyDescription,
+    annotations: { title: "Find Strategy", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       asset: z
         .string()
@@ -803,6 +824,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.supply", {
     description: lendingSupplyDescription,
+    annotations: { title: "Supply Collateral", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
       chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain where the pool lives"),
@@ -822,6 +844,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.borrow", {
     description: lendingBorrowDescription,
+    annotations: { title: "Borrow Asset", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
       chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain"),
@@ -841,6 +864,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.withdraw", {
     description: lendingWithdrawDescription,
+    annotations: { title: "Withdraw Collateral", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
       chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain"),
@@ -860,6 +884,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("lending.repay", {
     description: lendingRepayDescription,
+    annotations: { title: "Repay Loan", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       protocol: z.enum(["aave-v3", "spark"]).default("aave-v3").describe("Lending protocol"),
       chain: z.enum(["ethereum", "arbitrum", "base"]).default("ethereum").describe("Chain"),
@@ -879,6 +904,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("tx.receipt", {
     description: txReceiptDescription,
+    annotations: { title: "Transaction Receipt", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       txHash: z.string().describe("Transaction hash to look up"),
       chain: z.string().default("ethereum").describe("Chain: ethereum, arbitrum, base, bsc (or chain ID)"),
@@ -892,6 +918,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("token.price", {
     description: tokenPriceDescription,
+    annotations: { title: "Token Price", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       symbol: z.string().default("WETH").describe("Token symbol (e.g. wBTC, WETH, USDC). Ignored when symbols is provided."),
       symbols: z.array(z.string()).optional().describe("Batch: array of token symbols to price in one call (up to 20)"),
@@ -905,6 +932,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("alerts.watch", {
     description: alertWatchDescription,
+    annotations: { title: "Watch Position", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       address: z.string().describe("EVM address to monitor"),
       protocol: z
@@ -938,6 +966,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("alerts.check", {
     description: alertCheckDescription,
+    annotations: { title: "Check Alerts", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     inputSchema: {
       watchId: z.string().optional().describe("Filter alerts for a specific watch ID"),
       acknowledge: z.boolean().default(false).describe("Mark returned alerts as acknowledged"),
@@ -951,6 +980,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("alerts.list", {
     description: alertListDescription,
+    annotations: { title: "List Watches", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     outputSchema: alertListOutput,
   }, withLogging(clientIp, "alerts.list", () => handleAlertList()));
 
@@ -958,6 +988,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("alerts.remove", {
     description: alertRemoveDescription,
+    annotations: { title: "Remove Watch", readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       watchId: z.string().describe("ID of the watch to remove"),
     },
@@ -970,6 +1001,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("metamorpho.supply", {
     description: metaMorphoSupplyDescription,
+    annotations: { title: "MetaMorpho Deposit", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       vault: z
         .string()
@@ -993,6 +1025,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("metamorpho.withdraw", {
     description: metaMorphoWithdrawDescription,
+    annotations: { title: "MetaMorpho Withdraw", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       vault: z
         .string()
@@ -1019,6 +1052,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.market", {
     description: predictionMarketDescription,
+    annotations: { title: "Market Detail", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       slug: z.string().optional().describe("Polymarket market slug"),
       conditionId: z.string().optional().describe("Polymarket condition ID (0x-prefixed)"),
@@ -1044,6 +1078,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.watch", {
     description: predictionWatchDescription,
+    annotations: { title: "Watch Market", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       slug: z.string().optional().describe("Polymarket market slug"),
       conditionId: z.string().optional().describe("Polymarket condition ID"),
@@ -1064,6 +1099,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.position", {
     description: predictionPositionDescription,
+    annotations: { title: "Prediction Positions", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       address: z.string().describe("Polygon EOA address holding Polymarket positions"),
     },
@@ -1079,6 +1115,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.quote", {
     description: predictionQuoteDescription,
+    annotations: { title: "Prediction Quote", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       tokenId: z.string().describe("Polymarket outcome token ID"),
       side: z.enum(["buy", "sell"]),
@@ -1103,6 +1140,7 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("prediction.order", {
     description: predictionOrderDescription,
+    annotations: { title: "Place Prediction Order", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       tokenId: z.string().describe("Polymarket outcome token ID"),
       side: z.enum(["buy", "sell"]),
@@ -1127,6 +1165,50 @@ Call this tool to learn what tools are available and how to use them.`,
     }),
     (p) => ({ ...p, maker: "***" + String(p.maker).slice(-4) })
   ));
+
+  // ── Prompts ───────────────────────────────────────────────────────
+
+  server.registerPrompt("find-yield", {
+    description: "Find the best yield opportunities for a given asset across DeFi protocols",
+    argsSchema: {
+      asset: z.string().describe('Asset to find yield for (e.g. "ETH", "USDC", "wBTC")'),
+    },
+  }, async ({ asset }) => ({
+    messages: [{
+      role: "user",
+      content: {
+        type: "text",
+        text: `Use yield.opportunities with asset="${asset}" to find the best current yield opportunities. Show APY, protocol, risk level, and any relevant details. Sort by APY descending and highlight any fixed-yield (Pendle PT) options.`,
+      },
+    }],
+  }));
+
+  server.registerPrompt("market-overview", {
+    description: "Get current DeFi lending market rates, TVL, and utilization across protocols",
+  }, async () => ({
+    messages: [{
+      role: "user",
+      content: {
+        type: "text",
+        text: "Call lending.market.overview with chain='all' to show current DeFi lending market state. Then call lending.rates.query with collateral='all' and chain='all' to show current borrow and supply rates. Summarize the best supply and borrow opportunities.",
+      },
+    }],
+  }));
+
+  server.registerPrompt("check-position", {
+    description: "Check health factor and liquidation risk for a lending position",
+    argsSchema: {
+      address: z.string().describe("EVM wallet address to check (0x...)"),
+    },
+  }, async ({ address }) => ({
+    messages: [{
+      role: "user",
+      content: {
+        type: "text",
+        text: `Use lending.position.monitor with address="${address}" and protocol="all" and chain="all" to check the current health factor and liquidation risk. Flag any positions below health factor 1.5 and recommend corrective actions if needed.`,
+      },
+    }],
+  }));
 
   return server;
 }
