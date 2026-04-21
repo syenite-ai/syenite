@@ -1245,3 +1245,58 @@ export const kalshiSignalsOutput = z.object({
   timestamp: z.string(),
   note: z.string(),
 });
+
+// ── prediction.compare / prediction.arbitrage ────────────────────────────
+
+const CrossExchangeMarket = z.object({
+  question: z.string(),
+  probPct: z.number().describe("Implied YES probability (0–100)"),
+  liquidityUSD: z.number(),
+  spreadBps: z.number(),
+  volume: z.number().optional(),
+  volume24h: z.number().optional(),
+  slug: z.string().optional().describe("Polymarket slug"),
+  ticker: z.string().optional().describe("Kalshi ticker"),
+});
+
+export const predictionCompareOutput = z.object({
+  query: z.string(),
+  matchedPairs: z.number(),
+  polymarketsFound: z.number(),
+  kalshiMarketsFound: z.number(),
+  pairs: z.array(z.object({
+    matchConfidence: z.string().describe("Jaccard keyword overlap between titles"),
+    divergencePp: z.number().describe("Absolute difference in implied probability (percentage points)"),
+    higherOn: z.enum(["polymarket", "kalshi", "equal"]),
+    polymarket: CrossExchangeMarket,
+    kalshi: CrossExchangeMarket,
+  })),
+  unmatchedMarkets: z.array(z.object({
+    exchange: z.string(),
+    question: z.string(),
+    probPct: z.number(),
+    slug: z.string().optional(),
+    ticker: z.string().optional(),
+  })),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+export const predictionArbitrageOutput = z.object({
+  marketsScanned: z.object({
+    polymarket: z.number(),
+    kalshi: z.number(),
+  }),
+  arbOpportunities: z.number(),
+  minDivergencePp: z.number(),
+  opportunities: z.array(z.object({
+    divergencePp: z.number(),
+    matchConfidence: z.string(),
+    action: z.string().describe("Suggested long/short pair"),
+    higherOn: z.enum(["polymarket", "kalshi", "equal"]),
+    polymarket: CrossExchangeMarket,
+    kalshi: CrossExchangeMarket,
+  })),
+  timestamp: z.string(),
+  note: z.string(),
+});

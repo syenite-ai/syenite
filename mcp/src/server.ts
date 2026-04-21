@@ -67,6 +67,12 @@ import {
 } from "./tools/kalshi.js";
 import { handleKalshiMarket, kalshiMarketDescription } from "./tools/kalshi-market.js";
 import { handleKalshiSignals, kalshiSignalsDescription } from "./tools/kalshi-signals.js";
+import {
+  handlePredictionCompare,
+  handlePredictionArbitrage,
+  predictionCompareDescription,
+  predictionArbitrageDescription,
+} from "./tools/prediction-compare.js";
 import type { PredictionConditions } from "./data/alerts.js";
 import { logToolCall } from "./logging/usage.js";
 import { recordToolCall } from "./logging/metrics.js";
@@ -115,6 +121,8 @@ import {
   kalshiBookOutput,
   kalshiMarketOutput,
   kalshiSignalsOutput,
+  predictionCompareOutput,
+  predictionArbitrageOutput,
 } from "./schemas.js";
 
 function extractChain(params: Record<string, unknown>): string | undefined {
@@ -1318,6 +1326,30 @@ Results persisted across server restarts. Poll alerts.check to retrieve fired al
     outputSchema: kalshiSignalsOutput,
   }, withLogging(clientIp, "kalshi.signals", (p) =>
     handleKalshiSignals(p as { minStrength?: number; types?: string[]; limit?: number })
+  ));
+
+  server.registerTool("prediction.compare", {
+    description: predictionCompareDescription,
+    annotations: { title: "Prediction Market Compare", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      query: z.string().describe("Topic to search on both Polymarket and Kalshi (e.g. 'Trump tariffs', 'Bitcoin 100k', 'Fed rate cut')"),
+      minOverlapPct: z.number().min(0).max(100).optional().describe("Minimum keyword overlap to count as a match (0–100, default 20). Lower = more speculative matches."),
+    },
+    outputSchema: predictionCompareOutput,
+  }, withLogging(clientIp, "prediction.compare", (p) =>
+    handlePredictionCompare(p as { query: string; minOverlapPct?: number })
+  ));
+
+  server.registerTool("prediction.arbitrage", {
+    description: predictionArbitrageDescription,
+    annotations: { title: "Cross-Exchange Arbitrage Scanner", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      minDivergencePp: z.number().min(0).optional().describe("Minimum probability divergence in percentage points to surface (default 3)"),
+      limit: z.number().int().min(1).max(50).optional().describe("Max opportunities to return (default 20, max 50)"),
+    },
+    outputSchema: predictionArbitrageOutput,
+  }, withLogging(clientIp, "prediction.arbitrage", (p) =>
+    handlePredictionArbitrage(p as { minDivergencePp?: number; limit?: number })
   ));
 
   // ── Prompts ───────────────────────────────────────────────────────

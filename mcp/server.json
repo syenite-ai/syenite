@@ -14,15 +14,5 @@
       "type": "streamable-http",
       "url": "https://syenite.ai/mcp"
     }
-  ],
-  "packages": [
-    {
-      "registryType": "npm",
-      "identifier": "@syenite/mcp",
-      "version": "0.6.0",
-      "transport": {
-        "type": "stdio"
-      }
-    }
   ]
 }
