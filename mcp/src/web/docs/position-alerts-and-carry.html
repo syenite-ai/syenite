@@ -5,6 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Position alerts and carry screening with Syenite MCP</title>
   <meta name="description" content="Monitor lending positions with alerts.watch and alerts.check. Screen for positive carry with strategy.carry.screen. Health factor alerts and self-funding DeFi strategies via MCP.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Position alerts and carry screening with Syenite MCP">
+  <meta property="og:description" content="Monitor lending positions with alerts.watch and alerts.check. Screen for positive carry with strategy.carry.screen. Health factor alerts and self-funding DeFi strategies via MCP.">
+  <meta property="og:url" content="https://syenite.ai/docs/position-alerts-and-carry">
+  <meta property="og:image" content="https://syenite.ai/assets/icon-square.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Position alerts and carry screening with Syenite MCP">
+  <meta name="twitter:description" content="Monitor lending positions with alerts.watch and alerts.check. Screen for positive carry with strategy.carry.screen. Health factor alerts and self-funding DeFi strategies via MCP.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Docs", "item": "https://syenite.ai/docs" },
+    { "@type": "ListItem", "position": 2, "name": "Position alerts and carry screening with Syenite MCP", "item": "https://syenite.ai/docs/position-alerts-and-carry" }
+  ]
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do position alerts work in Syenite?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Call alerts.watch with a wallet address and threshold parameters (health factor, rate change, or carry spread). Syenite stores a persistent watch and evaluates it against live chain data on each polling interval. When a threshold is breached, alerts.check returns the triggered event."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is a carry trade in DeFi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A carry trade borrows a low-rate asset and deploys the proceeds into a higher-yield position, capturing the spread as profit. Syenite's strategy.carry.screen identifies pairs where the borrow cost is lower than available supply yield across supported protocols."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I set up a webhook for DeFi position alerts?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pass a webhook URL in the alerts.watch call. When Syenite detects a threshold breach it sends a POST request to your endpoint with the alert payload. This lets you integrate position monitoring into any notification system or downstream automation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What triggers a position alert?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Alerts can trigger on health factor falling below a threshold, borrow rate increasing above a set level, carry spread turning negative, or a position's net APY dropping below target. You configure these conditions when calling alerts.watch."
+      }
+    }
+  ]
+}
+  </script>
   <link rel="canonical" href="https://syenite.ai/docs/position-alerts-and-carry">
   <style>
     :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}

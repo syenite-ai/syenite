@@ -5,6 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Compare DeFi lending rates and assess risk with Syenite MCP</title>
   <meta name="description" content="Workflow for DeFi lending rates and risk: lending.rates.query, lending.market.overview, lending.risk.assess. Aave v3, Morpho Blue, Spark on Ethereum. MCP server for agentic DeFi.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Compare DeFi lending rates and assess risk with Syenite MCP">
+  <meta property="og:description" content="Workflow for DeFi lending rates and risk: lending.rates.query, lending.market.overview, lending.risk.assess. Aave v3, Morpho Blue, Spark on Ethereum. MCP server for agentic DeFi.">
+  <meta property="og:url" content="https://syenite.ai/docs/lending-rates-and-risk">
+  <meta property="og:image" content="https://syenite.ai/assets/icon-square.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Compare DeFi lending rates and assess risk with Syenite MCP">
+  <meta name="twitter:description" content="Workflow for DeFi lending rates and risk: lending.rates.query, lending.market.overview, lending.risk.assess. Aave v3, Morpho Blue, Spark on Ethereum. MCP server for agentic DeFi.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Docs", "item": "https://syenite.ai/docs" },
+    { "@type": "ListItem", "position": 2, "name": "Compare DeFi lending rates and assess risk with Syenite MCP", "item": "https://syenite.ai/docs/lending-rates-and-risk" }
+  ]
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What lending protocols does Syenite support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Syenite supports Aave v3, Morpho Blue, Spark, and Compound across Ethereum mainnet, Arbitrum, and Base. Use lending.rates.query to fetch real-time borrow and supply rates for any supported protocol and collateral pair."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I compare borrow rates across Aave, Morpho, and Compound?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Call lending.rates.query with your collateral and borrowAsset parameters. Syenite returns current rates for all supported protocols in a single response, making it easy to identify the lowest cost borrow. You can also use lending.market.overview for a broader market snapshot."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is utilisation rate and why does it matter for lending?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Utilisation rate is the fraction of supplied liquidity that has been borrowed. When utilisation is high, borrow rates rise sharply on most lending curves. Syenite exposes utilisation data through lending.market.overview so agents can anticipate rate moves before executing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does Syenite assess liquidation risk?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Call lending.risk.assess with a wallet address to receive health factor, loan-to-value ratio, and liquidation threshold for open positions. Syenite returns these metrics for all active positions across supported protocols so agents can flag positions approaching unsafe levels."
+      }
+    }
+  ]
+}
+  </script>
   <link rel="canonical" href="https://syenite.ai/docs/lending-rates-and-risk">
   <style>
     :root{--bg:#101010;--surface:#161616;--border:#1e1e1e;--text:#999;--heading:#c8c8c8;--muted:#555;--accent:#b09070;--accent-hover:#c4a080;--green:#8a9a7c;--mono:'SF Mono','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
