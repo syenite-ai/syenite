@@ -99,7 +99,7 @@
     <li><code>collateral</code> (string): <code>"wBTC"</code>, <code>"tBTC"</code>, <code>"cbBTC"</code>, <code>"WETH"</code>, <code>"wstETH"</code>, <code>"rETH"</code>, <code>"cbETH"</code>, <code>"weETH"</code>, or <code>"all"</code></li>
     <li><code>borrowAsset</code> (string): <code>"USDC"</code> (default), <code>"USDT"</code>, <code>"DAI"</code>, <code>"GHO"</code></li>
   </ul>
-  <p>Use it to compare which protocol offers the best borrow rate for a given collateral. Example: collateral <code>"wBTC"</code>, borrowAsset <code>"USDC"</code> returns rates per protocol.</p>
+  <p>Use it to <a href="/docs/compare-aave-morpho-compound">compare which protocol offers the best borrow rate</a> for a given collateral. Example: collateral <code>"wBTC"</code>, borrowAsset <code>"USDC"</code> returns rates per protocol.</p>
 
   <h2>lending.market.overview</h2>
   <p>Returns an aggregate view: TVL, utilization, rate ranges, and available liquidity per protocol. Parameter <code>collateral</code> filters by asset or <code>"all"</code>. Use it to see market depth before choosing a protocol.</p>
@@ -117,10 +117,17 @@
   <p>Workflow: call <code>lending.rates.query</code> to compare rates, then <code>lending.risk.assess</code> for the chosen protocol and LTV. The agent can recommend a protocol and LTV based on both rate and risk.</p>
 
   <h2>Supported protocols and collateral</h2>
-  <p>Aave v3: wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH. Morpho Blue: wBTC, tBTC, cbBTC, wstETH, WETH. Spark: wBTC, tBTC, WETH, wstETH, rETH, weETH. All on Ethereum mainnet.</p>
+  <p>Aave v3: wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH. Morpho Blue: wBTC, tBTC, cbBTC, wstETH, WETH. Spark: wBTC, tBTC, WETH, wstETH, rETH, weETH. All on Ethereum mainnet. For a protocol-by-protocol comparison across Aave, Morpho, and Compound including parameter differences and fee structures, see <a href="/docs/compare-aave-morpho-compound">Compare Aave, Morpho &amp; Compound</a>.</p>
 
-  <h2>Related</h2>
-  <p><a href="/docs/lending-execution">Lending execution (supply, borrow, withdraw, repay)</a> generates the unsigned calldata once you have chosen a market. <a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a> uses these tools in a full tutorial. <a href="/docs/quick-start">Quick start</a> shows how to call <code>lending.rates.query</code> from Cursor or Claude. For monitoring existing positions, use <code>lending.position.monitor</code> (see the <a href="/">tool list</a> on the homepage).</p>
+  <section style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+    <h2 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Related</h2>
+    <ul style="margin-top:0.75rem;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:0.4rem">
+      <li><a href="/docs/compare-aave-morpho-compound">Compare Aave, Morpho &amp; Compound</a></li>
+      <li><a href="/docs/lending-execution">Lending execution (supply, borrow, withdraw, repay)</a></li>
+      <li><a href="/docs/yield-opportunities">Find and assess yield opportunities</a></li>
+      <li><a href="/docs/defi-agent-quickstart">Build a DeFi AI Agent</a></li>
+    </ul>
+  </section>
 
   <footer class="foot">
     <a href="/docs">Docs</a> · <a href="/">syenite</a>

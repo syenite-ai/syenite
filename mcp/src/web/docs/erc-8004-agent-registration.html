@@ -90,8 +90,15 @@
   <p>Syenite's registration document includes <code>"x402Support": true</code>, which tells discovery clients and wallets that this agent can participate in x402 flows. The MCP endpoint itself is currently free and rate-limited; x402 is a declaration for future payment integration and for appearing in agent directories that filter by payment capability.</p>
   <p>To verify: fetch the registration document and check the <code>x402Support</code> field. Agents with both ERC-8004 and x402 are discoverable as payment-capable DeFi tools. DeFi operations (quotes, execution, data) can be monetized per call via this standard — no API keys or billing dashboards required.</p>
 
-  <h2>related</h2>
-  <p><a href="/docs/why-agentic-defi">Why agentic DeFi</a> (ERC-8004, AgentKit, and the agent economy). <a href="/docs/quick-start">Quick start</a> for MCP setup. <a href="/docs/security-and-production">Security and production</a>.</p>
+  <section style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+    <h2 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Related</h2>
+    <ul style="margin-top:0.75rem;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:0.4rem">
+      <li><a href="/docs/mcp-server-defi-tools">MCP Server DeFi Tools Reference</a></li>
+      <li><a href="/docs/defi-agent-quickstart">Build a DeFi AI Agent</a></li>
+      <li><a href="/docs/mcp-defi-discovery">MCP server DeFi and crypto discovery</a></li>
+      <li><a href="/docs/security-and-production">Security and production use</a></li>
+    </ul>
+  </section>
 
   <footer class="foot">
     <a href="/docs">Docs</a> · <a href="/">syenite</a>

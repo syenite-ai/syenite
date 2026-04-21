@@ -47,27 +47,37 @@
 <body>
 <div class="wrap">
   <h1>SEO and indexing</h1>
-  <p>Syenite serves a sitemap and robots.txt so crawlers can discover and index the site. You can verify ownership in Google Search Console (GSC) using an environment variable.</p>
+  <p>Syenite serves a sitemap and robots.txt so crawlers can discover and index the site. You can verify ownership in Google Search Console (GSC) using an environment variable. For an overview of how Syenite is discoverable by AI agents and MCP clients, see <a href=”/docs/mcp-defi-discovery”>MCP server DeFi and crypto discovery</a>.</p>
 
   <h2>Sitemap</h2>
-  <p><code>GET https://syenite.ai/sitemap.xml</code> returns an XML sitemap of the homepage, docs index, and all doc articles. Updated when new docs are added. Cache-Control: 1 hour. Submit this URL in GSC under Sitemaps after verifying the property.</p>
+  <p><code>GET https://syenite.ai/sitemap.xml</code> returns an XML sitemap of the homepage, docs index, and all doc articles — including the <a href=”/docs/mcp-server-defi-tools”>MCP Server DeFi Tools Reference</a> and the <a href=”/docs/defi-agent-quickstart”>Build a DeFi AI Agent</a> guide. Updated when new docs are added. Cache-Control: 1 hour. Submit this URL in GSC under Sitemaps after verifying the property.</p>
 
   <h2>robots.txt</h2>
   <p><code>GET https://syenite.ai/robots.txt</code> allows crawlers for <code>/</code> and <code>/docs</code>, disallows <code>/dashboard</code> and <code>/metrics</code>, and references the sitemap. Cache-Control: 24 hours.</p>
 
   <h2>Google Search Console</h2>
-  <p>Add the property at <a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a> with URL prefix <code>https://syenite.ai</code>. To verify ownership, use one of the following.</p>
+  <p>Add the property at <a href=”https://search.google.com/search-console” target=”_blank” rel=”noopener”>search.google.com/search-console</a> with URL prefix <code>https://syenite.ai</code>. To verify ownership, use one of the following.</p>
   <h3>HTML tag</h3>
   <p>In GSC choose “HTML tag” and copy the <code>content</code> value from the meta tag. Set it in your deployment environment:</p>
-  <pre><code>GOOGLE_SITE_VERIFICATION=<span style="color:#8a9a7c">your-token-from-gsc</span></code></pre>
-  <p>Syenite injects <code>&lt;meta name="google-site-verification" content="..."&gt;</code> into the landing page head when this variable is set. Redeploy, then click Verify in GSC.</p>
+  <pre><code>GOOGLE_SITE_VERIFICATION=<span style=”color:#8a9a7c”>your-token-from-gsc</span></code></pre>
+  <p>Syenite injects <code>&lt;meta name=”google-site-verification” content=”...”&gt;</code> into the landing page head when this variable is set. Redeploy, then click Verify in GSC.</p>
   <h3>HTML file</h3>
   <p>If you prefer the file method, use the same token. GSC will ask you to place a file named <code>google&lt;token&gt;.html</code>. Syenite serves that URL with the required content when <code>GOOGLE_SITE_VERIFICATION</code> is set. Request <code>https://syenite.ai/google&lt;token&gt;.html</code> after deploying; then verify in GSC.</p>
 
   <h2>After verification</h2>
-  <p>Submit the sitemap URL in GSC (Sitemaps → Add a new sitemap → <code>sitemap.xml</code>). Use the URL Inspection tool to request indexing for important URLs. Indexing can take a few days for new or updated pages.</p>
+  <p>Submit the sitemap URL in GSC (Sitemaps → Add a new sitemap → <code>sitemap.xml</code>). Use the URL Inspection tool to request indexing for important URLs. Key pages to prioritize include <a href=”/docs/why-agentic-defi”>Why agentic DeFi</a>, the <a href=”/docs/mcp-server-defi-tools”>MCP Server DeFi Tools Reference</a>, and the <a href=”/docs/defi-agent-quickstart”>agent quickstart</a>. Indexing can take a few days for new or updated pages.</p>
 
-  <footer class="foot">
+  <section style=”margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border)”>
+    <h2 style=”font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)”>Related</h2>
+    <ul style=”margin-top:0.75rem;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:0.4rem”>
+      <li><a href=”/docs/mcp-defi-discovery”>MCP server DeFi and crypto discovery</a></li>
+      <li><a href=”/docs/mcp-server-defi-tools”>MCP Server DeFi Tools Reference</a></li>
+      <li><a href=”/docs/why-agentic-defi”>Why agentic DeFi</a></li>
+      <li><a href=”/docs/defi-agent-quickstart”>Build a DeFi AI Agent</a></li>
+    </ul>
+  </section>
+
+  <footer class=”foot”>
     <a href="/docs">Docs</a> · <a href="/">syenite</a>
   </footer>
 </div>

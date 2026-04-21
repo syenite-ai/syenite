@@ -108,9 +108,9 @@
 }</code></pre>
 
   <h2>full execution loop</h2>
-  <p>The recommended agent workflow for a lending position:</p>
+  <p>The recommended agent workflow for a lending position. If you are getting started, see <a href="/docs/defi-agent-quickstart">Build a DeFi AI Agent</a> for a framework-agnostic setup guide.</p>
   <ol style="color:#888;padding-left:1.25rem;margin-bottom:1rem;">
-    <li><code>find.strategy</code> or <code>lending.rates.query</code> to identify the best market</li>
+    <li><code>find.strategy</code> or <a href="/docs/lending-rates-and-risk"><code>lending.rates.query</code></a> to identify the best market</li>
     <li><code>lending.risk.assess</code> to evaluate the position before committing</li>
     <li><code>lending.supply</code> to deposit collateral (submit approval tx first, then supply tx)</li>
     <li><code>tx.receipt</code> to confirm the supply transaction landed</li>
@@ -132,13 +132,15 @@
     <li><code>verification</code> — next-step guidance pointing to <code>tx.receipt</code> and <code>lending.position.monitor</code></li>
   </ul>
 
-  <h2>related</h2>
-  <ul>
-    <li><a href="/docs/lending-rates-and-risk">Compare lending rates and assess risk</a></li>
-    <li><a href="/docs/tx-trust-layer">Transaction trust layer (tx.verify, tx.simulate, tx.guard)</a></li>
-    <li><a href="/docs/position-alerts-and-carry">Position alerts and carry screening</a></li>
-    <li><a href="/docs/build-defi-lending-agent-30-min">Build a DeFi lending agent in 30 minutes</a></li>
-  </ul>
+  <section style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+    <h2 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Related</h2>
+    <ul style="margin-top:0.75rem;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:0.4rem">
+      <li><a href="/docs/compare-aave-morpho-compound">Compare Aave, Morpho &amp; Compound</a></li>
+      <li><a href="/docs/lending-rates-and-risk">Compare lending rates and assess risk</a></li>
+      <li><a href="/docs/tx-trust-layer">Transaction trust layer (tx.verify, tx.simulate, tx.guard)</a></li>
+      <li><a href="/docs/defi-agent-quickstart">Build a DeFi AI Agent</a></li>
+    </ul>
+  </section>
 
   <footer class="foot">
     <a href="/">syenite</a> · <a href="/docs">docs</a> · <a href="https://syenite.ai">syenite.ai</a>
