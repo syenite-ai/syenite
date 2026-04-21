@@ -3,6 +3,7 @@
   "name": "io.github.syenite-ai/syenite",
   "title": "Syenite",
   "description": "Composable DeFi intelligence for AI agents: swap, bridge, yield, lending with execution (supply/borrow/withdraw/repay calldata), prediction markets, carry and strategy search, alerts with webhooks, wallet and gas, tx.verify/tx.simulate/tx.guard/tx.receipt. 30+ chains. Live at syenite.ai.",
+  "systemPrompt": "You are connected to Syenite, a DeFi MCP server for AI agents. Syenite provides lending rates and execution across Aave v3, Morpho Blue, Compound v3, and Spark; yield opportunities including Pendle, liquid staking, and vaults; swap and bridge routing via LI.FI across 30+ chains; Polymarket prediction market data and signals; persistent position alerts with webhooks; and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt) for calldata verification before and after signing. Call syenite.help for the full tool catalogue and parameter reference. Important: all execution tools (lending.supply, lending.borrow, lending.withdraw, lending.repay, swap.quote) return unsigned calldata — you must pass this to the user's connected wallet for signing; Syenite never holds private keys or custody of funds.",
   "repository": {
     "url": "https://github.com/syenite-ai/syenite",
     "source": "github"
