@@ -1,10 +1,7 @@
 import { getOrderBook, type OrderBookSummary } from "../data/polymarket.js";
 import { SyeniteError } from "../errors.js";
 
-export const predictionQuoteDescription = `Get a size-aware quote for a Polymarket order.
-Walks the CLOB order book to compute average fill price, slippage from mid, and available depth.
-Inputs: tokenId, side (buy/sell), outcome (YES/NO informational), size in shares, optional
-orderType and limitPrice. Polymarket CLOB charges 0 maker/taker fees at time of writing.`;
+export const predictionQuoteDescription = `Simulates a Polymarket CLOB order fill by walking the live order book, computing average fill price, total cost in USDC, slippage from mid-price in percentage and basis points, and available book depth for a given size. Call this before prediction.order to validate that the book can absorb the desired position size at an acceptable price. Requires tokenId (from prediction.trending/search), side (buy or sell), outcome (YES or NO — informational label only), and size in shares; optionally pass orderType (market or limit) and limitPrice. Returns a partial-fill warning if the book cannot fully absorb the requested size, and a slippage warning if estimated slippage exceeds 5%. Polymarket CLOB currently charges zero maker and taker fees. Does not place an order.`;
 
 function round(n: number, decimals = 2): number {
   return Math.round(n * 10 ** decimals) / 10 ** decimals;

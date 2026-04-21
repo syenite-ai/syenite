@@ -5,9 +5,7 @@ import { isSolanaAddress } from "../data/solana/client.js";
 import { SyeniteError } from "../errors.js";
 import { log } from "../logging/logger.js";
 
-export const walletBalancesDescription = `Check native and token balances for any EVM address across supported chains (Ethereum, Arbitrum, Base, BNB Chain) or a Solana address.
-Returns native gas token balance, common stablecoin balances, and USD-equivalent totals per chain. Accepts an EVM 0x-address or a Solana base58 pubkey and routes automatically.
-Use this to verify an address has sufficient funds before executing swaps, bridges, or on-chain operations.`;
+export const walletBalancesDescription = `Returns native gas token and major stablecoin balances for any EVM or Solana address across supported chains, reading directly from on-chain RPC with no third-party indexer dependency. Accepts an EVM 0x-address (queries Ethereum, Arbitrum, Base, BNB Chain, and Optimism) or a Solana base58 pubkey (queries native SOL and all non-zero SPL token accounts) — address format is detected automatically. Optionally pass chains to restrict the query to specific chains and reduce latency. Use this before executing swaps, bridges, or lending operations to confirm the wallet holds sufficient funds. Returns balances per chain with raw and human-readable amounts; chains with RPC errors are included with an error marker rather than silently dropped.`;
 
 const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
   ethereum: "ETH",

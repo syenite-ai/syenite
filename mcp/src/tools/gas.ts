@@ -4,10 +4,7 @@ import { getRecentPrioritizationFees } from "../data/solana/client.js";
 import { SyeniteError } from "../errors.js";
 import { log } from "../logging/logger.js";
 
-export const gasEstimateDescription = `Estimate current gas costs across supported chains (Ethereum, Arbitrum, Base, BNB Chain) and Solana priority fees.
-Returns gas prices, estimated costs for common operations (transfer, swap, bridge, contract call), and the native token needed.
-For Solana, returns recent prioritization fees in micro-lamports/CU (sampled from the last few slots).
-Use this before executing transactions to ensure the wallet has enough native gas, or to pick the cheapest chain for an operation.`;
+export const gasEstimateDescription = `Returns current gas prices and estimated costs for common DeFi operations across EVM chains (Ethereum, Arbitrum, Base, BNB Chain) and Solana priority fees, allowing agents to confirm a wallet holds sufficient native gas and to select the cheapest chain for an operation. Covered operations: transfer, erc20_transfer, erc20_approve, swap, bridge, lending_supply, lending_borrow, contract_register — each reported with gas units, cost in native token, and approximate USD cost at current price. For Solana, returns recent prioritization fees in micro-lamports per compute unit (min, median, p75, max) sampled from the last few slots. Optionally filter by chains (array) and operations (array of operation names); defaults to all chains and all operations. Identifies the cheapest chain per operation. USD estimates use approximate native token prices and are indicative, not exact.`;
 
 const NATIVE_SYMBOLS: Record<SupportedChain, string> = {
   ethereum: "ETH",

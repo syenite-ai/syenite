@@ -6,9 +6,7 @@ import {
 } from "../data/polymarket.js";
 import { log } from "../logging/logger.js";
 
-export const predictionSignalsDescription = `Detect actionable signals across prediction markets — volume spikes, wide spreads, extreme probabilities, and high-conviction opportunities.
-Scans Polymarket for markets where agents can profit: market making on wide spreads, fading extremes, or riding momentum.
-Returns ranked signals with signal type, strength, and suggested action. Use this for autonomous prediction market strategy discovery.`;
+export const predictionSignalsDescription = `Scans the top 25 trending Polymarket markets and returns ranked actionable signals across five categories: wide_spread (bid-ask gap above 4% — market-making opportunity), extreme_probability (outcome above 92% or below 8% — contrarian or long-shot play), high_volume (turnover ratio above 5x — active price discovery), deep_liquidity (pool above $100k — safe for large size), and mispriced (outcome probabilities don't sum to 100% — arbitrage opportunity). Use this for autonomous prediction market strategy discovery without manually scanning individual markets. Optionally filter by minStrength (0–100), types (array of signal type strings), and limit (default 20, max 50). Returns each signal with strength score, affected market, suggested action, and supporting data. Signals are heuristic — verify market fundamentals before trading.`;
 
 type SignalType = "wide_spread" | "extreme_probability" | "high_volume" | "deep_liquidity" | "mispriced";
 

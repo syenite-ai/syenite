@@ -1,10 +1,7 @@
 import { handleSwapQuote } from "./swap.js";
 import { SyeniteError } from "../errors.js";
 
-export const swapMultiDescription = `Batch multiple swap or bridge quotes in a single call. Fetches all quotes in parallel and returns them together.
-Useful for splitting funds across chains, multi-leg rebalancing, or comparing routes side-by-side.
-Each request in the batch uses the same parameters as swap.quote.
-Returns individual results (with errors per-item if any fail) and a summary of total costs.`;
+export const swapMultiDescription = `Fetches up to 10 swap or bridge quotes in a single batched call, executing all route lookups in parallel and returning each result alongside a total cost summary. Use this when splitting funds across multiple chains, executing multi-leg portfolio rebalancing, or comparing routes side-by-side without making sequential calls. Each element in the requests array accepts the same parameters as swap.quote (fromToken, toToken, fromAmount, fromAddress, fromChain, toChain, slippage, order). Returns per-request results with status ok or error (failed quotes do not abort the batch), plus aggregate gas and fee totals. Quotes are valid for approximately 30 seconds; sign and submit transactions sequentially to avoid nonce conflicts. Maximum 10 requests per call.`;
 
 interface SwapRequest {
   fromToken: string;

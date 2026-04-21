@@ -1,14 +1,7 @@
 import { SyeniteError } from "../errors.js";
 import { getOrderBook } from "../data/polymarket.js";
 
-export const predictionOrderDescription = `Prepare a Polymarket CLOB order for signing.
-IMPORTANT: Polymarket CLOB uses off-chain EIP-712 order signing with on-chain settlement, NOT direct
-on-chain transactions. This tool returns the EIP-712 typed-data payload the agent must sign with its
-Polygon EOA and POST to https://clob.polymarket.com/order. It is NOT compatible with tx.simulate /
-tx.verify because there is no on-chain transaction until settlement.
-
-Inputs: tokenId, side (buy/sell), size (shares), price (0-1), expiration (unix seconds, 0 = GTC).
-Returns the domain, types, message, and the signing/submission instructions. See docs/internal/planning/v0.6-trackC-spike.md.`;
+export const predictionOrderDescription = `Constructs a Polymarket CLOB limit order payload ready for EIP-712 off-chain signing and submission to the Polymarket REST API. Polymarket uses off-chain order signing with on-chain settlement — this tool returns the EIP-712 typed-data (domain, types, message) that the agent must sign with its Polygon EOA private key, then POST to https://clob.polymarket.com/order with CLOB API authentication headers; it is not compatible with tx.simulate, tx.verify, or tx.receipt because no on-chain transaction is broadcast until settlement. Requires tokenId (from prediction.trending/search), side (buy or sell), outcome (YES or NO — label only), size (shares, positive), price (0–1 exclusive, USDC per share), and maker (Polygon EOA address); optionally pass expiration (unix seconds, 0 = GTC). Before the first order, the maker must approve the CTF Exchange contract to spend USDC on Polygon — the response includes approval details. Use prediction.quote first to validate fill price and available depth.`;
 
 const CTF_EXCHANGE_ADDRESS =
   process.env.POLYMARKET_EXCHANGE_ADDRESS ?? "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E";

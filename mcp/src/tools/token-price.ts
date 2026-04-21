@@ -2,10 +2,7 @@ import { getTokenPrice } from "../data/prices.js";
 import { TOKEN_PRICE_FEED } from "../data/types.js";
 import { SyeniteError } from "../errors.js";
 
-export const tokenPriceDescription = `Get the current USD price for a supported token via Chainlink on-chain oracle.
-Prices are the same feeds used by Aave, Morpho, Spark, and other lending protocols — what Chainlink reports is what determines liquidation.
-Supported tokens: ${Object.keys(TOKEN_PRICE_FEED).join(", ")}.
-Cached for 60 seconds. Use for portfolio valuation, P&L calculation, and policy enforcement.`;
+export const tokenPriceDescription = `Returns the current USD price for one or more tokens by reading Chainlink on-chain price feed contracts directly — the same oracles that Aave, Morpho, Spark, and Compound use to trigger liquidations. Use this for portfolio valuation, P&L calculation, health-factor estimation, and policy enforcement where prices must match what lending protocols see. Pass symbol for a single token or symbols (array, max 20) for a batch lookup; results are cached for 60 seconds. Supported tokens: ${Object.keys(TOKEN_PRICE_FEED).join(", ")}. Returns priceUSD and the feed contract address per token; unsupported symbols return an error entry without aborting the batch.`;
 
 export async function handleTokenPrice(params: {
   symbol: string;

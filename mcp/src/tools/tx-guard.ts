@@ -3,9 +3,7 @@ import { CHAIN_IDS, CHAIN_NAMES } from "../data/types.js";
 import { lookupContract } from "../data/contracts.js";
 import { SyeniteError } from "../errors.js";
 
-export const txGuardDescription = `Check a transaction against user-defined risk parameters before signing.
-You define the rules (max value, allowed contracts, gas limits, function filters). Syenite evaluates them.
-No trust required — the rules are yours. Use this as a programmable safety net for autonomous agents.`;
+export const txGuardDescription = `Evaluates a proposed transaction against a caller-supplied set of risk rules before signing, returning a per-rule pass/fail/skip breakdown and an overall approved verdict. Rules are caller-defined — Syenite does not impose or modify them. Supported rules: maxValueNative (cap native token value), allowedContracts (allowlist of target addresses), blockedContracts (denylist), allowedFunctions (function selector filter), requireVerifiedContract (flag if contract is unverified — requires prior tx.verify call), requireAllowlisted (flag if contract is not in Syenite's curated protocol registry), and maxGasLimit. Pass transaction (to, data, value, gasLimit, chainId) and rules (any subset of the above); at least one rule is required. Use as a programmable safety gate before any autonomous on-chain action. Does not submit or sign the transaction.`;
 
 interface GuardRules {
   maxValueNative?: string;

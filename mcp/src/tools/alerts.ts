@@ -10,21 +10,13 @@ import {
 import { checkAllWatches } from "../data/alert-checker.js";
 import { SyeniteError } from "../errors.js";
 
-export const alertWatchDescription = `Register a continuous monitor that fires alerts when thresholds are crossed. Supports four watch types:
+export const alertWatchDescription = `Registers a persistent background monitor that fires alerts when user-defined thresholds are crossed, persisting across server restarts. Supports four watch types: lending (monitors a wallet's health factor on Aave, Morpho, Spark, or Compound — fires when health factor drops below healthFactorThreshold), rate (monitors borrow/supply APY and pool utilization for a collateral/borrowAsset pair — fires on APY crossings via rateBorrowThreshold/rateSupplyThreshold or utilization via rateUtilizationThreshold), carry (monitors the net spread between best supply APY and cheapest borrow rate — fires when spread exceeds carryThreshold), and yield (monitors best available yield for an asset — fires when APY crosses yieldApyThreshold in the specified direction). Provide webhookUrl to receive POST payloads when alerts fire; otherwise poll alerts.check to retrieve unacknowledged alerts. Does not execute trades — alert data must be acted on by the agent. Returns a watch ID needed for alerts.remove.`;
 
-• lending — monitors a wallet address health factor across Aave, Morpho, Spark, Compound. Fires when health factor drops below healthFactorThreshold.
-• rate — monitors borrow/supply APY and utilization for a collateral/borrowAsset pair. Fires on APY threshold crossings (rateBorrowThreshold, rateSupplyThreshold) or utilization spikes (rateUtilizationThreshold). Per-market crossing detection — each protocol/chain/market tracked independently.
-• carry — monitors the net spread between the best available supply APY for an asset and the cheapest borrow rate for a collateral/borrowAsset pair. Fires when spread exceeds carryThreshold. Replaces manual carry screener polling.
-• yield — monitors the best available yield for an asset. Fires when the best matching APY crosses yieldApyThreshold.
+export const alertCheckDescription = `Triggers an immediate evaluation of all registered watches and returns any unacknowledged alerts grouped by severity (critical or warning). Call this to poll for fired conditions without waiting for a webhook — it is safe to call repeatedly and will re-evaluate all watches on each call. Optionally pass watchId to filter results to a single watch; pass acknowledge: true with a watchId to clear that watch's alerts after reading. Returns alert count, severity breakdown, and per-alert details including watch type, message, and supporting data. Does not modify watch configuration.`;
 
-Provide webhookUrl to receive POST requests when alerts fire. Otherwise poll alerts.check periodically.`;
+export const alertListDescription = `Returns all currently registered watches with their full configuration, type (lending, rate, carry, yield, prediction), threshold parameters, and last check timestamp. Use this to audit active monitors before creating new ones or to retrieve watch IDs needed for alerts.remove. Takes no parameters and never triggers a live check — for current alert state, call alerts.check instead.`;
 
-export const alertCheckDescription = `Check for active alerts across all watches. Triggers an immediate check before returning.
-Returns unacknowledged alerts grouped by severity. Pass acknowledge: true with a watchId to clear alerts after reading.`;
-
-export const alertListDescription = `List all active watches and their status. Shows watch type, parameters, and last check time.`;
-
-export const alertRemoveDescription = `Remove a watch by its ID. Stops monitoring immediately.`;
+export const alertRemoveDescription = `Removes a registered watch by its ID, stopping all monitoring and alert generation for that watch immediately and permanently. Requires the watchId returned when the watch was created (or retrieved via alerts.list). Returns success: true if the watch was found and removed, or false if the ID was not found. Does not affect other watches or their accumulated alerts.`;
 
 function validateWebhookUrl(webhookUrl: string): void {
   try {

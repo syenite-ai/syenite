@@ -8,10 +8,7 @@ import {
 } from "../data/polymarket.js";
 import { SyeniteError } from "../errors.js";
 
-export const predictionMarketDescription = `Deep drill-down on a single Polymarket market.
-Returns market title, question, outcomes, current prices, odds history (24h/7d/30d), volume curves,
-liquidity depth, close time, resolution criteria, one-sided flow, and implied probability.
-Input: slug, conditionId, or marketId (at least one required). Use after prediction.trending or prediction.search.`;
+export const predictionMarketDescription = `Provides a comprehensive deep-dive on a single Polymarket market, returning the question, outcomes with current token prices and probability percentages, price history statistics for the last 24h/7d/30d (open, close, min, max, change), total and 24h volume, liquidity depth, bid-ask spread, one-sided order flow direction, implied probability, resolution criteria, and time remaining until close. Use this after prediction.trending or prediction.search to fully evaluate a market before quoting, ordering, or monitoring. Requires at least one of slug, conditionId, or marketId — all are returned by the search and trending tools. Does not place or cancel orders.`;
 
 function round(n: number, decimals = 2): number {
   return Math.round(n * 10 ** decimals) / 10 ** decimals;

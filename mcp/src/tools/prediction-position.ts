@@ -2,9 +2,7 @@ import { isAddress } from "viem";
 import { getUserPositions } from "../data/polymarket.js";
 import { SyeniteError } from "../errors.js";
 
-export const predictionPositionDescription = `List an agent's Polymarket positions across markets.
-Returns size, avgPrice, currentPrice, realized/unrealized PnL, and time-to-resolve for each position.
-Input: Polygon EOA address. Uses Polymarket data-api (read-only, no signing required).`;
+export const predictionPositionDescription = `Returns all open and recently resolved Polymarket positions for a given Polygon EOA address, including size in outcome shares, average entry price, current market price, realized and unrealized P&L in USDC, percentage P&L, and hours remaining until resolution for each market. Use this to audit an agent's prediction market exposure, calculate portfolio value, or identify positions that are redeemable. Requires a valid Polygon EVM address (0x-prefixed, 40 hex chars); read-only via Polymarket data API — no signing or wallet connection required. Does not place or cancel orders.`;
 
 function round(n: number, decimals = 2): number {
   return Math.round(n * 10 ** decimals) / 10 ** decimals;

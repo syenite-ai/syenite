@@ -5,10 +5,7 @@ import {
 import { getMarketDetail, getOrderBook } from "../data/polymarket.js";
 import { SyeniteError } from "../errors.js";
 
-export const predictionWatchDescription = `Register a Polymarket market for continuous monitoring.
-Mirrors alerts.watch but for prediction markets. Supports conditions on odds threshold, odds movement
-over a time window, liquidity drop, resolution approaching, and volume spike. Triggered alerts flow
-through alerts.check and optional webhookUrl. Use for automated prediction market strategy execution.`;
+export const predictionWatchDescription = `Registers a persistent background monitor for a specific Polymarket market that fires alerts when user-defined conditions are met. Supported conditions (at least one required): oddsThresholdPct (fire when implied probability crosses a target level), oddsMovePct (fire when probability moves by a delta% within a windowMinutes window), liquidityDropPct (fire when liquidity falls by a percentage from baseline), resolutionApproachingHours (fire when the market closes within N hours), and volumeSpikeMultiple (fire when 24h volume exceeds baseline by a multiple). Requires either slug or conditionId to identify the market (both returned by prediction.trending and prediction.search); optionally provide webhookUrl to receive POST payloads when conditions fire. Triggered alerts flow through alerts.check; use the returned watch ID with alerts.remove to stop monitoring. Does not place or cancel orders.`;
 
 function hasAnyCondition(c: PredictionConditions): boolean {
   return (

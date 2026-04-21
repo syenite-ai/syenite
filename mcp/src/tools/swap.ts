@@ -5,14 +5,9 @@ import { getSolanaToken } from "../data/solana/tokens.js";
 import { isSolanaAddress } from "../data/solana/client.js";
 import { SyeniteError } from "../errors.js";
 
-export const swapQuoteDescription = `Get an optimal swap or bridge quote with unsigned transaction calldata.
-Supports same-chain swaps and cross-chain bridges across 30+ chains via aggregated routing (1inch, 0x, Paraswap, and more).
-Returns the best route, expected output, fee breakdown, and an unsigned transaction ready to sign. The agent or user handles signing — Syenite never touches private keys.
-For cross-chain transfers, this handles bridging automatically — no separate bridge step needed.`;
+export const swapQuoteDescription = `Fetches an optimal swap or bridge quote across 30+ EVM chains and Solana using the LI.FI aggregator (EVM) or Jupiter (Solana), comparing routes from DEXs and bridges including 1inch, 0x, Paraswap, and major cross-chain bridges to find the best price with lowest fees. Call this before any token exchange to obtain a quote; then pass the returned unsigned transaction calldata to a wallet for signing and submission — Syenite never holds or touches private keys. Provide fromToken, toToken, fromAmount (human-readable), fromAddress, and fromChain; set toChain for cross-chain bridges, or omit to default to the same chain. Returns best route, expected output, minimum output (with slippage), gas cost, fee breakdown, and estimated execution time; cross-chain bridges may take 2–30 minutes and should be tracked with swap.status. Quotes are valid for approximately 30 seconds — re-query for fresh pricing. Does not execute the swap.`;
 
-export const swapStatusDescription = `Track execution status of a swap or cross-chain bridge transaction.
-Returns current status (PENDING, DONE, FAILED), receiving transaction hash, and amount received.
-Useful for monitoring cross-chain bridges where execution is not instant.`;
+export const swapStatusDescription = `Tracks the execution status of a cross-chain bridge transaction submitted after a swap.quote call, polling LI.FI's bridge monitoring API to report whether the transfer is PENDING, DONE, or FAILED. Call this after submitting a cross-chain transaction — same-chain swaps settle immediately and do not require polling. Requires txHash (the sending transaction hash); supply fromChain and toChain for faster resolution, or omit to default to ethereum. Returns current status, substatus, receiving transaction hash, amount received at destination, and a human-readable message explaining next steps. Does not cancel or modify the transfer — it is read-only.`;
 
 const KNOWN_STABLECOINS = new Set([
   "usdc", "usdt", "dai", "gho", "usde", "susde", "lusd", "frax", "busd", "tusd",

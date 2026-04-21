@@ -2,10 +2,7 @@ import { formatEther, formatGwei, type Hex } from "viem";
 import { getClient, type SupportedChain, ALL_LENDING_CHAINS } from "../data/client.js";
 import { SyeniteError } from "../errors.js";
 
-export const txReceiptDescription = `Fetch and decode a transaction receipt from any supported chain.
-Returns success/failure, gas used, gas cost in native + USD, block number, contract interactions, and decoded event logs.
-Use after submitting any transaction (swap, supply, borrow, bridge) to confirm execution.
-Essential for closing the strategy → quote → sign → verify loop.`;
+export const txReceiptDescription = `Fetches and decodes an on-chain transaction receipt from any supported EVM chain, returning confirmation status (confirmed or reverted), gas used and effective gas price, cost in both native token and USD, block number, all contracts interacted with, decoded event logs (Transfer, Approval, Swap, Aave Supply/Borrow/Repay, and others), and a direct block explorer URL. Use after submitting any transaction — swap, supply, borrow, repay, bridge, or approval — to confirm execution and close the strategy loop. Requires txHash and optionally chain (ethereum, arbitrum, base, or bsc; defaults to ethereum). Throws if the transaction is not found, which may indicate it is still pending or was submitted to a different chain. Does not modify state.`;
 
 const CHAIN_MAP: Record<string, SupportedChain> = {
   ethereum: "ethereum",

@@ -4,10 +4,7 @@ import { CHAIN_IDS, CHAIN_NAMES } from "../data/types.js";
 import { SyeniteError } from "../errors.js";
 import { log } from "../logging/logger.js";
 
-export const txSimulateDescription = `Simulate an unsigned transaction against current chain state before signing.
-Returns expected balance changes (native + ERC-20), gas used, and revert detection.
-Use this to verify what a transaction will actually do — independently of whoever constructed it.
-The simulation runs via eth_call against the live EVM, producing deterministic, verifiable results.`;
+export const txSimulateDescription = `Simulates an unsigned EVM transaction against live chain state using eth_call and eth_estimateGas, returning whether the call would succeed or revert (with revert reason), estimated gas units, approximate gas cost in USD, and native token balance changes from the transaction value. Use this to independently verify what a transaction will do before signing — particularly useful when the transaction was constructed by a third party. Requires transaction.to, transaction.from, transaction.data, and optionally transaction.value and transaction.chainId; pass chain or chainId to target a specific network (ethereum, arbitrum, base, bsc supported). Does not submit the transaction; ERC-20 balance diffs require trace-level simulation (not available on public RPCs) and are noted but not fully computed.`;
 
 const COMMON_TOKENS: Record<number, Array<{ symbol: string; address: Address; decimals: number }>> = {
   1: [

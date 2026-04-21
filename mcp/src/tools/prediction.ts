@@ -5,17 +5,11 @@ import {
   type PolymarketEvent,
 } from "../data/polymarket.js";
 
-export const predictionTrendingDescription = `Get trending prediction markets on Polymarket, ranked by volume.
-Returns market titles, current probabilities (outcome prices), volume, liquidity, and spread.
-Use this for discovering active markets and identifying trading opportunities.`;
+export const predictionTrendingDescription = `Fetches the top trending prediction markets on Polymarket ranked by trading volume, returning market titles, current outcome probabilities (derived from CLOB token prices as 0–100% values), total volume and liquidity in USDC, and bid-ask spread per market. Use this as the starting point for prediction market discovery — call before prediction.market, prediction.book, prediction.quote, or prediction.order to obtain market slugs and token IDs. Optionally pass limit (1–25, default 10) to control result count. Data is live from Polymarket's Gamma API and reflects current on-chain state.`;
 
-export const predictionSearchDescription = `Search prediction markets on Polymarket by topic.
-Returns matching markets with probabilities, volume, liquidity, and order book metrics.
-Good for finding specific events (elections, crypto prices, sports, geopolitics).`;
+export const predictionSearchDescription = `Searches Polymarket markets by topic keyword and returns matching events with current outcome probabilities, volume, liquidity, and order book metrics including best bid, ask, and spread. Use this when looking for a specific real-world event (elections, crypto price levels, sports outcomes, geopolitical events) rather than browsing by volume. Requires query (the search term); optionally pass limit (1–25, default 10). Returns market slugs and token IDs needed for prediction.market, prediction.book, prediction.quote, and prediction.order.`;
 
-export const predictionBookDescription = `Get the order book for a specific Polymarket outcome token.
-Returns top bids/asks, spread, mid-price, and depth. Use for assessing execution quality and market making opportunities.
-Requires a Polymarket token ID (from the markets returned by prediction.trending or prediction.search).`;
+export const predictionBookDescription = `Fetches the current CLOB order book for a specific Polymarket outcome token, returning top bid and ask levels with sizes, mid-price, spread in both decimal and basis points, and total bid/ask depth in USD. Use this to assess execution quality and market-making opportunities before placing an order — wide spreads indicate higher edge for makers; shallow depth signals potential slippage on larger size. Requires tokenId, which is obtained from the clobTokenIds field in prediction.trending or prediction.search results. Does not place or modify orders.`;
 
 function formatEvent(e: PolymarketEvent): Record<string, unknown> {
   return {

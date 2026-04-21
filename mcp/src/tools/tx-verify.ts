@@ -5,9 +5,7 @@ import { lookupContract, type ProtocolContract } from "../data/contracts.js";
 import { SyeniteError } from "../errors.js";
 import { log } from "../logging/logger.js";
 
-export const txVerifyDescription = `Verify that a transaction targets a known, verified contract — not an arbitrary address.
-Cross-references against Etherscan (verified source code), Sourcify (independent verification), and Syenite's curated protocol registry.
-Use this to confirm a contract's identity before signing any transaction. Works for any transaction, not just Syenite's.`;
+export const txVerifyDescription = `Cross-references a transaction target address against Etherscan (source code verification), Sourcify (independent verification), and Syenite's curated protocol registry to confirm the contract's identity and surface risk flags before signing. Use this to verify any EVM transaction target — not just Syenite-generated ones — as a mandatory pre-signing check in autonomous agent workflows. Requires to (the contract address, 0x-prefixed) and chain (ethereum, arbitrum, base, or bsc); optionally pass data (transaction calldata) to decode and name the function selector via 4byte.directory. Returns verification status from both sources, protocol identification (name, type, risk rating), function name if decoded, risk flags (unverified_contract, unknown_protocol, proxy_contract, eoa_target), and a human-readable summary. Network calls to Etherscan and Sourcify have 10-second timeouts; failures are noted but do not abort the call.`;
 
 const FOUR_BYTE_URL = "https://www.4byte.directory/api/v1/signatures/";
 
