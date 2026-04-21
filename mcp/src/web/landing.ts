@@ -346,8 +346,8 @@ export function landingPageHtml(): string {
       <h1>syenite</h1>
     </div>
     <p style="font-family:var(--mono);font-size:0.82rem;color:var(--muted);margin-top:0.4rem;letter-spacing:0.01em">DeFi MCP server for AI agents — lending rates, yield, swap, and position alerts across 30+ chains</p>
-    <p class="lead">Real-time lending rates and yield across Aave, Morpho, Compound, Spark, and Pendle — with position alerts and webhook delivery when conditions change. Swap and bridge routing (30+ chains), lending execution (supply, borrow, withdraw, repay), prediction markets, carry screening, and a trust layer for transaction verification. No keys held — unsigned transactions only.</p>
-    <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
+    <p class="lead">Real-time lending rates and yield across Aave, Morpho, Compound, Spark, and Pendle — with position alerts and webhook delivery when conditions change. Swap and bridge routing (30+ chains), lending execution (supply, borrow, withdraw, repay), Polymarket prediction markets, carry screening, and a trust layer for transaction verification. No keys held — unsigned transactions only.</p>
+    <p style="margin-top:1rem"><a href="/docs">Docs</a> &nbsp;<a href="/docs/defi-agent-quickstart" style="color:var(--muted)">Quickstart →</a></p>
   </header>
 
   <section>
@@ -437,6 +437,8 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+    <p style="font-size:0.8rem;margin-top:-1rem;margin-bottom:2rem"><a href="/docs/swap-and-bridge" style="color:var(--muted)">Swap and bridge guide →</a></p>
+
     <p class="section-label">trust layer</p>
 
     <div class="tool">
@@ -476,6 +478,8 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+    <p style="font-size:0.8rem;margin-top:-1rem;margin-bottom:2rem"><a href="/docs/tx-trust-layer" style="color:var(--muted)">Trust layer guide →</a></p>
+
     <p class="section-label">yield</p>
 
     <div class="tool">
@@ -497,6 +501,8 @@ export function landingPageHtml(): string {
         <span class="pn">asset</span><span class="pt">string</span><span class="pd">Asset context for finding alternatives</span>
       </div>
     </div>
+
+    <p style="font-size:0.8rem;margin-top:-1rem;margin-bottom:2rem"><a href="/docs/yield-opportunities" style="color:var(--muted)">Yield opportunities guide →</a></p>
 
     <p class="section-label">strategy & prediction</p>
 
@@ -596,8 +602,7 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
-  
-
+    <p style="font-size:0.8rem;margin-top:-1rem;margin-bottom:2rem"><a href="/docs/prediction-and-strategy" style="color:var(--muted)">Prediction and strategy guide →</a></p>
 
     <p class="section-label">lending</p>
 
@@ -640,6 +645,8 @@ export function landingPageHtml(): string {
         <span class="pn">protocol</span><span class="pt">string</span><span class="pd">"aave-v3", "morpho", "spark", or "best"</span>
       </div>
     </div>
+
+    <p style="font-size:0.8rem;margin-top:-1rem;margin-bottom:2rem"><a href="/docs/lending-rates-and-risk" style="color:var(--muted)">Lending rates and risk guide →</a></p>
 
     <p class="section-label">lending execution</p>
 
@@ -692,6 +699,8 @@ export function landingPageHtml(): string {
     </div>
 
 
+    <p style="font-size:0.8rem;margin-top:-1rem;margin-bottom:2rem"><a href="/docs/lending-execution" style="color:var(--muted)">Lending execution guide →</a></p>
+
     <p class="section-label">metamorpho vaults</p>
 
     <div class="tool">
@@ -740,6 +749,8 @@ export function landingPageHtml(): string {
         <span class="pn">webhookUrl</span><span class="pt">string</span><span class="pd">Optional HTTP(S) URL for push alerts. Structured JSON payload with retries.</span>
       </div>
     </div>
+
+    <p style="font-size:0.8rem;margin-top:-1rem"><a href="/docs/position-alerts-and-carry" style="color:var(--muted)">Position alerts and carry guide →</a></p>
   </section>
 
   <section>

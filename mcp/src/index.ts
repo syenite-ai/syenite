@@ -1,4 +1,5 @@
 import "dotenv/config";
+import compression from "compression";
 import express from "express";
 import path from "path";
 import { existsSync } from "fs";
@@ -44,6 +45,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 
 const app = express();
 app.set("trust proxy", true);
+app.use(compression());
 app.use(express.json({ limit: "100kb" }));
 
 app.use((_req, res, next) => {
