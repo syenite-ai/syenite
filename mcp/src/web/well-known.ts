@@ -1,7 +1,7 @@
 export function wellKnownMcp() {
   return {
     name: "syenite",
-    version: "0.6.0",
+    version: "0.6.3",
     description:
       "Real-time lending rates (Aave, Morpho, Compound, Spark) and yield opportunities — with position alerts and webhooks. Swap and bridge routing (30+ chains), lending execution, prediction markets, carry screening, wallet and gas, and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt). DeFi MCP for AI agents.",
     transport: "streamable-http",

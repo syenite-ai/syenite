@@ -214,7 +214,7 @@ export function createMcpServer(clientIp: string): McpServer {
   const server = new McpServer(
     {
       name: "syenite",
-      version: "0.6.0",
+      version: "0.6.3",
     },
     { capabilities: { tools: {}, prompts: {}, resources: {} } }
   );
@@ -223,7 +223,7 @@ export function createMcpServer(clientIp: string): McpServer {
 
   const helpData = {
     service: "Syenite — The DeFi interface for AI agents",
-    version: "0.6.0",
+    version: "0.6.3",
     description:
       "Real-time lending rates (Aave, Morpho, Compound, Spark) and yield opportunities across EVM and Solana — with position alerts and webhooks. Swap and bridge routing (30+ chains), lending execution (supply, borrow, withdraw, repay), MetaMorpho vaults, Pendle PT/YT, prediction markets (drill-down, CLOB orders, monitoring), carry and strategy search, wallet and gas, and a trust layer (tx.verify, tx.simulate, tx.guard) — one MCP endpoint for reading and writing to DeFi.",
     tools: [
