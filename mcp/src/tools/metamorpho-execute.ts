@@ -6,14 +6,16 @@ import { SyeniteError } from "../errors.js";
 export const metaMorphoSupplyToolName = "metamorpho.supply";
 export const metaMorphoWithdrawToolName = "metamorpho.withdraw";
 
-export const metaMorphoSupplyDescription = `Build an unsigned supply transaction for a MetaMorpho curated vault (ERC-4626).
-Returns transactionRequest calldata the caller can sign and submit, plus the ERC-20 approval required first.
-Target a specific vault via the 'vault' parameter (vault address or vault name fragment).
-Currently supported: MetaMorpho vaults on Ethereum, Base, Arbitrum, Optimism.`;
+export const metaMorphoSupplyDescription = `Builds unsigned ERC-20 approval and ERC-4626 deposit transaction calldata for supplying assets into a MetaMorpho curated vault on Ethereum, Base, Arbitrum, or Optimism.
+Call this after selecting a vault from \`yield.opportunities\` (category "vault") or \`yield.assess\`; use \`vault\` to target by vault address or a name/curator fragment (e.g. "Steakhouse", "Gauntlet").
+Provide \`vault\` identifier, human-readable \`amount\`, and \`receiver\` wallet address; the tool resolves vault address, underlying asset, and decimals automatically and errors with suggestions if the vault name is ambiguous.
+Returns the ERC-20 approval transaction (submit first) and the deposit transaction; shares are credited to \`receiver\` at the vault's current exchange rate.
+Syenite never holds private keys; no funds move until the caller signs and broadcasts both transactions.`;
 
-export const metaMorphoWithdrawDescription = `Build an unsigned withdraw transaction for a MetaMorpho vault position (ERC-4626 redeem).
-Accepts the owner address and either a share amount or 'max' to redeem the full balance.
-Returns transactionRequest calldata and the vault address.`;
+export const metaMorphoWithdrawDescription = `Builds an unsigned ERC-4626 redeem transaction calldata to withdraw assets from a MetaMorpho vault on Ethereum, Base, Arbitrum, or Optimism.
+Call this when an agent needs to exit a MetaMorpho vault position; no approval transaction is required for redemption.
+Provide \`vault\` identifier (address or name fragment), \`shares\` as a human-readable amount or the string "max" to redeem the full balance, \`receiver\` address to receive underlying assets, and \`owner\` address whose shares will be burned.
+Returns the redeem transaction request; withdrawal is subject to available liquidity in the underlying Morpho Blue markets and Syenite never holds private keys.`;
 
 const erc4626Abi = [
   {

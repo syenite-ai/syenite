@@ -8,10 +8,10 @@ import type { ProtocolRate } from "../data/types.js";
 
 export const ratesToolName = "lending.rates.query";
 
-export const ratesToolDescription = `Query real-time DeFi lending rates across Aave v3, Compound V3, Fluid, Morpho Blue, and Spark on Ethereum, Arbitrum, and Base; plus Kamino and MarginFi on Solana.
-Returns normalized borrow APY, supply APY, available liquidity, utilization, and LTV limits for each market.
-Supports all major collateral types: BTC wrappers (wBTC, tBTC, cbBTC), ETH and LSTs (WETH, wstETH, rETH, cbETH, weETH), SOL and LSTs (SOL, mSOL, jitoSOL).
-Filter by specific asset, category ("BTC" or "ETH"), chain ("ethereum", "arbitrum", "base", "bsc", "solana"), or use "all".`;
+export const ratesToolDescription = `Returns real-time borrow APY, supply APY, available liquidity, utilization, max LTV, liquidation threshold, and liquidation penalty for every active lending market across Aave v3, Compound V3, Fluid, Morpho Blue, and Spark on Ethereum, Arbitrum, and Base, plus Kamino and MarginFi on Solana.
+Call this before any borrow or supply decision to identify the cheapest borrow or the highest supply rate for a given asset pair; the response includes a \`bestBorrowRate\` summary field for quick comparison.
+Pass \`collateral\` (e.g. "WBTC", "ETH", "wstETH") and \`borrowAsset\` (e.g. "USDC", "DAI") to filter by pair; pass \`chain\` ("ethereum", "arbitrum", "base", "solana", or "all") to restrict scope — omitting either returns all markets.
+This tool is read-only and executes no transactions; APYs include compounding and are sourced live from on-chain data.`;
 
 export async function handleRatesQuery(params: {
   collateral?: string;

@@ -7,9 +7,10 @@ import type { ProtocolRate } from "../data/types.js";
 
 export const marketToolName = "lending.market.overview";
 
-export const marketToolDescription = `Get an aggregate overview of DeFi lending markets across Aave v3, Compound V3, Morpho Blue, and Spark on Ethereum, Arbitrum, and Base.
-Returns per-protocol totals: TVL, total borrowed, utilization ranges, rate ranges, and available liquidity.
-Supports all collateral types (BTC wrappers, ETH, LSTs). Use this for a high-level view of lending market conditions.`;
+export const marketToolDescription = `Returns an aggregated overview of DeFi lending market conditions across Aave v3, Compound V3, Fluid, Morpho Blue, and Spark on Ethereum, Arbitrum, and Base.
+Use this for a macro view of the lending landscape before calling \`lending.rates.query\` for per-market detail — it surfaces cross-protocol totals for supply, borrow, utilization, and available liquidity alongside borrow and supply APY ranges per protocol.
+Pass \`collateral\` (e.g. "ETH", "BTC", or "all") to scope the market scan; optionally pass \`chain\` to restrict to one network.
+Returns cross-protocol summary (lowest borrow APY, highest supply APY, total available liquidity) and per-protocol breakdowns including individual market rows; does not execute any transaction.`;
 
 export async function handleMarketOverview(params: {
   collateral?: string;

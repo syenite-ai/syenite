@@ -6,11 +6,11 @@ import { getPendleMarkets } from "../data/pendle.js";
 import type { SupportedChain } from "../data/client.js";
 import type { ProtocolRate, PendleMarket } from "../data/types.js";
 
-export const carryScreenerDescription = `Screen for positive carry strategies across all DeFi lending markets.
-Calculates net carry = collateral supply APY - borrow APY for every market.
-Returns strategies ranked by carry, including net annual return on a given position size.
-Positive carry means you earn more on deposited collateral than you pay to borrow — a self-funding leveraged position.
-Use this to discover the best borrow-to-yield strategies for autonomous agents.`;
+export const carryScreenerDescription = `Screens all DeFi lending markets across Aave v3, Compound V3, Fluid, Morpho Blue, and Spark — plus Pendle PT fixed-rate rows — for positive carry, defined as collateral supply APY minus borrow APY.
+Returns strategies ranked by net carry (highest first), with leveraged carry at 70% of max LTV, estimated annual USD return for a given position size, available liquidity, and utilization.
+Call this to discover self-funding positions where deposited collateral earns more than the cost to borrow against it; positive-carry count and best strategy are surfaced in the \`summary\` field for quick scanning.
+Optionally pass \`collateral\` (e.g. "wstETH"), \`borrowAsset\` (default "USDC"), \`chain\`, \`minCarry\` threshold (e.g. 0.5 for 0.5%+), and \`positionSizeUSD\` to size annual return estimates.
+This tool is read-only; use \`lending.risk.assess\` and the lending execute tools to act on a strategy.`;
 
 interface CarryStrategy {
   protocol: string;

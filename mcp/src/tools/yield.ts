@@ -10,9 +10,10 @@ import type { YieldOpportunity } from "../data/types.js";
 
 export const yieldToolName = "yield.opportunities";
 
-export const yieldToolDescription = `Find the best DeFi yield opportunities for any asset across blue-chip protocols on Ethereum and Solana.
-Aggregates yields from EVM lending supply (Aave, Morpho Blue on Ethereum/Base/Arbitrum/Optimism, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), curated vaults (MetaMorpho, Yearn), fixed-yield (Pendle PT), and basis capture (Ethena sUSDe); and from Solana lending (Kamino, MarginFi), liquid staking (Jito, Marinade, Sanctum), and basis capture (Drift).
-Pass chains: ["ethereum"], ["solana"], or both. Returns opportunities ranked by APY with risk level, TVL, lockup period, and protocol details. Filter by asset, category, or risk tolerance. Pass tags=["fixed-yield"] to isolate fixed-rate PTs, or tags=["yt","leveraged-variable"] to surface Pendle YT markets (hidden by default).`;
+export const yieldToolDescription = `Aggregates and ranks live DeFi yield opportunities for any asset across lending supply (Aave, Morpho Blue, Spark), liquid staking (Lido, Rocket Pool, Coinbase), savings rates (Maker DSR/sDAI), curated vaults (MetaMorpho, Yearn), fixed-yield Pendle PTs, and basis capture (Ethena sUSDe) on EVM chains, plus Kamino, MarginFi, Jito, Marinade, and Drift on Solana.
+Call this to discover where to deploy capital before deciding on a protocol; follow up with \`yield.assess\` to evaluate the risk of a specific opportunity.
+Pass \`asset\` (e.g. "USDC", "ETH", "stables") and \`chains\` (["ethereum"], ["solana"], or both) to scope results; optionally filter by \`riskTolerance\` ("low", "medium", "high") or \`tags\` (["fixed-yield"] for Pendle PTs, ["yt"] to surface Pendle YT markets which are hidden by default).
+Returns opportunities sorted by APY with risk level, TVL, lockup period, APY type (variable/fixed/estimated), and category counts; does not execute any transaction.`;
 
 const RISK_ORDER: Record<string, number> = { low: 1, medium: 2, high: 3 };
 

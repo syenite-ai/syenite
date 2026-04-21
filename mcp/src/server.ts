@@ -193,7 +193,7 @@ export function createMcpServer(clientIp: string): McpServer {
       name: "syenite",
       version: "0.6.0",
     },
-    { capabilities: { tools: {}, prompts: {} } }
+    { capabilities: { tools: {}, prompts: {}, resources: {} } }
   );
 
   // ── syenite.help ──────────────────────────────────────────────────
@@ -1051,7 +1051,7 @@ Results persisted across server restarts. Poll alerts.check to retrieve fired al
     clientIp,
     "rates.watch",
     (p) => {
-      const mode = (p.mode as string) === "carry" ? "carry" : "rate";
+      const mode = p.mode === "carry" ? "carry" : "rate";
       return handleAlertWatch({ type: mode, ...p } as Parameters<typeof handleAlertWatch>[0]);
     },
     (p) => ({ mode: p.mode, rateCollateral: p.rateCollateral, carryCollateral: p.carryCollateral,

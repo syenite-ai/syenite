@@ -4,9 +4,10 @@ import { handleGasEstimate } from "./gas.js";
 import { handlePredictionSignals } from "./prediction-signals.js";
 import { log } from "../logging/logger.js";
 
-export const findStrategyDescription = `Composable strategy finder — scans yield, carry trades, lending leverage, prediction markets, and gas costs to surface the best opportunities for a given asset and risk profile.
-The intelligence layer that connects all Syenite data sources. Tell it what you have, and it tells you what to do.
-Returns ranked strategies with expected return, risk level, execution steps, and which Syenite tools to call next.`;
+export const findStrategyDescription = `Orchestrates a parallel scan across yield opportunities, carry trades, lending leverage, cross-chain rate arbitrage, and prediction market signals to surface the best strategies for a given asset and risk profile.
+Call this as the first step when an agent has capital to deploy and needs ranked recommendations — it fans out to \`yield.opportunities\`, \`carry.screen\`, \`gas.estimate\`, and optionally \`prediction.signals\` in one call.
+Provide \`asset\` (e.g. "WETH", "USDC", "WBTC"), optionally \`amount\` in USD (used for return estimates), \`riskTolerance\` ("low", "medium", or "high"), \`chain\`, and \`includePrediction\` (default true).
+Returns strategies ranked by risk-adjusted return with category ("yield", "carry", "leverage", "arbitrage", "prediction"), expected APY, execution steps, and the exact Syenite tool names to call next for each strategy; does not execute any transaction.`;
 
 function round(n: number, decimals = 2): number {
   return Math.round(n * 10 ** decimals) / 10 ** decimals;

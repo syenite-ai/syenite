@@ -6,9 +6,10 @@ import { SyeniteError } from "../errors.js";
 
 export const riskToolName = "lending.risk.assess";
 
-export const riskToolDescription = `Assess the risk of a proposed DeFi lending position before opening it.
-Returns risk score (1-10), recommended protocol, liquidation price and penalty, position sizing analysis, collateral risk profile, protocol risk notes (oracle, liquidation mechanics, governance), estimated annual cost, and actionable summary.
-Supports any collateral asset (wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH) and borrow asset (USDC, USDT, DAI, GHO).`;
+export const riskToolDescription = `Evaluates the risk of a proposed lending position before it is opened — fetching live rates, current asset price, and available liquidity from Aave v3, Morpho Blue, and Spark to compute position-specific risk metrics.
+Call this before \`lending.supply\` and \`lending.borrow\` whenever an agent is about to open or resize a collateralized borrow; it surfaces the protocol with the lowest borrow APY that accepts the target LTV.
+Provide \`collateral\` asset symbol (e.g. "wBTC", "wstETH"), \`collateralAmount\` (token units), \`targetLTV\` (percentage, e.g. 60), and optionally \`borrowAsset\` (default "USDC") and \`protocol\` preference ("aave-v3", "spark", "morpho-blue", or "best").
+Returns a risk score (1–10), liquidation price and distance, liquidation penalty in USD, position sizing warnings if the borrow is large relative to pool liquidity, collateral-specific depeg notes, protocol oracle and governance notes, estimated annual borrow cost, and an actionable plain-language summary; does not execute any transaction.`;
 
 const PROTOCOL_RISK: Record<string, { oracleType: string; liquidationMechanism: string; governance: string; notes: string }> = {
   "aave-v3": {

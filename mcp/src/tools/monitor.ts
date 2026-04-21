@@ -8,9 +8,10 @@ import { SyeniteError } from "../errors.js";
 
 export const monitorToolName = "lending.position.monitor";
 
-export const monitorToolDescription = `Check the health of any DeFi lending position on Aave v3, Morpho Blue, or Spark across Ethereum, Arbitrum, and Base.
-Returns current LTV, health factor, liquidation price, distance to liquidation (% price drop needed), borrow rate, and estimated annual cost.
-Works with any wallet address. Scans all collateral types (BTC wrappers, ETH, LSTs) automatically.`;
+export const monitorToolDescription = `Reads the live health of any EVM wallet's lending positions across Aave v3, Morpho Blue, Compound V3, and Spark on Ethereum, Arbitrum, and Base — no authentication required.
+Call this before withdrawing collateral or after price moves to verify health factor and liquidation distance; positions with health factor below 1.5 trigger an explicit warning in the response.
+Provide the 0x-prefixed EVM \`address\` to inspect; optionally filter by \`protocol\` ("aave-v3", "morpho-blue", "compound-v3", or "spark") and \`chain\` to reduce response size.
+Returns per-position: collateral asset and USD value, debt asset and USD value, current LTV, health factor, liquidation price, percentage price drop to liquidation, borrow APY, and estimated annual interest cost; does not execute any transaction.`;
 
 export async function handlePositionMonitor(params: {
   address: string;

@@ -10,9 +10,10 @@ import { SyeniteError } from "../errors.js";
 
 export const yieldAssessToolName = "yield.assess";
 
-export const yieldAssessToolDescription = `Assess the risk of a specific DeFi yield strategy before committing capital.
-Returns risk breakdown: smart contract risk, oracle dependency, depeg/peg risk, liquidity/exit risk, position sizing vs TVL, protocol governance, and comparable alternatives.
-Use this after yield.opportunities to evaluate a specific opportunity in depth.`;
+export const yieldAssessToolDescription = `Provides a structured risk assessment for a specific DeFi yield opportunity before committing capital — covering smart contract risk, oracle configuration, governance model, liquidity and exit risk, depeg/peg risk, and position sizing relative to TVL.
+Call this after \`yield.opportunities\` when an agent or user wants to evaluate a specific protocol and product in depth rather than just comparing APYs.
+Provide \`protocol\` (e.g. "Aave v3", "Morpho", "Lido") and optionally \`product\` to disambiguate vaults, \`amount\` in USD to get position-sizing warnings, and \`asset\` to narrow matches.
+Returns a numeric risk score (1–10), per-dimension risk notes, projected annual and monthly yield for the supplied amount, and up to five comparable alternatives ranked by APY; does not execute any transaction.`;
 
 const PROTOCOL_DEEP_RISK: Record<string, {
   smartContract: string;

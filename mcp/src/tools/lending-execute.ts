@@ -13,20 +13,26 @@ import {
   TOKEN_DECIMALS_BASE,
 } from "../data/types.js";
 
-export const lendingSupplyDescription = `Generate unsigned transaction calldata to supply (deposit) an asset into a lending protocol.
-Supports Aave v3 on Ethereum, Arbitrum, and Base, plus Spark on Ethereum.
-Returns the transaction request ready to sign — Syenite never holds private keys.
-After signing and submitting, verify with tx.receipt and monitor with lending.position.monitor.`;
+export const lendingSupplyDescription = `Generates unsigned ERC-20 approval and pool supply transaction calldata for depositing an asset into Aave v3 (Ethereum, Arbitrum, Base) or Spark (Ethereum).
+Call this when the agent has decided to supply collateral or earn supply APY on a lending protocol; precede it with \`lending.rates.query\` to confirm the target protocol and chain.
+Provide \`protocol\` ("aave-v3" or "spark"), \`chain\`, \`asset\` symbol (e.g. "WETH", "USDC"), human-readable \`amount\`, and \`onBehalfOf\` wallet address.
+Returns two transaction requests — the ERC-20 approval must be submitted first, then the supply call — and a verification reminder to use \`tx.receipt\` and \`lending.position.monitor\` after submission.
+Syenite never holds private keys; no funds move until the caller signs and broadcasts.`;
 
-export const lendingBorrowDescription = `Generate unsigned transaction calldata to borrow an asset against deposited collateral.
-Supports Aave v3 on Ethereum, Arbitrum, and Base, plus Spark on Ethereum.
-Returns the transaction request ready to sign. Check lending.risk.assess first to evaluate the position.`;
+export const lendingBorrowDescription = `Generates unsigned variable-rate borrow transaction calldata for Aave v3 (Ethereum, Arbitrum, Base) or Spark (Ethereum).
+Call \`lending.risk.assess\` before this tool to confirm the target LTV is safe and the market has sufficient liquidity.
+Provide \`protocol\`, \`chain\`, \`asset\` to borrow (e.g. "USDC"), human-readable \`amount\`, and \`onBehalfOf\` wallet address; collateral must already be supplied.
+Returns one transaction request (no approval needed for borrows); Syenite never holds private keys and no funds move until the caller signs and broadcasts.`;
 
-export const lendingWithdrawDescription = `Generate unsigned transaction calldata to withdraw a supplied asset from a lending protocol.
-Use max amount or specify the exact amount. Check lending.position.monitor first to ensure safe withdrawal.`;
+export const lendingWithdrawDescription = `Generates unsigned withdraw transaction calldata to reclaim a supplied asset from Aave v3 (Ethereum, Arbitrum, Base) or Spark (Ethereum).
+Call \`lending.position.monitor\` first to confirm the withdrawal will not push an outstanding borrow position toward liquidation.
+Provide \`protocol\`, \`chain\`, \`asset\`, a human-readable \`amount\` or the string "max" to withdraw the full supplied balance, and \`to\` as the recipient address.
+Returns one transaction request; Syenite never holds private keys and no funds move until the caller signs and broadcasts.`;
 
-export const lendingRepayDescription = `Generate unsigned transaction calldata to repay borrowed debt.
-Supports full or partial repayment. Use max amount (uint256 max) to repay all outstanding debt.`;
+export const lendingRepayDescription = `Generates unsigned ERC-20 approval and variable-rate repay transaction calldata for Aave v3 (Ethereum, Arbitrum, Base) or Spark (Ethereum).
+Use this to reduce or eliminate an outstanding borrow; pass amount "max" (uint256 max) to repay the entire debt balance, or a specific human-readable amount for partial repayment.
+Provide \`protocol\`, \`chain\`, \`asset\` being repaid, \`amount\`, and \`onBehalfOf\` wallet address.
+Returns the ERC-20 approval transaction (submit first) and the repay transaction; Syenite never holds private keys and no funds move until the caller signs and broadcasts.`;
 
 // ── Protocol pool addresses by chain ────────────────────────────────
 

@@ -39,10 +39,11 @@ export interface YieldWatchState {
 export interface WatchConfig {
   id: string;
   type: WatchType;
-  // lending/prediction watches use address; rate/yield use placeholder "n/a"
+  // lending/prediction watches use address; rate/yield/carry use placeholder "n/a"
   address: string;
   protocol?: string;
   chain?: string;
+  // not used for non-lending types (stored as 0 to satisfy the required field)
   healthFactorThreshold: number;
   // Prediction-specific fields (populated when type === "prediction"):
   marketId?: string;

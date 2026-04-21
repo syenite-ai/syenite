@@ -294,7 +294,7 @@ async function checkRateWatch(watch: WatchConfig): Promise<Alert[]> {
         fired.push(addAlert({
           watchId: watch.id,
           type: "rate_spike",
-          severity: direction === "above" ? "warning" : "warning",
+          severity: "warning",
           message: `${rate.protocol} ${rate.chain} ${rate.market} ${metric} ${direction} ${threshold}%: now ${current.toFixed(2)}%`,
           data: { protocol: rate.protocol, chain: rate.chain, market: rate.market,
             metric, currentValue: current, previousValue: prevVal, threshold, direction },
@@ -336,11 +336,13 @@ async function checkCarryWatch(watch: WatchConfig): Promise<Alert[]> {
   const borrowAsset = watch.carryBorrowAsset ?? "USDC";
   const supplyAsset = watch.carrySupplyAsset ?? borrowAsset;
   const threshold = watch.carryThreshold ?? 0;
+  const chains = watch.chain && watch.chain !== "all"
+    ? [watch.chain as SupportedChain]
+    : undefined;
 
-  // Fetch borrow rates for the collateral/borrow pair and supply yields
   const [borrowRates, supplyYields] = await Promise.all([
-    fetchRates(collateral, borrowAsset),
-    fetchYields(supplyAsset, [], "high"),
+    fetchRates(collateral, borrowAsset, chains),
+    fetchYields(supplyAsset, watch.chain && watch.chain !== "all" ? [watch.chain] : [], "high"),
   ]);
 
   if (borrowRates.length === 0 || supplyYields.length === 0) return [];
