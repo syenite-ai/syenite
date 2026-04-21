@@ -48,6 +48,17 @@ export function landingPageHtml(): string {
     ],
     author: { "@type": "Organization", name: "Syenite", url: "https://syenite.ai/" },
   })}</script>
+  <script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Syenite",
+    url: "https://syenite.ai",
+    sameAs: [
+      "https://github.com/syenite-ai/syenite",
+      "https://smithery.ai/server/syenite",
+      "https://www.npmjs.com/package/@syenite/mcp",
+    ],
+  })}</script>
   <style>
     :root {
       --bg: #101010;
@@ -328,9 +339,13 @@ export function landingPageHtml(): string {
   <header class="hero">
     <span class="tag">the defi interface for ai agents \u00b7 open access \u00b7 no api key</span>
     <div class="hero-head">
-      <img src="/assets/icon-32.png" alt="" class="logo" width="32" height="32">
+      <picture>
+        <source srcset="/assets/icon-32.webp" type="image/webp">
+        <img src="/assets/icon-32.png" alt="Syenite" class="logo" width="32" height="32">
+      </picture>
       <h1>syenite</h1>
     </div>
+    <p style="font-family:var(--mono);font-size:0.82rem;color:var(--muted);margin-top:0.4rem;letter-spacing:0.01em">DeFi MCP server for AI agents — lending rates, yield, swap, and position alerts across 30+ chains</p>
     <p class="lead">Real-time lending rates and yield across Aave, Morpho, Compound, Spark, and Pendle — with position alerts and webhook delivery when conditions change. Swap and bridge routing (30+ chains), lending execution (supply, borrow, withdraw, repay), prediction markets, carry screening, and a trust layer for transaction verification. No keys held — unsigned transactions only.</p>
     <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
   </header>
