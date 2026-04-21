@@ -11,7 +11,43 @@ export function landingPageHtml(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">${gscMeta}
   <title>syenite — the DeFi interface for AI agents</title>
   <meta name="description" content="DeFi MCP for AI agents: swaps and bridges (30+ chains), yield and lending with execution (supply, borrow, withdraw, repay), prediction markets, carry screening, wallet balances, gas estimates, tx.verify, tx.simulate, and tx.receipt. Open access, no API key.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="https://syenite.ai/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Syenite">
+  <meta property="og:title" content="syenite — the DeFi interface for AI agents">
+  <meta property="og:description" content="One MCP endpoint for agentic DeFi: swap, bridge, yield, lending execution, prediction markets, alerts, and a trust layer across 30+ chains. No API key.">
+  <meta property="og:url" content="https://syenite.ai/">
+  <meta property="og:image" content="https://syenite.ai/assets/icon-square.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="syenite — the DeFi interface for AI agents">
+  <meta name="twitter:description" content="One MCP endpoint for agentic DeFi: swap, bridge, yield, lending execution, prediction markets, alerts, and a trust layer across 30+ chains. No API key.">
+  <meta name="twitter:image" content="https://syenite.ai/assets/icon-square.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
+  <script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Syenite",
+    alternateName: "Syenite MCP",
+    url: "https://syenite.ai/",
+    description:
+      "MCP server for agentic DeFi: swap and bridge routing, yield and multi-chain lending intelligence with execution, prediction market data and signals, carry screening, position alerts, wallet and gas tools, and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt) across 30+ chains.",
+    applicationCategory: "DeveloperApplication",
+    applicationSubCategory: "Model Context Protocol server",
+    operatingSystem: "Any",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    featureList: [
+      "Swap and bridge routing via Li.Fi",
+      "Multi-chain lending execution (Aave, Morpho, Spark)",
+      "Yield intelligence across lending, staking, vaults, savings rate",
+      "Polymarket prediction market data and signals",
+      "Carry trade screening and strategy search",
+      "Position alerts with webhook delivery",
+      "Wallet balances and gas estimation",
+      "Transaction trust layer: verify, simulate, guard, receipt",
+    ],
+    author: { "@type": "Organization", name: "Syenite", url: "https://syenite.ai/" },
+  })}</script>
   <style>
     :root {
       --bg: #101010;
@@ -545,18 +581,8 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
-    <div class="tool">
-      <div class="tool-name">prediction.order</div>
-      <p class="tool-desc">Prepare a Polymarket CLOB limit order as EIP-712 typed data for off-chain signing, plus a USDC approval tx. Returns a signing payload — not an on-chain transaction. Sign and submit to the Polymarket CLOB API.</p>
-      <div class="params">
-        <span class="pn">tokenId</span><span class="pt">string</span><span class="pd">Outcome token ID</span>
-        <span class="pn">side</span><span class="pt">string</span><span class="pd">“buy” or “sell”</span>
-        <span class="pn">outcome</span><span class="pt">string</span><span class="pd">“YES” or “NO”</span>
-        <span class="pn">size</span><span class="pt">number</span><span class="pd">USDC notional</span>
-        <span class="pn">price</span><span class="pt">number</span><span class="pd">Limit price (0–1)</span>
-        <span class="pn">maker</span><span class="pt">string</span><span class="pd">EVM address placing the order</span>
-      </div>
-    </div>
+  
+
 
     <p class="section-label">lending</p>
 

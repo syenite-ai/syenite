@@ -177,7 +177,7 @@ export function createMcpServer(clientIp: string): McpServer {
   const server = new McpServer(
     {
       name: "syenite",
-      version: "0.5.1",
+      version: "0.6.0",
     },
     { capabilities: { tools: {} } }
   );
@@ -204,9 +204,9 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "lending.market.overview", use: "Aggregate market view — TVL, utilization, rate ranges per protocol." },
       { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
       { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
-      { name: "lending.supply", use: "Generate unsigned supply (deposit) calldata for Aave v3 or Spark. Sign and submit to deposit collateral." },
+      { name: "lending.supply", use: "Generate unsigned supply (deposit) calldata for Aave v3 or Spark. Sign and submit to deposit collateral. For MetaMorpho vaults use metamorpho.supply." },
       { name: "lending.borrow", use: "Generate unsigned borrow calldata. Variable rate only (stable deprecated). Check lending.risk.assess first." },
-      { name: "lending.withdraw", use: "Generate unsigned withdraw calldata. Use 'max' to withdraw all supplied assets." },
+      { name: "lending.withdraw", use: "Generate unsigned withdraw calldata for Aave v3 or Spark. Use 'max' to withdraw all. For MetaMorpho vaults use metamorpho.withdraw." },
       { name: "lending.repay", use: "Generate unsigned repay calldata. Use 'max' to repay all outstanding debt." },
       { name: "tx.receipt", use: "Fetch and decode a transaction receipt — success/failure, gas cost, events, token transfers. Close the execution loop." },
       { name: "strategy.carry.screen", use: "Screen all markets for positive carry (supply APY > borrow APY). Ranks self-funding leveraged strategies." },
@@ -219,7 +219,6 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "prediction.watch", use: "Monitor a market for odds threshold, movement, liquidity drop, resolution, or volume spikes." },
       { name: "prediction.position", use: "List an agent's Polymarket positions across markets — size, PnL, time-to-resolve." },
       { name: "prediction.quote", use: "Size-aware buy/sell quote walking the CLOB book — fill price, slippage, available depth." },
-      { name: "prediction.order", use: "Prepare a Polymarket CLOB order (EIP-712 off-chain signed order) for signing plus the USDC approval tx. Note: returns EIP-712 typed data, not an on-chain tx — use your signer, not tx.verify/tx.simulate." },
       { name: "metamorpho.supply", use: "Generate unsigned ERC-4626 deposit calldata for a MetaMorpho vault (Steakhouse, Gauntlet, etc). Returns transactionRequest plus ERC-20 approval." },
       { name: "metamorpho.withdraw", use: "Generate unsigned ERC-4626 redeem calldata to withdraw from a MetaMorpho vault." },
       { name: "token.price", use: "Current USD price for any token via Chainlink on-chain oracles — same feeds used by Aave, Morpho, and Spark for liquidation. Batch up to 20 symbols." },
