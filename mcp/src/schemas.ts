@@ -1103,3 +1103,145 @@ export const predictionOrderOutput = z.object({
   }),
   timestamp: z.string(),
 });
+
+// ── kalshi.* ────────────────────────────────────────────────────────────
+
+const KalshiMarketItem = z.object({
+  ticker: z.string(),
+  title: z.string(),
+  subtitle: z.string(),
+  yesBid: z.number().describe("YES bid price in cents (0–99)"),
+  yesAsk: z.number().describe("YES ask price in cents — ≈ implied probability"),
+  impliedProbabilityPct: z.number().describe("Cost to buy YES in cents ≈ probability"),
+  lastPrice: z.number(),
+  volume: z.number().describe("Total contracts traded"),
+  volume24h: z.number(),
+  liquidityUSD: z.number(),
+  closeTime: z.string(),
+});
+
+const KalshiEventItem = z.object({
+  eventTicker: z.string(),
+  seriesTicker: z.string(),
+  title: z.string(),
+  subtitle: z.string(),
+  category: z.string(),
+  mutuallyExclusive: z.boolean(),
+  markets: z.array(KalshiMarketItem),
+});
+
+export const kalshiTrendingOutput = z.object({
+  source: z.string(),
+  eventCount: z.number(),
+  events: z.array(KalshiEventItem),
+  timestamp: z.string(),
+  note: z.string(),
+});
+
+export const kalshiSearchOutput = z.object({
+  source: z.string(),
+  query: z.string(),
+  resultCount: z.number(),
+  events: z.array(KalshiEventItem),
+  timestamp: z.string(),
+});
+
+export const kalshiBookOutput = z.object({
+  ticker: z.string(),
+  impliedProbabilityPct: z.number().optional(),
+  yesMidCents: z.number().optional(),
+  spreadCents: z.number().optional(),
+  spreadBps: z.number().optional(),
+  yesBidDepthContracts: z.number().optional(),
+  yesAskDepthContracts: z.number().optional(),
+  yesBids: z.array(z.object({ priceCents: z.number(), sizeContracts: z.number() })).optional(),
+  noAsks: z.array(z.object({ priceCents: z.number(), sizeContracts: z.number() })).optional(),
+  error: z.string().optional(),
+  timestamp: z.string(),
+  note: z.string().optional(),
+});
+
+const KalshiHistoryStats = z.object({
+  pointCount: z.number(),
+  openPrice: z.number(),
+  closePrice: z.number(),
+  minPrice: z.number(),
+  maxPrice: z.number(),
+  changePct: z.number(),
+}).nullable();
+
+export const kalshiMarketOutput = z.object({
+  source: z.string().optional(),
+  ticker: z.string().optional().describe("Present when the market was not found"),
+  error: z.string().optional(),
+  market: z.object({
+    ticker: z.string(),
+    eventTicker: z.string(),
+    seriesTicker: z.string(),
+    title: z.string(),
+    subtitle: z.string(),
+    category: z.string(),
+    status: z.string(),
+    result: z.string().nullable(),
+    closeTime: z.string(),
+    expirationTime: z.string(),
+    hoursToClose: z.number().nullable(),
+    rulesPrimary: z.string(),
+    rulesSecondary: z.string(),
+    pricing: z.object({
+      yesBid: z.number(),
+      yesAsk: z.number(),
+      noBid: z.number(),
+      noAsk: z.number(),
+      lastPrice: z.number(),
+      previousPrice: z.number(),
+      impliedProbabilityPct: z.number(),
+      change24hPct: z.number().nullable(),
+    }),
+  }).optional(),
+  priceHistory: z.object({
+    "24h": KalshiHistoryStats,
+    "7d": KalshiHistoryStats,
+    note: z.string(),
+  }).optional(),
+  volume: z.object({
+    totalContracts: z.number(),
+    contracts24h: z.number(),
+    approxUSD: z.number(),
+    approxUSD24h: z.number(),
+  }).optional(),
+  liquidity: z.object({
+    liquidityUSD: z.number(),
+    openInterest: z.number(),
+    yesBid: z.number(),
+    yesAsk: z.number(),
+    spreadCents: z.number(),
+    spreadBps: z.number(),
+    yesBidDepthContracts: z.number(),
+    yesAskDepthContracts: z.number(),
+    flow: z.object({
+      direction: z.enum(["bid-heavy", "ask-heavy", "balanced"]),
+      ratio: z.number(),
+    }),
+  }).optional(),
+  siblings: z.array(z.object({
+    ticker: z.string(),
+    title: z.string(),
+    yesAsk: z.number(),
+    impliedProbabilityPct: z.number(),
+    volume: z.number(),
+  })).optional(),
+  timestamp: z.string(),
+  note: z.string().optional(),
+});
+
+export const kalshiSignalsOutput = z.object({
+  source: z.string(),
+  marketsScanned: z.number(),
+  signalCount: z.number(),
+  typeCounts: z.record(z.string(), z.number()),
+  signals: z.array(z.record(z.string(), z.unknown())),
+  signalTypes: z.record(z.string(), z.string()),
+  timestamp: z.string(),
+  note: z.string(),
+});

@@ -57,6 +57,16 @@ import { handlePredictionWatch, predictionWatchDescription } from "./tools/predi
 import { handlePredictionPosition, predictionPositionDescription } from "./tools/prediction-position.js";
 import { handlePredictionQuote, predictionQuoteDescription } from "./tools/prediction-quote.js";
 import { handlePredictionOrder, predictionOrderDescription } from "./tools/prediction-order.js";
+import {
+  handleKalshiTrending,
+  handleKalshiSearch,
+  handleKalshiBook,
+  kalshiTrendingDescription,
+  kalshiSearchDescription,
+  kalshiBookDescription,
+} from "./tools/kalshi.js";
+import { handleKalshiMarket, kalshiMarketDescription } from "./tools/kalshi-market.js";
+import { handleKalshiSignals, kalshiSignalsDescription } from "./tools/kalshi-signals.js";
 import type { PredictionConditions } from "./data/alerts.js";
 import { logToolCall } from "./logging/usage.js";
 import { recordToolCall } from "./logging/metrics.js";
@@ -100,6 +110,11 @@ import {
   predictionPositionOutput,
   predictionQuoteOutput,
   predictionOrderOutput,
+  kalshiTrendingOutput,
+  kalshiSearchOutput,
+  kalshiBookOutput,
+  kalshiMarketOutput,
+  kalshiSignalsOutput,
 } from "./schemas.js";
 
 function extractChain(params: Record<string, unknown>): string | undefined {
@@ -232,6 +247,11 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "prediction.signals", use: "Detect actionable signals — wide spreads, extreme probabilities, volume spikes, mispricing." },
       { name: "prediction.market", use: "Deep drill-down on a single market — odds history, liquidity depth, resolution criteria, one-sided flow." },
       { name: "prediction.watch", use: "Monitor a market for odds threshold, movement, liquidity drop, resolution, or volume spikes." },
+      { name: "kalshi.trending", use: "Top open events on Kalshi (US-regulated) — prices in cents, implied probabilities, volume." },
+      { name: "kalshi.search", use: "Search Kalshi events and markets by keyword." },
+      { name: "kalshi.book", use: "Order book depth and spread for a specific Kalshi market." },
+      { name: "kalshi.market", use: "Deep drill-down on a single Kalshi market — price history, liquidity, flow, resolution rules." },
+      { name: "kalshi.signals", use: "Detect actionable signals on Kalshi — wide spreads, extreme probabilities, high volume, near resolution, mispricing." },
       { name: "prediction.position", use: "List an agent's Polymarket positions across markets — size, PnL, time-to-resolve." },
       { name: "prediction.quote", use: "Size-aware buy/sell quote walking the CLOB book — fill price, slippage, available depth." },
       { name: "tx.simulate", use: "Simulate a transaction before signing — balance changes, gas, revert detection. Third-party verified via EVM." },
@@ -1238,6 +1258,66 @@ Results persisted across server restarts. Poll alerts.check to retrieve fired al
       expiration?: number;
     }),
     (p) => ({ ...p, maker: "***" + String(p.maker).slice(-4) })
+  ));
+
+  // ── kalshi.trending ───────────────────────────────────────────────
+
+  server.registerTool("kalshi.trending", {
+    description: kalshiTrendingDescription,
+    annotations: { title: "Kalshi Trending Markets", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      limit: z.number().int().min(1).max(50).optional().describe("Number of events to return (default 25, max 50)"),
+    },
+    outputSchema: kalshiTrendingOutput,
+  }, withLogging(clientIp, "kalshi.trending", (p) => handleKalshiTrending(p as { limit?: number })));
+
+  // ── kalshi.search ─────────────────────────────────────────────────
+
+  server.registerTool("kalshi.search", {
+    description: kalshiSearchDescription,
+    annotations: { title: "Search Kalshi Markets", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      query: z.string().describe("Search term (topic, ticker, or keyword)"),
+      limit: z.number().int().min(1).max(50).optional().describe("Max results (default 25, max 50)"),
+    },
+    outputSchema: kalshiSearchOutput,
+  }, withLogging(clientIp, "kalshi.search", (p) => handleKalshiSearch(p as { query: string; limit?: number })));
+
+  // ── kalshi.book ───────────────────────────────────────────────────
+
+  server.registerTool("kalshi.book", {
+    description: kalshiBookDescription,
+    annotations: { title: "Kalshi Order Book", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      ticker: z.string().describe('Market ticker (e.g. "KXBTC-25DEC31-T100000")'),
+    },
+    outputSchema: kalshiBookOutput,
+  }, withLogging(clientIp, "kalshi.book", (p) => handleKalshiBook(p as { ticker: string })));
+
+  // ── kalshi.market ─────────────────────────────────────────────────
+
+  server.registerTool("kalshi.market", {
+    description: kalshiMarketDescription,
+    annotations: { title: "Kalshi Market Detail", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      ticker: z.string().describe('Market ticker (e.g. "KXBTC-25DEC31-T100000")'),
+    },
+    outputSchema: kalshiMarketOutput,
+  }, withLogging(clientIp, "kalshi.market", (p) => handleKalshiMarket(p as { ticker: string })));
+
+  // ── kalshi.signals ────────────────────────────────────────────────
+
+  server.registerTool("kalshi.signals", {
+    description: kalshiSignalsDescription,
+    annotations: { title: "Kalshi Signals", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      minStrength: z.number().min(0).max(100).optional().describe("Minimum signal strength to include (0–100, default 0)"),
+      types: z.array(z.string()).optional().describe("Filter by signal type: wide_spread, extreme_probability, high_volume, near_resolution, mispriced"),
+      limit: z.number().int().min(1).max(50).optional().describe("Max signals to return (default 20, max 50)"),
+    },
+    outputSchema: kalshiSignalsOutput,
+  }, withLogging(clientIp, "kalshi.signals", (p) =>
+    handleKalshiSignals(p as { minStrength?: number; types?: string[]; limit?: number })
   ));
 
   // ── Prompts ───────────────────────────────────────────────────────
