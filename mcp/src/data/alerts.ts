@@ -1,6 +1,7 @@
 import { log } from "../logging/logger.js";
+import { getPool, hasDatabase } from "./db.js";
 
-export type WatchType = "lending" | "prediction";
+export type WatchType = "lending" | "prediction" | "rate" | "yield" | "carry";
 
 export interface PredictionConditions {
   oddsThresholdPct?: number;
@@ -17,9 +18,28 @@ export interface PredictionWatchState {
   baselineVolume24h?: number;
 }
 
+// keyed by "${protocol}:${chain}:${market}"
+export type RateMarketSnapshot = Record<string, { borrowAPY: number; supplyAPY: number; utilization: number }>;
+
+export interface RateWatchState {
+  markets?: RateMarketSnapshot;
+  lastCheckedAt?: string;
+}
+
+export interface CarryWatchState {
+  lastSpread?: number;
+  lastCheckedAt?: string;
+}
+
+export interface YieldWatchState {
+  lastBestApy?: number;
+  lastCheckedAt?: string;
+}
+
 export interface WatchConfig {
   id: string;
   type: WatchType;
+  // lending/prediction watches use address; rate/yield use placeholder "n/a"
   address: string;
   protocol?: string;
   chain?: string;
@@ -33,6 +53,29 @@ export interface WatchConfig {
   question?: string;
   predictionConditions?: PredictionConditions;
   predictionState?: PredictionWatchState;
+  // Rate-specific fields (populated when type === "rate"):
+  rateCollateral?: string;
+  rateBorrowAsset?: string;
+  rateChain?: string;
+  rateProtocol?: string;
+  rateBorrowThreshold?: number;
+  rateSupplyThreshold?: number;
+  rateDirection?: "above" | "below";
+  rateUtilizationThreshold?: number;
+  rateState?: RateWatchState;
+  // Carry-specific fields (populated when type === "carry"):
+  carryCollateral?: string;
+  carryBorrowAsset?: string;
+  carrySupplyAsset?: string;
+  carryThreshold?: number;
+  carryState?: CarryWatchState;
+  // Yield-specific fields (populated when type === "yield"):
+  yieldAsset?: string;
+  yieldChains?: string[];
+  yieldRisk?: "low" | "medium" | "high";
+  yieldApyThreshold?: number;
+  yieldDirection?: "above" | "below";
+  yieldState?: YieldWatchState;
   webhookUrl?: string;
   createdAt: string;
   lastCheckedAt?: string;
@@ -44,6 +87,9 @@ export interface Alert {
     | "health_factor_low"
     | "health_factor_critical"
     | "rate_spike"
+    | "rate_utilization"
+    | "carry_opportunity"
+    | "yield_opportunity"
     | "prediction_odds_threshold"
     | "prediction_odds_move"
     | "prediction_liquidity_drop"
@@ -57,14 +103,57 @@ export interface Alert {
   webhookDelivered?: boolean;
 }
 
-// In-memory alert store (future: persist to DB for server mode)
+// In-memory store — write-through to DB when available
 const watches = new Map<string, WatchConfig>();
 const alerts: Alert[] = [];
 let nextId = 1;
 
-export function addWatch(
+async function persistWatch(watch: WatchConfig): Promise<void> {
+  if (!hasDatabase()) return;
+  try {
+    await getPool().query(
+      `INSERT INTO watches (id, config, created_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (id) DO UPDATE SET config = EXCLUDED.config`,
+      [watch.id, JSON.stringify(watch), watch.createdAt]
+    );
+  } catch (e) {
+    log.warn("failed to persist watch", { id: watch.id, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+async function deletePersistedWatch(id: string): Promise<void> {
+  if (!hasDatabase()) return;
+  try {
+    await getPool().query("DELETE FROM watches WHERE id = $1", [id]);
+  } catch (e) {
+    log.warn("failed to delete watch from db", { id, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+export async function loadWatches(): Promise<void> {
+  if (!hasDatabase()) return;
+  try {
+    const res = await getPool().query<{ id: string; config: WatchConfig }>(
+      "SELECT id, config FROM watches ORDER BY created_at"
+    );
+    let maxId = 0;
+    for (const row of res.rows) {
+      const w = row.config as WatchConfig;
+      watches.set(w.id, w);
+      const n = parseInt(w.id.replace("watch_", ""), 10);
+      if (!isNaN(n) && n > maxId) maxId = n;
+    }
+    nextId = maxId + 1;
+    log.info("watches loaded from db", { count: res.rows.length });
+  } catch (e) {
+    log.warn("failed to load watches from db", { error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+export async function addWatch(
   config: Omit<WatchConfig, "id" | "createdAt" | "type"> & { type?: WatchType }
-): WatchConfig {
+): Promise<WatchConfig> {
   const id = `watch_${nextId++}`;
   const watch: WatchConfig = {
     type: "lending",
@@ -73,13 +162,17 @@ export function addWatch(
     createdAt: new Date().toISOString(),
   };
   watches.set(id, watch);
-  log.info("position watch added", { id, type: watch.type, address: config.address, webhook: !!config.webhookUrl });
+  log.info("watch added", { id, type: watch.type, webhook: !!config.webhookUrl });
+  await persistWatch(watch);
   return watch;
 }
 
-export function removeWatch(id: string): boolean {
+export async function removeWatch(id: string): Promise<boolean> {
   const existed = watches.delete(id);
-  if (existed) log.info("position watch removed", { id });
+  if (existed) {
+    log.info("watch removed", { id });
+    await deletePersistedWatch(id);
+  }
   return existed;
 }
 
@@ -95,7 +188,10 @@ export function getWatch(id: string): WatchConfig | undefined {
 export function updateWatchState(id: string, state: Partial<WatchConfig>): void {
   const current = watches.get(id);
   if (!current) return;
-  watches.set(id, { ...current, ...state });
+  const updated = { ...current, ...state };
+  watches.set(id, updated);
+  // Fire-and-forget state update — non-critical, don't await
+  void persistWatch(updated);
 }
 
 export function addAlert(alert: Omit<Alert, "createdAt" | "acknowledged">): Alert {
@@ -105,8 +201,6 @@ export function addAlert(alert: Omit<Alert, "createdAt" | "acknowledged">): Aler
     acknowledged: false,
   };
   alerts.push(entry);
-
-  // Keep only last 100 alerts
   if (alerts.length > 100) alerts.splice(0, alerts.length - 100);
   return entry;
 }

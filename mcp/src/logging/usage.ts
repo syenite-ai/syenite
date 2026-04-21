@@ -16,6 +16,7 @@ export async function logToolCall(params: {
   errorMessage?: string;
   chain?: string;
   protocol?: string;
+  asset?: string;
 }): Promise<void> {
   if (!hasDatabase()) return;
 
@@ -25,8 +26,8 @@ export async function logToolCall(params: {
     .slice(0, 16);
 
   await getPool().query(
-    `INSERT INTO usage_logs (api_key, tool_name, params_hash, response_time_ms, success, error_message, chain, protocol)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    `INSERT INTO usage_logs (api_key, tool_name, params_hash, response_time_ms, success, error_message, chain, protocol, asset)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       hashIp(params.clientIp),
       params.toolName,
@@ -36,6 +37,7 @@ export async function logToolCall(params: {
       params.errorMessage ?? null,
       params.chain ?? null,
       params.protocol ?? null,
+      params.asset ?? null,
     ]
   );
 }
@@ -53,6 +55,7 @@ export interface UsageStats {
   recentErrors: Array<{ tool: string; message: string; at: string }>;
   byChain: Array<{ chain: string; calls: number; clients: number; errors: number }>;
   byProtocol: Array<{ protocol: string; calls: number; clients: number; errors: number }>;
+  byAsset: Array<{ asset: string; calls: number; clients: number }>;
   retention: { returningClients2d: number; returningClients7d: number; totalClients: number };
   sessions: Array<{ clientKey: string; sessionStart: string; toolSequence: string[]; uniqueTools: number }>;
 }
@@ -125,6 +128,7 @@ export async function getUsageStats(): Promise<UsageStats> {
 
   const byChain = await getChainStats();
   const byProtocol = await getProtocolStats();
+  const byAsset = await getAssetStats();
   const retention = await getRetentionCohort();
   const sessions = await getClientSessions();
 
@@ -141,6 +145,7 @@ export async function getUsageStats(): Promise<UsageStats> {
     recentErrors,
     byChain,
     byProtocol,
+    byAsset,
     retention,
     sessions,
   };
@@ -197,6 +202,26 @@ export async function getProtocolStats(): Promise<
     calls: Number(r.calls),
     clients: Number(r.clients),
     errors: Number(r.errors),
+  }));
+}
+
+export async function getAssetStats(): Promise<
+  Array<{ asset: string; calls: number; clients: number }>
+> {
+  if (!hasDatabase()) return [];
+  const res = await getPool().query<{ asset: string; calls: string; clients: string }>(
+    `SELECT asset,
+            COUNT(*)::int as calls,
+            COUNT(DISTINCT api_key)::int as clients
+     FROM usage_logs
+     WHERE asset IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days'
+     GROUP BY asset
+     ORDER BY calls DESC`
+  );
+  return res.rows.map((r) => ({
+    asset: r.asset,
+    calls: Number(r.calls),
+    clients: Number(r.clients),
   }));
 }
 

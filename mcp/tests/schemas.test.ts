@@ -175,6 +175,7 @@ describe("Zod Output Schemas", () => {
     const valid = {
       watch: {
         id: "watch_1",
+        type: "lending" as const,
         address: "0x123",
         healthFactorThreshold: 1.5,
         createdAt: new Date().toISOString(),

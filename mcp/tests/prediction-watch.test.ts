@@ -109,8 +109,8 @@ describe("prediction.watch handler", () => {
 });
 
 describe("alerts storage round-trip", () => {
-  it("persists and lists prediction watches", () => {
-    const watch = addWatch({
+  it("persists and lists prediction watches", async () => {
+    const watch = await addWatch({
       type: "prediction",
       address: "0xcond",
       slug: "test-slug",
@@ -130,7 +130,7 @@ describe("alert-checker evaluates prediction watches", () => {
 
   it("fires odds threshold alert when current odds cross threshold", async () => {
     // Current market midpoint is 0.45 → 45% — threshold 40% triggers.
-    const watch = addWatch({
+    const watch = await addWatch({
       type: "prediction",
       address: "0xcond",
       slug: "election-2026",
@@ -151,7 +151,7 @@ describe("alert-checker evaluates prediction watches", () => {
   });
 
   it("fires odds_move alert when movement exceeds delta within window", async () => {
-    const watch = addWatch({
+    const watch = await addWatch({
       type: "prediction",
       address: "0xcond",
       slug: "election-2026",
@@ -201,7 +201,7 @@ describe("alert-checker evaluates prediction watches", () => {
       description: "soon",
     });
 
-    const watch = addWatch({
+    const watch = await addWatch({
       type: "prediction",
       address: "0xcond",
       slug: "election-2026",
@@ -223,7 +223,7 @@ describe("alert-checker evaluates prediction watches", () => {
   });
 
   it("updates predictionState baseline after each run", async () => {
-    const watch = addWatch({
+    const watch = await addWatch({
       type: "prediction",
       address: "0xcond",
       slug: "election-2026",

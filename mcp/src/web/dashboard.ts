@@ -35,6 +35,15 @@ function renderTopUsers(topUsers: UsageStats["topUsers"]): string {
     .join("");
 }
 
+function renderAssetRows(byAsset: UsageStats["byAsset"]): string {
+  return byAsset
+    .map(
+      (a) =>
+        `<tr><td><code>${escape(a.asset)}</code></td><td>${a.calls.toLocaleString()}</td><td>${a.clients.toLocaleString()}</td></tr>`
+    )
+    .join("");
+}
+
 function renderChainRows(byChain: UsageStats["byChain"]): string {
   return byChain
     .map(
@@ -74,6 +83,7 @@ function renderErrorRows(errors: UsageStats["recentErrors"]): string {
 export function dashboardHtml(stats: UsageStats): string {
   const toolRows = renderByTool(stats.byTool);
   const userRows = renderTopUsers(stats.topUsers);
+  const assetRows = renderAssetRows(stats.byAsset);
   const chainRows = renderChainRows(stats.byChain);
   const protocolRows = renderProtocolRows(stats.byProtocol);
   const sessionRows = renderSessionRows(stats.sessions);
@@ -353,6 +363,14 @@ export function dashboardHtml(stats: UsageStats): string {
     <table>
       <tr><th>client</th><th>calls</th></tr>
       ${userRows || '<tr><td colspan="2" style="color:var(--muted)">no data yet</td></tr>'}
+    </table>
+  </div>
+
+  <h2>by asset \u00b7 last 30d</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>asset</th><th>calls</th><th>clients</th></tr>
+      ${assetRows || '<tr><td colspan="3" style="color:var(--muted)">no data yet</td></tr>'}
     </table>
   </div>
 

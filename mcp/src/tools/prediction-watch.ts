@@ -73,7 +73,7 @@ export async function handlePredictionWatch(params: {
     ? book.midPrice * 100
     : Number(market.outcomePrices[0] ?? 0) * 100;
 
-  const watch = addWatch({
+  const watch = await addWatch({
     type: "prediction",
     address: market.conditionId,
     marketId: market.id,

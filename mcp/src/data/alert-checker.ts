@@ -1,7 +1,13 @@
 import { type Address } from "viem";
-import { getAavePosition, getSparkPosition } from "./aave.js";
-import { getMorphoPosition } from "./morpho.js";
-import { getCompoundPosition } from "./compound.js";
+import { getAavePosition, getSparkPosition, getAaveRates, getSparkRates } from "./aave.js";
+import { getMorphoPosition, getMorphoRatesMultiChain } from "./morpho.js";
+import { getCompoundPosition, getCompoundRates } from "./compound.js";
+import { getFluidRates } from "./fluid.js";
+import { getLendingSupplyYields } from "./yield-lending.js";
+import { getStakingYields } from "./yield-staking.js";
+import { getVaultYields } from "./yield-vaults.js";
+import { getMetaMorphoYields } from "./yield-metamorpho.js";
+import { getSolanaYields } from "./solana/yield.js";
 import {
   listWatches,
   addAlert,
@@ -16,7 +22,7 @@ import { getMarketDetail, getOrderBook } from "./polymarket.js";
 import { deliverWebhook } from "./webhook.js";
 import { log } from "../logging/logger.js";
 import type { SupportedChain } from "./client.js";
-import type { PositionData } from "./types.js";
+import type { PositionData, ProtocolRate, YieldOpportunity } from "./types.js";
 
 let checkInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -232,6 +238,232 @@ async function checkPredictionWatch(watch: WatchConfig): Promise<Alert[]> {
   return fired;
 }
 
+async function fetchRates(
+  collateral: string,
+  borrowAsset: string,
+  chains?: SupportedChain[],
+  protocol?: string
+): Promise<ProtocolRate[]> {
+  const all = protocol && protocol !== "all" ? [protocol] : ["aave", "morpho", "spark", "compound", "fluid"];
+  const tasks: Promise<ProtocolRate[]>[] = [];
+  if (all.includes("aave") || all.includes("aave-v3")) tasks.push(getAaveRates(collateral, borrowAsset, chains));
+  if (all.includes("morpho")) tasks.push(getMorphoRatesMultiChain(collateral, borrowAsset, chains));
+  if (all.includes("spark")) tasks.push(getSparkRates(collateral, borrowAsset, chains));
+  if (all.includes("compound") || all.includes("compound-v3")) tasks.push(getCompoundRates(collateral, borrowAsset, chains));
+  if (all.includes("fluid")) tasks.push(getFluidRates(collateral, borrowAsset, chains));
+  const results = await Promise.allSettled(tasks);
+  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+}
+
+function marketKey(r: ProtocolRate): string {
+  return `${r.protocol}:${r.chain}:${r.market}`;
+}
+
+async function checkRateWatch(watch: WatchConfig): Promise<Alert[]> {
+  const collateral = watch.rateCollateral ?? "all";
+  const borrowAsset = watch.rateBorrowAsset ?? "USDC";
+  const chains = watch.rateChain && watch.rateChain !== "all"
+    ? [watch.rateChain as SupportedChain]
+    : undefined;
+
+  const rates = await fetchRates(collateral, borrowAsset, chains, watch.rateProtocol);
+  if (rates.length === 0) return [];
+
+  const fired: Alert[] = [];
+  const direction = watch.rateDirection ?? "above";
+  const prevMarkets = watch.rateState?.markets ?? {};
+  const nextMarkets: typeof prevMarkets = {};
+
+  for (const rate of rates) {
+    const key = marketKey(rate);
+    const prev = prevMarkets[key];
+
+    // Rate threshold checks (borrow and supply independently)
+    for (const [metric, threshold] of [
+      ["borrowAPY", watch.rateBorrowThreshold] as const,
+      ["supplyAPY", watch.rateSupplyThreshold] as const,
+    ]) {
+      if (threshold === undefined) continue;
+      const current = metric === "borrowAPY" ? rate.borrowAPY : rate.supplyAPY;
+      const prevVal = metric === "borrowAPY" ? prev?.borrowAPY : prev?.supplyAPY;
+      const crossed = direction === "above" ? current >= threshold : current <= threshold;
+      const wasCrossed = prevVal !== undefined
+        ? (direction === "above" ? prevVal >= threshold : prevVal <= threshold)
+        : false;
+      if (crossed && !wasCrossed) {
+        fired.push(addAlert({
+          watchId: watch.id,
+          type: "rate_spike",
+          severity: direction === "above" ? "warning" : "warning",
+          message: `${rate.protocol} ${rate.chain} ${rate.market} ${metric} ${direction} ${threshold}%: now ${current.toFixed(2)}%`,
+          data: { protocol: rate.protocol, chain: rate.chain, market: rate.market,
+            metric, currentValue: current, previousValue: prevVal, threshold, direction },
+        }));
+      }
+    }
+
+    // Utilization threshold check
+    if (watch.rateUtilizationThreshold !== undefined) {
+      const prevUtil = prev?.utilization;
+      const crossed = rate.utilization >= watch.rateUtilizationThreshold;
+      const wasCrossed = prevUtil !== undefined && prevUtil >= watch.rateUtilizationThreshold;
+      if (crossed && !wasCrossed) {
+        fired.push(addAlert({
+          watchId: watch.id,
+          type: "rate_utilization",
+          severity: rate.utilization >= 95 ? "critical" : "warning",
+          message: `${rate.protocol} ${rate.chain} ${rate.market} utilization at ${rate.utilization.toFixed(1)}% — borrow rate kink approaching`,
+          data: { protocol: rate.protocol, chain: rate.chain, market: rate.market,
+            utilization: rate.utilization, threshold: watch.rateUtilizationThreshold,
+            borrowAPY: rate.borrowAPY, availableLiquidityUSD: rate.availableLiquidityUSD },
+        }));
+      }
+    }
+
+    nextMarkets[key] = { borrowAPY: rate.borrowAPY, supplyAPY: rate.supplyAPY, utilization: rate.utilization };
+  }
+
+  updateWatchState(watch.id, {
+    rateState: { markets: nextMarkets, lastCheckedAt: new Date().toISOString() },
+    lastCheckedAt: new Date().toISOString(),
+  });
+
+  return fired;
+}
+
+async function checkCarryWatch(watch: WatchConfig): Promise<Alert[]> {
+  const collateral = watch.carryCollateral ?? "all";
+  const borrowAsset = watch.carryBorrowAsset ?? "USDC";
+  const supplyAsset = watch.carrySupplyAsset ?? borrowAsset;
+  const threshold = watch.carryThreshold ?? 0;
+
+  // Fetch borrow rates for the collateral/borrow pair and supply yields
+  const [borrowRates, supplyYields] = await Promise.all([
+    fetchRates(collateral, borrowAsset),
+    fetchYields(supplyAsset, [], "high"),
+  ]);
+
+  if (borrowRates.length === 0 || supplyYields.length === 0) return [];
+
+  const bestBorrow = borrowRates.reduce((a, b) => a.borrowAPY < b.borrowAPY ? a : b);
+  supplyYields.sort((a, b) => b.apy - a.apy);
+  const bestSupply = supplyYields[0];
+
+  const spread = bestSupply.apy - bestBorrow.borrowAPY;
+  const lastSpread = watch.carryState?.lastSpread;
+  const wasTriggered = lastSpread !== undefined && lastSpread >= threshold;
+  const triggered = spread >= threshold;
+
+  const fired: Alert[] = [];
+  if (triggered && !wasTriggered) {
+    fired.push(addAlert({
+      watchId: watch.id,
+      type: "carry_opportunity",
+      severity: "warning",
+      message: `Carry spread ${spread.toFixed(2)}%: borrow ${borrowAsset} at ${bestBorrow.borrowAPY.toFixed(2)}% (${bestBorrow.protocol} ${bestBorrow.chain}), supply ${supplyAsset} at ${bestSupply.apy.toFixed(2)}% (${bestSupply.protocol})`,
+      data: {
+        spread,
+        threshold,
+        borrow: { protocol: bestBorrow.protocol, chain: bestBorrow.chain,
+          market: bestBorrow.market, borrowAPY: bestBorrow.borrowAPY },
+        supply: { protocol: bestSupply.protocol, product: bestSupply.product,
+          asset: bestSupply.asset, supplyAPY: bestSupply.apy, risk: bestSupply.risk },
+      },
+    }));
+  }
+
+  updateWatchState(watch.id, {
+    carryState: { lastSpread: spread, lastCheckedAt: new Date().toISOString() },
+    lastCheckedAt: new Date().toISOString(),
+  });
+
+  return fired;
+}
+
+async function fetchYields(
+  asset: string,
+  chains: string[],
+  risk: string
+): Promise<YieldOpportunity[]> {
+  const RISK_ORDER: Record<string, number> = { low: 1, medium: 2, high: 3 };
+  const maxRisk = RISK_ORDER[risk] ?? 3;
+  const includeSolana = chains.length === 0 || chains.includes("solana");
+  const includeEvm = chains.length === 0 || chains.some((c) => c !== "solana");
+
+  const tasks: Promise<YieldOpportunity[]>[] = [];
+  if (includeEvm) {
+    tasks.push(
+      getLendingSupplyYields(asset),
+      getStakingYields(),
+      getVaultYields(),
+      getMetaMorphoYields(),
+    );
+  }
+  if (includeSolana) tasks.push(getSolanaYields());
+
+  const results = await Promise.allSettled(tasks);
+  let all: YieldOpportunity[] = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+
+  if (asset && asset !== "all") {
+    const filter = asset.toLowerCase();
+    all = all.filter((y) => y.asset.toLowerCase() === filter
+      || (filter === "eth" && ["eth", "weth"].includes(y.asset.toLowerCase()))
+      || (filter === "stables" && ["usdc", "usdt", "dai", "gho", "usde"].includes(y.asset.toLowerCase()))
+    );
+  }
+
+  return all.filter((y) => RISK_ORDER[y.risk] <= maxRisk);
+}
+
+async function checkYieldWatch(watch: WatchConfig): Promise<Alert[]> {
+  const asset = watch.yieldAsset ?? "all";
+  const chains = watch.yieldChains ?? [];
+  const risk = watch.yieldRisk ?? "high";
+  const threshold = watch.yieldApyThreshold;
+  if (threshold === undefined) return [];
+
+  const opportunities = await fetchYields(asset, chains, risk);
+  if (opportunities.length === 0) return [];
+
+  opportunities.sort((a, b) => b.apy - a.apy);
+  const best = opportunities[0];
+  const direction = watch.yieldDirection ?? "above";
+  const state = watch.yieldState ?? {};
+  const lastBest = state.lastBestApy;
+
+  const triggered = direction === "above" ? best.apy >= threshold : best.apy <= threshold;
+  const wasTriggered = lastBest !== undefined
+    ? (direction === "above" ? lastBest >= threshold : lastBest <= threshold)
+    : false;
+
+  const fired: Alert[] = [];
+  if (triggered && !wasTriggered) {
+    fired.push(addAlert({
+      watchId: watch.id,
+      type: "yield_opportunity",
+      severity: "warning",
+      message: `${best.protocol} ${best.product} (${best.asset}) ${direction} ${threshold}% APY: now ${best.apy.toFixed(2)}%`,
+      data: {
+        protocol: best.protocol,
+        product: best.product,
+        asset: best.asset,
+        currentApy: best.apy,
+        threshold,
+        direction,
+        risk: best.risk,
+        tvlUSD: best.tvlUSD,
+      },
+    }));
+  }
+
+  updateWatchState(watch.id, {
+    yieldState: { lastBestApy: best.apy, lastCheckedAt: new Date().toISOString() },
+    lastCheckedAt: new Date().toISOString(),
+  });
+
+  return fired;
+}
+
 async function runCheck(): Promise<void> {
   const watches = listWatches();
   if (watches.length === 0) return;
@@ -240,6 +472,12 @@ async function runCheck(): Promise<void> {
     try {
       const fired = watch.type === "prediction"
         ? await checkPredictionWatch(watch)
+        : watch.type === "rate"
+        ? await checkRateWatch(watch)
+        : watch.type === "yield"
+        ? await checkYieldWatch(watch)
+        : watch.type === "carry"
+        ? await checkCarryWatch(watch)
         : await checkLendingWatch(watch);
 
       if (watch.webhookUrl && fired.length > 0) {

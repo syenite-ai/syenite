@@ -7,14 +7,15 @@ import {
   addAlert,
   acknowledgeAlerts,
   getWatch,
+  clearAll,
 } from "../src/data/alerts.js";
 
 describe("Alert Watch System", () => {
-  // Note: alerts module uses module-level state. Tests run sequentially.
+  beforeEach(() => clearAll());
 
   describe("addWatch", () => {
-    it("creates a watch with generated ID and timestamp", () => {
-      const watch = addWatch({
+    it("creates a watch with generated ID and timestamp", async () => {
+      const watch = await addWatch({
         address: "0x1234567890123456789012345678901234567890",
         healthFactorThreshold: 1.5,
       });
@@ -25,15 +26,15 @@ describe("Alert Watch System", () => {
       expect(watch.createdAt).toBeTruthy();
     });
 
-    it("assigns unique IDs to each watch", () => {
-      const w1 = addWatch({ address: "0xaaa", healthFactorThreshold: 1.5 });
-      const w2 = addWatch({ address: "0xbbb", healthFactorThreshold: 2.0 });
+    it("assigns unique IDs to each watch", async () => {
+      const w1 = await addWatch({ address: "0xaaa", healthFactorThreshold: 1.5 });
+      const w2 = await addWatch({ address: "0xbbb", healthFactorThreshold: 2.0 });
 
       expect(w1.id).not.toBe(w2.id);
     });
 
-    it("stores optional protocol and chain", () => {
-      const watch = addWatch({
+    it("stores optional protocol and chain", async () => {
+      const watch = await addWatch({
         address: "0xccc",
         protocol: "aave-v3",
         chain: "arbitrum",
@@ -46,8 +47,8 @@ describe("Alert Watch System", () => {
   });
 
   describe("getWatch", () => {
-    it("retrieves an existing watch by ID", () => {
-      const created = addWatch({ address: "0xddd", healthFactorThreshold: 1.5 });
+    it("retrieves an existing watch by ID", async () => {
+      const created = await addWatch({ address: "0xddd", healthFactorThreshold: 1.5 });
       const retrieved = getWatch(created.id);
       expect(retrieved).toBeDefined();
       expect(retrieved?.address).toBe("0xddd");
@@ -59,19 +60,20 @@ describe("Alert Watch System", () => {
   });
 
   describe("removeWatch", () => {
-    it("removes an existing watch and returns true", () => {
-      const watch = addWatch({ address: "0xeee", healthFactorThreshold: 1.5 });
-      expect(removeWatch(watch.id)).toBe(true);
+    it("removes an existing watch and returns true", async () => {
+      const watch = await addWatch({ address: "0xeee", healthFactorThreshold: 1.5 });
+      expect(await removeWatch(watch.id)).toBe(true);
       expect(getWatch(watch.id)).toBeUndefined();
     });
 
-    it("returns false for non-existent watch", () => {
-      expect(removeWatch("watch_nonexistent")).toBe(false);
+    it("returns false for non-existent watch", async () => {
+      expect(await removeWatch("watch_nonexistent")).toBe(false);
     });
   });
 
   describe("listWatches", () => {
-    it("returns an array of all watches", () => {
+    it("returns an array of all watches", async () => {
+      await addWatch({ address: "0xfff", healthFactorThreshold: 1.5 });
       const watches = listWatches();
       expect(Array.isArray(watches)).toBe(true);
       expect(watches.length).toBeGreaterThan(0);
@@ -79,8 +81,8 @@ describe("Alert Watch System", () => {
   });
 
   describe("Alert management", () => {
-    it("adds and retrieves alerts", () => {
-      const watch = addWatch({ address: "0xfff", healthFactorThreshold: 1.5 });
+    it("adds and retrieves alerts", async () => {
+      const watch = await addWatch({ address: "0xfff", healthFactorThreshold: 1.5 });
 
       addAlert({
         watchId: watch.id,
@@ -100,9 +102,9 @@ describe("Alert Watch System", () => {
       expect(alert.createdAt).toBeTruthy();
     });
 
-    it("filters alerts by watchId", () => {
-      const w1 = addWatch({ address: "0xaaa1", healthFactorThreshold: 1.5 });
-      const w2 = addWatch({ address: "0xbbb1", healthFactorThreshold: 1.5 });
+    it("filters alerts by watchId", async () => {
+      const w1 = await addWatch({ address: "0xaaa1", healthFactorThreshold: 1.5 });
+      const w2 = await addWatch({ address: "0xbbb1", healthFactorThreshold: 1.5 });
 
       addAlert({
         watchId: w1.id,
@@ -119,8 +121,8 @@ describe("Alert Watch System", () => {
       expect(w2Alerts.some((a) => a.severity === "critical")).toBe(false);
     });
 
-    it("acknowledges alerts for a watch", () => {
-      const watch = addWatch({ address: "0xccc1", healthFactorThreshold: 1.5 });
+    it("acknowledges alerts for a watch", async () => {
+      const watch = await addWatch({ address: "0xccc1", healthFactorThreshold: 1.5 });
 
       addAlert({
         watchId: watch.id,
@@ -137,8 +139,8 @@ describe("Alert Watch System", () => {
       expect(unacked.length).toBe(0);
     });
 
-    it("filters to unacknowledged only", () => {
-      const watch = addWatch({ address: "0xddd1", healthFactorThreshold: 1.5 });
+    it("filters to unacknowledged only", async () => {
+      const watch = await addWatch({ address: "0xddd1", healthFactorThreshold: 1.5 });
 
       addAlert({
         watchId: watch.id,

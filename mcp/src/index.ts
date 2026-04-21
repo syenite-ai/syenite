@@ -12,6 +12,7 @@ import { getPrometheusMetrics, recordRateLimitHit } from "./logging/metrics.js";
 import { log } from "./logging/logger.js";
 import { warmCache, startBackgroundRefresh } from "./data/warm-cache.js";
 import { startAlertChecker } from "./data/alert-checker.js";
+import { loadWatches } from "./data/alerts.js";
 import { landingPageHtml } from "./web/landing.js";
 import { dashboardHtml } from "./web/dashboard.js";
 import { wellKnownMcp } from "./web/well-known.js";
@@ -288,6 +289,7 @@ const start = async () => {
     log.warn("DASHBOARD_PASSWORD not set — dashboard and metrics are disabled");
   }
 
+  await loadWatches();
   await warmCache();
   startBackgroundRefresh();
   startAlertChecker(60_000);

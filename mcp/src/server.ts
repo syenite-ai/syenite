@@ -210,8 +210,9 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "lending.market.overview", use: "Aggregate market view — TVL, utilization, rate ranges per protocol." },
       { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
       { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
-      { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
-      { name: "alerts.check", use: "Poll for active alerts (lending health factor + prediction triggers)." },
+      { name: "alerts.watch", use: "Register a lending, rate, carry, or yield watch." },
+      { name: "rates.watch", use: "Monitor DeFi rates and carry spreads — dedicated tool for rate/carry watches." },
+      { name: "alerts.check", use: "Poll for active alerts across all watch types." },
       { name: "alerts.list", use: "List all active position and prediction market watches." },
       { name: "alerts.remove", use: "Remove a watch." },
       { name: "lending.supply", use: "Generate unsigned supply (deposit) calldata for Aave v3 or Spark. Sign and submit to deposit collateral. For MetaMorpho vaults use metamorpho.supply." },
@@ -949,43 +950,35 @@ Call this tool to learn what tools are available and how to use them.`,
     annotations: { title: "Watch Rates or Position", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       type: z
-        .enum(["lending", "rate", "yield"])
+        .enum(["lending", "rate", "carry", "yield"])
         .default("lending")
-        .describe("Watch type: lending (health factor), rate (borrow/supply APY threshold), yield (best APY threshold)"),
+        .describe("Watch type: lending (health factor), rate (APY/utilization), carry (net spread), yield (best APY)"),
       webhookUrl: z.string().optional().describe("HTTP(S) URL to POST alerts to in real-time"),
       // lending params
-      address: z.string().optional().describe("EVM address to monitor (required for lending watches)"),
-      protocol: z
-        .enum(["aave-v3", "compound-v3", "morpho", "spark", "all"])
-        .optional()
-        .describe("Protocol filter (lending watches)"),
-      chain: z.enum(["ethereum", "arbitrum", "base", "all"]).optional().describe("Chain filter (lending watches)"),
-      healthFactorThreshold: z
-        .number().min(1.0).max(5.0).optional()
-        .describe("Alert when health factor drops below this (default 1.5, lending watches only)"),
+      address: z.string().optional().describe("EVM address to monitor (lending watches)"),
+      protocol: z.enum(["aave-v3", "compound-v3", "morpho", "spark", "all"]).optional().describe("Protocol filter (lending)"),
+      chain: z.enum(["ethereum", "arbitrum", "base", "all"]).optional().describe("Chain filter (lending)"),
+      healthFactorThreshold: z.number().min(1.0).max(5.0).optional().describe("Alert threshold (lending, default 1.5)"),
       // rate params
-      rateCollateral: z.string().optional().describe("Collateral asset to monitor, e.g. wBTC (rate watches)"),
-      rateBorrowAsset: z.string().optional().describe("Borrow asset, e.g. USDC (rate watches, default USDC)"),
-      rateChain: z.string().optional().describe("Chain to monitor rates on (rate watches)"),
-      rateProtocol: z
-        .enum(["aave-v3", "morpho", "spark", "compound-v3", "fluid", "all"])
-        .optional()
-        .describe("Protocol to monitor (rate watches)"),
-      rateBorrowThreshold: z.number().optional().describe("Borrow APY % threshold (rate watches)"),
-      rateSupplyThreshold: z.number().optional().describe("Supply APY % threshold (rate watches)"),
-      rateDirection: z
-        .enum(["above", "below"])
-        .optional()
-        .describe("Fire when rate goes above or below threshold (default above, rate watches)"),
+      rateCollateral: z.string().optional().describe("Collateral asset, e.g. wBTC (rate)"),
+      rateBorrowAsset: z.string().optional().describe("Borrow asset, e.g. USDC (rate, default USDC)"),
+      rateChain: z.string().optional().describe("Chain filter (rate)"),
+      rateProtocol: z.enum(["aave-v3", "morpho", "spark", "compound-v3", "fluid", "all"]).optional().describe("Protocol filter (rate)"),
+      rateBorrowThreshold: z.number().optional().describe("Borrow APY % threshold (rate)"),
+      rateSupplyThreshold: z.number().optional().describe("Supply APY % threshold (rate)"),
+      rateDirection: z.enum(["above", "below"]).optional().describe("APY threshold direction (rate, default above)"),
+      rateUtilizationThreshold: z.number().min(0).max(100).optional().describe("Utilization % threshold — fires rate_utilization; critical at ≥95% (rate)"),
+      // carry params
+      carryCollateral: z.string().optional().describe("Collateral you post to borrow, e.g. wBTC (carry)"),
+      carryBorrowAsset: z.string().optional().describe("Asset you borrow, e.g. USDC (carry)"),
+      carrySupplyAsset: z.string().optional().describe("Asset you supply — defaults to carryBorrowAsset (carry)"),
+      carryThreshold: z.number().optional().describe("Minimum net spread % to fire carry_opportunity (carry)"),
       // yield params
-      yieldAsset: z.string().optional().describe("Asset to find yields for, e.g. ETH, USDC, stables (yield watches)"),
-      yieldChains: z.array(z.string()).optional().describe("Chains to include, e.g. ['ethereum', 'solana'] (yield watches)"),
-      yieldRisk: z.enum(["low", "medium", "high"]).optional().describe("Max risk level to include (yield watches)"),
-      yieldApyThreshold: z.number().optional().describe("APY % threshold to fire alert at (yield watches)"),
-      yieldDirection: z
-        .enum(["above", "below"])
-        .optional()
-        .describe("Fire when best APY goes above or below threshold (default above, yield watches)"),
+      yieldAsset: z.string().optional().describe("Asset to watch, e.g. ETH, USDC, stables (yield)"),
+      yieldChains: z.array(z.string()).optional().describe("Chains to include (yield)"),
+      yieldRisk: z.enum(["low", "medium", "high"]).optional().describe("Max risk level (yield)"),
+      yieldApyThreshold: z.number().optional().describe("APY % threshold (yield)"),
+      yieldDirection: z.enum(["above", "below"]).optional().describe("APY threshold direction (yield, default above)"),
     },
     outputSchema: alertWatchOutput,
   }, withLogging(
@@ -1017,6 +1010,53 @@ Call this tool to learn what tools are available and how to use them.`,
     annotations: { title: "List Watches", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     outputSchema: alertListOutput,
   }, withLogging(clientIp, "alerts.list", () => handleAlertList()));
+
+  // ── rates.watch ───────────────────────────────────────────────────
+
+  server.registerTool("rates.watch", {
+    description: `Monitor DeFi lending rates and carry opportunities without polling. Three modes:
+
+• rate — fires rate_spike when borrowAPY or supplyAPY crosses a threshold; fires rate_utilization when utilization exceeds rateUtilizationThreshold (critical at ≥95%). Each protocol/chain/market tracked independently — no false re-fires.
+• carry — fires carry_opportunity when (best supply APY − cheapest borrow APY) exceeds carryThreshold. Replaces manual carry screener polling.
+
+Results persisted across server restarts. Poll alerts.check to retrieve fired alerts.`,
+    annotations: { title: "Watch Rates or Carry Spread", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    inputSchema: {
+      mode: z
+        .enum(["rate", "carry"])
+        .describe("rate: APY/utilization threshold; carry: net spread between best supply and cheapest borrow"),
+      // Rate params
+      rateCollateral: z.string().optional().describe("Collateral asset, e.g. wBTC, ETH (rate mode)"),
+      rateBorrowAsset: z.string().optional().describe("Borrow asset, e.g. USDC, USDT (rate mode, default USDC)"),
+      rateProtocol: z
+        .enum(["aave-v3", "morpho", "spark", "compound-v3", "fluid", "all"])
+        .optional()
+        .describe("Limit to a specific protocol (rate mode, default all)"),
+      rateChain: z.string().optional().describe("Limit to a specific chain (rate mode, default all)"),
+      rateBorrowThreshold: z.number().optional().describe("Borrow APY % to fire at (rate mode)"),
+      rateSupplyThreshold: z.number().optional().describe("Supply APY % to fire at (rate mode)"),
+      rateDirection: z.enum(["above", "below"]).optional().describe("Direction for APY threshold (default above)"),
+      rateUtilizationThreshold: z
+        .number().min(0).max(100).optional()
+        .describe("Utilization % to fire rate_utilization alert at (rate mode). Critical severity at ≥95%."),
+      // Carry params
+      carryCollateral: z.string().optional().describe("Collateral you post to borrow, e.g. wBTC (carry mode)"),
+      carryBorrowAsset: z.string().optional().describe("Asset you borrow, e.g. USDC (carry mode)"),
+      carrySupplyAsset: z.string().optional().describe("Asset you supply/lend — defaults to carryBorrowAsset (carry mode)"),
+      carryThreshold: z.number().optional().describe("Minimum net spread % to fire carry_opportunity alert (carry mode)"),
+      webhookUrl: z.string().optional().describe("HTTP(S) URL to POST alerts to in real-time"),
+    },
+    outputSchema: alertWatchOutput,
+  }, withLogging(
+    clientIp,
+    "rates.watch",
+    (p) => {
+      const mode = (p.mode as string) === "carry" ? "carry" : "rate";
+      return handleAlertWatch({ type: mode, ...p } as Parameters<typeof handleAlertWatch>[0]);
+    },
+    (p) => ({ mode: p.mode, rateCollateral: p.rateCollateral, carryCollateral: p.carryCollateral,
+      webhookUrl: p.webhookUrl ? "[set]" : undefined })
+  ));
 
   // ── alerts.remove ─────────────────────────────────────────────────
 

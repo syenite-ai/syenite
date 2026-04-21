@@ -131,6 +131,7 @@ function trackETelemetry(): TrackReport {
     recentErrors: [],
     byChain: [],
     byProtocol: [],
+    byAsset: [],
     retention: { returningClients2d: 0, returningClients7d: 0, totalClients: 0 },
     sessions: [],
   };
