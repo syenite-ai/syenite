@@ -533,8 +533,8 @@ Call this tool to learn what tools are available and how to use them.`,
     toAddress: z.string().optional().describe("Recipient address"),
     fromChain: z.string().default("ethereum").describe("Source chain"),
     toChain: z.string().optional().describe("Destination chain"),
-    slippage: z.number().optional(),
-    order: z.enum(["CHEAPEST", "FASTEST"]).optional(),
+    slippage: z.number().optional().describe("Max slippage as decimal (0.005 = 0.5%). Defaults to 0.5%."),
+    order: z.enum(["CHEAPEST", "FASTEST"]).optional().describe("Route preference: CHEAPEST (best price) or FASTEST (lowest execution time)"),
   });
 
   server.registerTool("swap.multi", {
@@ -601,7 +601,7 @@ Call this tool to learn what tools are available and how to use them.`,
     data: z.string().describe("Calldata (hex)"),
     value: z.string().optional().describe("Native token value (hex or decimal wei)"),
     from: z.string().describe("Sender address"),
-    chainId: z.number().optional(),
+    chainId: z.number().optional().describe("EIP-155 chain ID (e.g. 1 for Ethereum, 42161 for Arbitrum)"),
   });
 
   server.registerTool("tx.simulate", {
@@ -660,8 +660,8 @@ Call this tool to learn what tools are available and how to use them.`,
         to: z.string().describe("Target address"),
         data: z.string().optional().describe("Calldata"),
         value: z.string().optional().describe("Native value (wei)"),
-        gasLimit: z.string().optional(),
-        chainId: z.number().optional(),
+        gasLimit: z.string().optional().describe("Gas limit as decimal string"),
+        chainId: z.number().optional().describe("EIP-155 chain ID"),
       }),
       rules: guardRulesSchema,
       chain: z.string().optional().describe("Chain name (defaults to ethereum)"),
@@ -1140,14 +1140,14 @@ Results persisted across server restarts. Poll alerts.check to retrieve fired al
   // ── prediction.watch ──────────────────────────────────────────────
 
   const predictionConditionsInput = z.object({
-    oddsThresholdPct: z.number().min(0).max(100).optional(),
+    oddsThresholdPct: z.number().min(0).max(100).optional().describe("Alert when YES probability crosses this threshold (0-100)"),
     oddsMovePct: z.object({
-      delta: z.number().positive(),
-      windowMinutes: z.number().positive(),
-    }).optional(),
-    liquidityDropPct: z.number().min(0).max(100).optional(),
-    resolutionApproachingHours: z.number().positive().optional(),
-    volumeSpikeMultiple: z.number().gt(1).optional(),
+      delta: z.number().positive().describe("Minimum probability shift to trigger (percentage points, e.g. 5)"),
+      windowMinutes: z.number().positive().describe("Time window to measure the move over (minutes)"),
+    }).optional().describe("Alert on a significant odds move within a time window"),
+    liquidityDropPct: z.number().min(0).max(100).optional().describe("Alert when liquidity drops by this percentage"),
+    resolutionApproachingHours: z.number().positive().optional().describe("Alert when resolution is within this many hours"),
+    volumeSpikeMultiple: z.number().gt(1).optional().describe("Alert when volume exceeds this multiple of the 24h average (e.g. 3 = 3x spike)"),
   });
 
   server.registerTool("prediction.watch", {
@@ -1192,10 +1192,10 @@ Results persisted across server restarts. Poll alerts.check to retrieve fired al
     annotations: { title: "Prediction Quote", readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     inputSchema: {
       tokenId: z.string().describe("Polymarket outcome token ID"),
-      side: z.enum(["buy", "sell"]),
+      side: z.enum(["buy", "sell"]).describe("Direction: buy to open a position, sell to close"),
       outcome: z.enum(["YES", "NO"]).describe("Informational — used for display only"),
       size: z.number().positive().describe("Order size in shares"),
-      orderType: z.enum(["market", "limit"]).default("market"),
+      orderType: z.enum(["market", "limit"]).default("market").describe("Order type: market fills immediately, limit rests in the book"),
       limitPrice: z.number().min(0).max(1).optional().describe("Required for limit orders (USDC per share)"),
     },
     outputSchema: predictionQuoteOutput,
@@ -1217,8 +1217,8 @@ Results persisted across server restarts. Poll alerts.check to retrieve fired al
     annotations: { title: "Place Prediction Order", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     inputSchema: {
       tokenId: z.string().describe("Polymarket outcome token ID"),
-      side: z.enum(["buy", "sell"]),
-      outcome: z.enum(["YES", "NO"]),
+      side: z.enum(["buy", "sell"]).describe("Direction: buy to open, sell to close"),
+      outcome: z.enum(["YES", "NO"]).describe("Outcome token side (YES or NO)"),
       size: z.number().positive().describe("Shares"),
       price: z.number().min(0).max(1).describe("Limit price in USDC per share (0-1)"),
       maker: z.string().describe("Polygon EOA that will sign the EIP-712 order"),
