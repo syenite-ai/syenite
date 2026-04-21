@@ -26,7 +26,7 @@ vi.mock("../src/data/aave.js", () => ({
 }));
 
 vi.mock("../src/data/morpho.js", () => ({
-  getMorphoRates: vi.fn().mockResolvedValue([
+  getMorphoRatesMultiChain: vi.fn().mockResolvedValue([
     {
       protocol: "morpho-blue",
       chain: "ethereum",
@@ -75,6 +75,10 @@ vi.mock("../src/data/compound.js", () => ({
 
 vi.mock("../src/data/fluid.js", () => ({
   getFluidRates: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("../src/data/pendle.js", () => ({
+  getPendleMarkets: vi.fn().mockResolvedValue([]),
 }));
 
 import { handleCarryScreener } from "../src/tools/carry.js";

@@ -13,9 +13,11 @@ vi.mock("../src/logging/metrics.js", () => ({
 
 const fetchMock = vi.fn();
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockReset();
+  const { clearCache } = await import("../src/data/cache.js");
+  clearCache();
 });
 
 afterEach(() => {

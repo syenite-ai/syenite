@@ -119,6 +119,12 @@ export function getAlerts(watchId?: string, unacknowledgedOnly = false): Alert[]
   });
 }
 
+export function clearAll(): void {
+  watches.clear();
+  alerts.length = 0;
+  nextId = 1;
+}
+
 export function acknowledgeAlerts(watchId: string): number {
   let count = 0;
   for (const alert of alerts) {

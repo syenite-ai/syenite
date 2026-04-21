@@ -13,7 +13,7 @@ import {
   type PredictionWatchState,
 } from "./alerts.js";
 import { getMarketDetail, getOrderBook } from "./polymarket.js";
-import { sendWebhook } from "./webhook.js";
+import { deliverWebhook } from "./webhook.js";
 import { log } from "../logging/logger.js";
 import type { SupportedChain } from "./client.js";
 import type { PositionData } from "./types.js";
@@ -244,7 +244,7 @@ async function runCheck(): Promise<void> {
 
       if (watch.webhookUrl && fired.length > 0) {
         for (const alert of fired) {
-          await sendWebhook(watch.webhookUrl, alert);
+          await deliverWebhook(watch.webhookUrl, alert);
         }
       }
 

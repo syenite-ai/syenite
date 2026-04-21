@@ -1,6 +1,6 @@
 {
   "name": "@syenite/mcp",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "mcpName": "io.github.syenite-ai/syenite",
   "description": "Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield, lending, prediction markets, wallet ops, and gas estimation across 30+ chains via MCP",
   "type": "module",

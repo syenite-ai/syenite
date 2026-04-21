@@ -186,8 +186,9 @@ export function createMcpServer(clientIp: string): McpServer {
 
   const helpData = {
     service: "Syenite — The DeFi interface for AI agents",
+    version: "0.6.0",
     description:
-      "Swap routing, bridge execution, yield and lending intelligence, prediction markets, carry and strategy search, position alerts, wallet and gas tools, and a trust layer (tx.verify, tx.simulate, tx.guard) — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
+      "Swap routing, bridge execution, yield and lending intelligence (EVM + Solana), MetaMorpho vault execution, Pendle PT/YT markets, prediction markets (drill-down, CLOB orders, position monitoring), carry and strategy search, position alerts with webhooks, wallet and gas tools, and a trust layer (tx.verify, tx.simulate, tx.guard) — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
     tools: [
       { name: "wallet.balances", use: "Check native and token balances across chains for any EVM address. Verify funds before transacting." },
       { name: "gas.estimate", use: "Current gas prices and operation costs across chains. Find the cheapest chain for any operation." },
@@ -218,7 +219,10 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "prediction.watch", use: "Monitor a market for odds threshold, movement, liquidity drop, resolution, or volume spikes." },
       { name: "prediction.position", use: "List an agent's Polymarket positions across markets — size, PnL, time-to-resolve." },
       { name: "prediction.quote", use: "Size-aware buy/sell quote walking the CLOB book — fill price, slippage, available depth." },
-      { name: "prediction.order", use: "Prepare a Polymarket CLOB order (EIP-712) for signing plus the USDC approval tx." },
+      { name: "prediction.order", use: "Prepare a Polymarket CLOB order (EIP-712 off-chain signed order) for signing plus the USDC approval tx. Note: returns EIP-712 typed data, not an on-chain tx — use your signer, not tx.verify/tx.simulate." },
+      { name: "metamorpho.supply", use: "Generate unsigned ERC-4626 deposit calldata for a MetaMorpho vault (Steakhouse, Gauntlet, etc). Returns transactionRequest plus ERC-20 approval." },
+      { name: "metamorpho.withdraw", use: "Generate unsigned ERC-4626 redeem calldata to withdraw from a MetaMorpho vault." },
+      { name: "token.price", use: "Current USD price for any token via Chainlink on-chain oracles — same feeds used by Aave, Morpho, and Spark for liquidation. Batch up to 20 symbols." },
       { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
       { name: "alerts.check", use: "Poll for active alerts (lending health factor + prediction triggers)." },
       { name: "alerts.list", use: "List all active position and prediction market watches." },
@@ -230,13 +234,15 @@ export function createMcpServer(clientIp: string): McpServer {
       execution: "Returns unsigned transaction calldata — agent or user signs. Syenite never holds keys.",
     },
     yieldSources: {
-      "lending-supply": ["Aave v3", "Morpho Blue", "Spark"],
-      "liquid-staking": ["Lido (stETH/wstETH)", "Rocket Pool (rETH)", "Coinbase (cbETH)"],
+      "lending-supply": ["Aave v3", "Morpho Blue (Ethereum, Base, Arbitrum, Optimism)", "Spark"],
+      "liquid-staking": ["Lido (stETH/wstETH)", "Rocket Pool (rETH)", "Coinbase (cbETH)", "Jito (jitoSOL)", "Marinade (mSOL)", "Sanctum LSTs"],
       "savings-rate": ["Maker DSR (sDAI)"],
-      vault: ["MetaMorpho (Steakhouse, Gauntlet)", "Yearn v3"],
+      vault: ["MetaMorpho (Steakhouse, Gauntlet) — supply/withdraw via metamorpho.supply/withdraw", "Yearn v3"],
       "basis-capture": ["Ethena (sUSDe)"],
+      "fixed-yield": ["Pendle PT markets (Ethereum, Arbitrum, Base)"],
+      "solana": ["Kamino (lending + vaults)", "MarginFi (lending)", "Drift (perps + lending)", "Jupiter (DEX/aggregator)", "Jito (staking)", "Marinade (staking)", "Sanctum (LST router)"],
     },
-    lendingProtocols: ["Aave v3 (Ethereum, Arbitrum, Base)", "Morpho Blue (Ethereum)", "Spark (Ethereum)"],
+    lendingProtocols: ["Aave v3 (Ethereum, Arbitrum, Base)", "Morpho Blue (Ethereum, Base, Arbitrum, Optimism)", "Spark (Ethereum)", "Compound v3 (Ethereum, Arbitrum, Base)", "Kamino (Solana)", "MarginFi (Solana)"],
     access: {
       status: "Free — no API key required",
       rateLimit: "30 requests/minute",

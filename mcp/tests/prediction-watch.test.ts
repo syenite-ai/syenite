@@ -38,6 +38,7 @@ vi.mock("../src/data/polymarket.js", () => ({
 import { handlePredictionWatch } from "../src/tools/prediction-watch.js";
 import {
   addWatch,
+  clearAll,
   getAlerts,
   listWatches,
   updateWatchState,
@@ -125,7 +126,7 @@ describe("alerts storage round-trip", () => {
 });
 
 describe("alert-checker evaluates prediction watches", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { clearAll(); vi.clearAllMocks(); });
 
   it("fires odds threshold alert when current odds cross threshold", async () => {
     // Current market midpoint is 0.45 → 45% — threshold 40% triggers.

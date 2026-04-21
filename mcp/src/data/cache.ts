@@ -51,6 +51,10 @@ export async function cacheSet<T>(key: string, value: T, ttlSeconds: number): Pr
   );
 }
 
+export function clearCache(): void {
+  memCache.clear();
+}
+
 export async function cachePurgeExpired(): Promise<number> {
   if (!hasDatabase()) {
     const now = Math.floor(Date.now() / 1000);

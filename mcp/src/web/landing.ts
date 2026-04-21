@@ -507,6 +507,57 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+    <div class="tool">
+      <div class="tool-name">prediction.market</div>
+      <p class="tool-desc">Deep drill-down on a single Polymarket market: full odds history, liquidity depth, resolution criteria, and one-sided order flow.</p>
+      <div class="params">
+        <span class="pn">slug</span><span class="pt">string</span><span class="pd">Market slug (from prediction.trending or prediction.search)</span>
+        <span class="pn">conditionId</span><span class="pt">string</span><span class="pd">Alternative: Polymarket condition ID</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.watch</div>
+      <p class="tool-desc">Monitor a Polymarket market for configurable triggers: odds threshold, movement, liquidity drop, resolution approaching, or volume spike. Optional webhook for push alerts.</p>
+      <div class="params">
+        <span class="pn">slug</span><span class="pt">string</span><span class="pd">Market slug to monitor</span>
+        <span class="pn">conditions</span><span class="pt">object</span><span class="pd">oddsThresholdPct, oddsMovePct, liquidityDropPct, resolutionApproachingHours, volumeSpikeMultiple</span>
+        <span class="pn">webhookUrl</span><span class="pt">string</span><span class="pd">Optional HTTP(S) URL for push alerts</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.position</div>
+      <p class="tool-desc">List an agent’s Polymarket positions: size, average entry, current value, PnL, and time-to-resolve.</p>
+      <div class="params">
+        <span class="pn">address</span><span class="pt">string</span><span class="pd">EVM address (Polygon) holding positions</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.quote</div>
+      <p class="tool-desc">Size-aware buy/sell quote walking the CLOB book: fill price, slippage at size, available depth, and fee estimate.</p>
+      <div class="params">
+        <span class="pn">tokenId</span><span class="pt">string</span><span class="pd">Outcome token ID</span>
+        <span class="pn">side</span><span class="pt">string</span><span class="pd">“buy” or “sell”</span>
+        <span class="pn">outcome</span><span class="pt">string</span><span class="pd">“YES” or “NO”</span>
+        <span class="pn">size</span><span class="pt">number</span><span class="pd">USDC notional</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">prediction.order</div>
+      <p class="tool-desc">Prepare a Polymarket CLOB limit order as EIP-712 typed data for off-chain signing, plus a USDC approval tx. Returns a signing payload — not an on-chain transaction. Sign and submit to the Polymarket CLOB API.</p>
+      <div class="params">
+        <span class="pn">tokenId</span><span class="pt">string</span><span class="pd">Outcome token ID</span>
+        <span class="pn">side</span><span class="pt">string</span><span class="pd">“buy” or “sell”</span>
+        <span class="pn">outcome</span><span class="pt">string</span><span class="pd">“YES” or “NO”</span>
+        <span class="pn">size</span><span class="pt">number</span><span class="pd">USDC notional</span>
+        <span class="pn">price</span><span class="pt">number</span><span class="pd">Limit price (0–1)</span>
+        <span class="pn">maker</span><span class="pt">string</span><span class="pd">EVM address placing the order</span>
+      </div>
+    </div>
+
     <p class="section-label">lending</p>
 
     <div class="tool">
@@ -599,6 +650,31 @@ export function landingPageHtml(): string {
       </div>
     </div>
 
+
+    <p class="section-label">metamorpho vaults</p>
+
+    <div class="tool">
+      <div class="tool-name">metamorpho.supply</div>
+      <p class="tool-desc">Generate unsigned ERC-4626 deposit calldata for a MetaMorpho vault (Steakhouse, Gauntlet, and others). Returns a <code>transactionRequest</code> plus the ERC-20 approval tx. Ethereum, Base, Arbitrum, Optimism.</p>
+      <div class="params">
+        <span class="pn">vault</span><span class="pt">string</span><span class="pd">Vault address or name fragment (e.g. "Steakhouse USDC")</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, base, arbitrum, optimism</span>
+        <span class="pn">amount</span><span class="pt">string</span><span class="pd">Human-readable amount (e.g. "1000")</span>
+        <span class="pn">receiver</span><span class="pt">string</span><span class="pd">Address that receives the vault shares</span>
+      </div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-name">metamorpho.withdraw</div>
+      <p class="tool-desc">Generate unsigned ERC-4626 redeem calldata to withdraw from a MetaMorpho vault. Use "max" to redeem all shares.</p>
+      <div class="params">
+        <span class="pn">vault</span><span class="pt">string</span><span class="pd">Vault address or name fragment</span>
+        <span class="pn">chain</span><span class="pt">string</span><span class="pd">ethereum, base, arbitrum, optimism</span>
+        <span class="pn">amount</span><span class="pt">string</span><span class="pd">Amount or "max"</span>
+        <span class="pn">receiver</span><span class="pt">string</span><span class="pd">Address that receives the underlying asset</span>
+      </div>
+    </div>
+
     <p class="section-label">prices</p>
 
     <div class="tool">
@@ -636,7 +712,7 @@ export function landingPageHtml(): string {
   <section>
     <h2>supported chains</h2>
     <p>Swap and bridge routing supports 30+ chains including Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, zkSync, Linea, Scroll, Gnosis, and Fantom.</p>
-    <p>Lending rates, market overview, and position monitoring run on Ethereum, Arbitrum, and Base (per protocol availability). Wallet balances, gas estimates, and the trust-layer simulation tools use Ethereum, Arbitrum, Base, and BNB Chain. Yield intelligence is centred on Ethereum mainnet blue-chip protocols.</p>
+    <p>Lending rates, market overview, and position monitoring: Ethereum, Arbitrum, Base (EVM) + Solana (Kamino, MarginFi). MetaMorpho vaults: Ethereum, Base, Arbitrum, Optimism. Wallet balances and gas: EVM + Solana. Yield intelligence covers EVM blue-chips plus Solana DeFi (Kamino, Drift, Jito, Marinade, Sanctum, Jupiter).</p>
   </section>
 
   <section>
@@ -658,10 +734,12 @@ export function landingPageHtml(): string {
     <p>All lending data read directly from on-chain contracts via Ethereum RPC. Prices use Chainlink feeds. Cached briefly (15\u201360s).</p>
     <div class="table-wrap">
       <table>
-        <tr><th>Protocol</th><th>Collateral</th></tr>
-        <tr><td>Aave v3</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
-        <tr><td>Morpho Blue</td><td>wBTC, tBTC, cbBTC, wstETH, WETH</td></tr>
-        <tr><td>Spark</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
+        <tr><th>Protocol</th><th>Chains</th><th>Collateral</th></tr>
+        <tr><td>Aave v3</td><td>Ethereum, Arbitrum, Base</td><td>wBTC, tBTC, cbBTC, WETH, wstETH, rETH, cbETH, weETH</td></tr>
+        <tr><td>Morpho Blue</td><td>Ethereum, Base, Arbitrum, Optimism</td><td>wBTC, tBTC, cbBTC, wstETH, WETH</td></tr>
+        <tr><td>Spark</td><td>Ethereum</td><td>wBTC, tBTC, WETH, wstETH, rETH, weETH</td></tr>
+        <tr><td>Kamino</td><td>Solana</td><td>SOL, mSOL, jitoSOL, USDC, wBTC</td></tr>
+        <tr><td>MarginFi</td><td>Solana</td><td>SOL, wBTC, USDC, wstETH</td></tr>
       </table>
     </div>
   </section>
