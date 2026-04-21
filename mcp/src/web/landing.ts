@@ -10,18 +10,18 @@ export function landingPageHtml(): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">${gscMeta}
   <title>syenite — the DeFi interface for AI agents</title>
-  <meta name="description" content="DeFi MCP for AI agents: swaps and bridges (30+ chains), yield and lending with execution (supply, borrow, withdraw, repay), prediction markets, carry screening, wallet balances, gas estimates, tx.verify, tx.simulate, and tx.receipt. Open access, no API key.">
+  <meta name="description" content="DeFi MCP for AI agents: real-time lending rates across Aave, Morpho, Compound and Spark, yield opportunities, and position alerts with webhooks. Swap and bridge routing (30+ chains), lending execution, prediction markets. No API key.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
   <link rel="canonical" href="https://syenite.ai/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Syenite">
   <meta property="og:title" content="syenite — the DeFi interface for AI agents">
-  <meta property="og:description" content="One MCP endpoint for agentic DeFi: swap, bridge, yield, lending execution, prediction markets, alerts, and a trust layer across 30+ chains. No API key.">
+  <meta property="og:description" content="Real-time lending rates, yield opportunities, and position alerts for AI agents. Swap routing (30+ chains), lending execution, prediction markets, trust layer. No API key.">
   <meta property="og:url" content="https://syenite.ai/">
   <meta property="og:image" content="https://syenite.ai/assets/icon-square.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="syenite — the DeFi interface for AI agents">
-  <meta name="twitter:description" content="One MCP endpoint for agentic DeFi: swap, bridge, yield, lending execution, prediction markets, alerts, and a trust layer across 30+ chains. No API key.">
+  <meta name="twitter:description" content="Real-time lending rates, yield opportunities, and position alerts for AI agents. Swap routing (30+ chains), lending execution, prediction markets, trust layer. No API key.">
   <meta name="twitter:image" content="https://syenite.ai/assets/icon-square.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
   <script type="application/ld+json">${JSON.stringify({
@@ -31,19 +31,19 @@ export function landingPageHtml(): string {
     alternateName: "Syenite MCP",
     url: "https://syenite.ai/",
     description:
-      "MCP server for agentic DeFi: swap and bridge routing, yield and multi-chain lending intelligence with execution, prediction market data and signals, carry screening, position alerts, wallet and gas tools, and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt) across 30+ chains.",
+      "MCP server for AI agents: real-time lending rates (Aave, Morpho, Compound, Spark), yield opportunities across lending, staking, vaults, and fixed-yield, persistent position alerts with webhooks, swap and bridge routing (30+ chains), lending execution, prediction markets, and a trust layer for transaction verification.",
     applicationCategory: "DeveloperApplication",
     applicationSubCategory: "Model Context Protocol server",
     operatingSystem: "Any",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     featureList: [
-      "Swap and bridge routing via Li.Fi",
-      "Multi-chain lending execution (Aave, Morpho, Spark)",
-      "Yield intelligence across lending, staking, vaults, savings rate",
+      "Real-time lending rates across Aave, Morpho, Compound and Spark",
+      "Yield opportunities across lending, staking, vaults, and fixed-yield (Pendle)",
+      "Position alerts with webhook delivery",
+      "Multi-chain lending execution (supply, borrow, withdraw, repay)",
+      "Swap and bridge routing via Li.Fi (30+ chains)",
       "Polymarket prediction market data and signals",
       "Carry trade screening and strategy search",
-      "Position alerts with webhook delivery",
-      "Wallet balances and gas estimation",
       "Transaction trust layer: verify, simulate, guard, receipt",
     ],
     author: { "@type": "Organization", name: "Syenite", url: "https://syenite.ai/" },
@@ -331,7 +331,7 @@ export function landingPageHtml(): string {
       <img src="/assets/icon-32.png" alt="" class="logo" width="32" height="32">
       <h1>syenite</h1>
     </div>
-    <p class="lead">One MCP endpoint for swaps and bridges (30+ chains), yield, multi-chain lending with execution (supply, borrow, withdraw, repay), prediction markets, carry and strategy search, position alerts with webhooks, and a trust layer: verify contracts, simulate before sign, confirm with tx.receipt after. Syenite never holds keys \u2014 you get unsigned transactions and independent checks.</p>
+    <p class="lead">Real-time lending rates and yield across Aave, Morpho, Compound, Spark, and Pendle — with position alerts and webhook delivery when conditions change. Swap and bridge routing (30+ chains), lending execution (supply, borrow, withdraw, repay), prediction markets, carry screening, and a trust layer for transaction verification. No keys held — unsigned transactions only.</p>
     <p style="margin-top:1rem"><a href="/docs">Docs</a></p>
   </header>
 

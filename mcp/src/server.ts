@@ -102,19 +102,30 @@ import {
   predictionOrderOutput,
 } from "./schemas.js";
 
-function extractDimension(
-  params: Record<string, unknown>,
-  key: "chain" | "protocol"
-): string | undefined {
-  const direct = params[key];
-  if (typeof direct === "string" && direct.length > 0 && direct !== "all") {
-    return direct.toLowerCase();
+function extractChain(params: Record<string, unknown>): string | undefined {
+  for (const key of ["chain", "fromChain", "toChain"]) {
+    const v = params[key];
+    if (typeof v === "string" && v.length > 0 && v !== "all") return v.toLowerCase();
   }
-  if (key === "chain") {
-    const fromChain = params.fromChain;
-    if (typeof fromChain === "string" && fromChain.length > 0) {
-      return fromChain.toLowerCase();
-    }
+  // yield.opportunities uses chains[] array
+  const chains = params.chains;
+  if (Array.isArray(chains) && chains.length > 0 && typeof chains[0] === "string") {
+    const first = chains[0].toLowerCase();
+    if (first !== "all") return first;
+  }
+  return undefined;
+}
+
+function extractProtocol(params: Record<string, unknown>): string | undefined {
+  const v = params.protocol;
+  if (typeof v === "string" && v.length > 0 && v !== "all") return v.toLowerCase();
+  return undefined;
+}
+
+function extractAsset(params: Record<string, unknown>): string | undefined {
+  for (const key of ["asset", "collateral", "borrowAsset", "tokenSymbol"]) {
+    const v = params[key];
+    if (typeof v === "string" && v.length > 0 && v !== "all") return v.toUpperCase();
   }
   return undefined;
 }
@@ -127,8 +138,9 @@ function withLogging(
 ) {
   return async (params: Record<string, unknown>) => {
     const start = Date.now();
-    const chain = extractDimension(params, "chain");
-    const protocol = extractDimension(params, "protocol");
+    const chain = extractChain(params);
+    const protocol = extractProtocol(params);
+    const asset = extractAsset(params);
     try {
       const result = await handler(params);
       const elapsed = Date.now() - start;
@@ -141,6 +153,7 @@ function withLogging(
         success: true,
         chain,
         protocol,
+        asset,
       });
       return {
         structuredContent: result,
@@ -161,6 +174,7 @@ function withLogging(
         errorMessage: msg,
         chain,
         protocol,
+        asset,
       });
       return {
         content: [{
@@ -188,27 +202,27 @@ export function createMcpServer(clientIp: string): McpServer {
     service: "Syenite — The DeFi interface for AI agents",
     version: "0.6.0",
     description:
-      "Swap routing, bridge execution, yield and lending intelligence (EVM + Solana), MetaMorpho vault execution, Pendle PT/YT markets, prediction markets (drill-down, CLOB orders, position monitoring), carry and strategy search, position alerts with webhooks, wallet and gas tools, and a trust layer (tx.verify, tx.simulate, tx.guard) — one MCP endpoint for reading and writing to DeFi across 30+ chains.",
+      "Real-time lending rates (Aave, Morpho, Compound, Spark) and yield opportunities across EVM and Solana — with position alerts and webhooks. Swap and bridge routing (30+ chains), lending execution (supply, borrow, withdraw, repay), MetaMorpho vaults, Pendle PT/YT, prediction markets (drill-down, CLOB orders, monitoring), carry and strategy search, wallet and gas, and a trust layer (tx.verify, tx.simulate, tx.guard) — one MCP endpoint for reading and writing to DeFi.",
     tools: [
-      { name: "wallet.balances", use: "Check native and token balances across chains for any EVM address. Verify funds before transacting." },
-      { name: "gas.estimate", use: "Current gas prices and operation costs across chains. Find the cheapest chain for any operation." },
-      { name: "swap.quote", use: "Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, bridges). 30+ chains." },
-      { name: "swap.multi", use: "Batch multiple swap/bridge quotes in parallel. Split funds across chains or compare routes." },
-      { name: "swap.status", use: "Track execution status of a cross-chain bridge transaction." },
-      { name: "tx.simulate", use: "Simulate a transaction before signing — balance changes, gas, revert detection. Third-party verified via EVM." },
-      { name: "tx.verify", use: "Verify a contract via Etherscan + Sourcify. Check if it's a known protocol. Risk flags." },
-      { name: "tx.guard", use: "Check a transaction against your own risk rules — value caps, allowlists, gas limits." },
+      { name: "lending.rates.query", use: "Compare borrow/supply rates across protocols for any collateral and borrow asset pair." },
       { name: "yield.opportunities", use: "Find the best yield for any asset across lending, staking, vaults, savings, and basis capture." },
       { name: "yield.assess", use: "Deep risk assessment for a specific yield strategy — smart contract, oracle, governance, liquidity, and depeg risk." },
-      { name: "lending.rates.query", use: "Compare borrow/supply rates across protocols for any collateral and borrow asset pair." },
       { name: "lending.market.overview", use: "Aggregate market view — TVL, utilization, rate ranges per protocol." },
       { name: "lending.position.monitor", use: "Check health factor, liquidation distance, and costs for any Ethereum address." },
       { name: "lending.risk.assess", use: "Risk assessment for a proposed lending position — liquidation price, safety margin, annual cost." },
+      { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
+      { name: "alerts.check", use: "Poll for active alerts (lending health factor + prediction triggers)." },
+      { name: "alerts.list", use: "List all active position and prediction market watches." },
+      { name: "alerts.remove", use: "Remove a watch." },
       { name: "lending.supply", use: "Generate unsigned supply (deposit) calldata for Aave v3 or Spark. Sign and submit to deposit collateral. For MetaMorpho vaults use metamorpho.supply." },
       { name: "lending.borrow", use: "Generate unsigned borrow calldata. Variable rate only (stable deprecated). Check lending.risk.assess first." },
       { name: "lending.withdraw", use: "Generate unsigned withdraw calldata for Aave v3 or Spark. Use 'max' to withdraw all. For MetaMorpho vaults use metamorpho.withdraw." },
       { name: "lending.repay", use: "Generate unsigned repay calldata. Use 'max' to repay all outstanding debt." },
-      { name: "tx.receipt", use: "Fetch and decode a transaction receipt — success/failure, gas cost, events, token transfers. Close the execution loop." },
+      { name: "metamorpho.supply", use: "Generate unsigned ERC-4626 deposit calldata for a MetaMorpho vault (Steakhouse, Gauntlet, etc). Returns transactionRequest plus ERC-20 approval." },
+      { name: "metamorpho.withdraw", use: "Generate unsigned ERC-4626 redeem calldata to withdraw from a MetaMorpho vault." },
+      { name: "swap.quote", use: "Get an optimal swap or bridge quote with unsigned transaction calldata. Same-chain swaps and cross-chain bridges via aggregated routing (1inch, 0x, Paraswap, bridges). 30+ chains." },
+      { name: "swap.multi", use: "Batch multiple swap/bridge quotes in parallel. Split funds across chains or compare routes." },
+      { name: "swap.status", use: "Track execution status of a cross-chain bridge transaction." },
       { name: "strategy.carry.screen", use: "Screen all markets for positive carry (supply APY > borrow APY). Ranks self-funding leveraged strategies." },
       { name: "find.strategy", use: "Composable strategy finder — scans yield, carry, leverage, prediction, and gas data to surface the best opportunities for a given asset." },
       { name: "prediction.trending", use: "Top prediction markets by volume — probabilities, liquidity, and spread." },
@@ -219,13 +233,13 @@ export function createMcpServer(clientIp: string): McpServer {
       { name: "prediction.watch", use: "Monitor a market for odds threshold, movement, liquidity drop, resolution, or volume spikes." },
       { name: "prediction.position", use: "List an agent's Polymarket positions across markets — size, PnL, time-to-resolve." },
       { name: "prediction.quote", use: "Size-aware buy/sell quote walking the CLOB book — fill price, slippage, available depth." },
-      { name: "metamorpho.supply", use: "Generate unsigned ERC-4626 deposit calldata for a MetaMorpho vault (Steakhouse, Gauntlet, etc). Returns transactionRequest plus ERC-20 approval." },
-      { name: "metamorpho.withdraw", use: "Generate unsigned ERC-4626 redeem calldata to withdraw from a MetaMorpho vault." },
+      { name: "tx.simulate", use: "Simulate a transaction before signing — balance changes, gas, revert detection. Third-party verified via EVM." },
+      { name: "tx.verify", use: "Verify a contract via Etherscan + Sourcify. Check if it's a known protocol. Risk flags." },
+      { name: "tx.guard", use: "Check a transaction against your own risk rules — value caps, allowlists, gas limits." },
+      { name: "tx.receipt", use: "Fetch and decode a transaction receipt — success/failure, gas cost, events, token transfers. Close the execution loop." },
       { name: "token.price", use: "Current USD price for any token via Chainlink on-chain oracles — same feeds used by Aave, Morpho, and Spark for liquidation. Batch up to 20 symbols." },
-      { name: "alerts.watch", use: "Register a position for continuous health factor monitoring." },
-      { name: "alerts.check", use: "Poll for active alerts (lending health factor + prediction triggers)." },
-      { name: "alerts.list", use: "List all active position and prediction market watches." },
-      { name: "alerts.remove", use: "Remove a watch." },
+      { name: "wallet.balances", use: "Check native and token balances across chains for any EVM address. Verify funds before transacting." },
+      { name: "gas.estimate", use: "Current gas prices and operation costs across chains. Find the cheapest chain for any operation." },
     ],
     swapAndBridge: {
       chains: "Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, and 25+ more",
@@ -251,7 +265,7 @@ export function createMcpServer(clientIp: string): McpServer {
   };
 
   server.registerTool("syenite.help", {
-    description: `Get information about Syenite — the DeFi interface for AI agents. Swap/bridge routing, yield and lending, prediction markets, strategy search, alerts, wallet/gas, and trust-layer verification before signing.
+    description: `Get information about Syenite — real-time lending rates, yield, and position alerts for AI agents. Covers Aave, Morpho, Compound, Spark, and Pendle. Also: swap/bridge routing (30+ chains), lending execution, prediction markets, carry screening, and a trust layer for transaction verification.
 Call this tool to learn what tools are available and how to use them.`,
     annotations: { title: "Syenite Help", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     outputSchema: helpOutput,
@@ -932,34 +946,54 @@ Call this tool to learn what tools are available and how to use them.`,
 
   server.registerTool("alerts.watch", {
     description: alertWatchDescription,
-    annotations: { title: "Watch Position", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    annotations: { title: "Watch Rates or Position", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     inputSchema: {
-      address: z.string().describe("EVM address to monitor"),
+      type: z
+        .enum(["lending", "rate", "yield"])
+        .default("lending")
+        .describe("Watch type: lending (health factor), rate (borrow/supply APY threshold), yield (best APY threshold)"),
+      webhookUrl: z.string().optional().describe("HTTP(S) URL to POST alerts to in real-time"),
+      // lending params
+      address: z.string().optional().describe("EVM address to monitor (required for lending watches)"),
       protocol: z
         .enum(["aave-v3", "compound-v3", "morpho", "spark", "all"])
-        .default("all")
-        .describe("Protocol filter"),
-      chain: z
-        .enum(["ethereum", "arbitrum", "base", "all"])
-        .default("all")
-        .describe("Chain filter"),
-      healthFactorThreshold: z
-        .number()
-        .min(1.0)
-        .max(5.0)
-        .default(1.5)
-        .describe("Alert when health factor drops below this value (default 1.5)"),
-      webhookUrl: z
-        .string()
         .optional()
-        .describe("HTTP(S) URL to POST alert payloads to in real-time. Enables push-based alerting instead of polling."),
+        .describe("Protocol filter (lending watches)"),
+      chain: z.enum(["ethereum", "arbitrum", "base", "all"]).optional().describe("Chain filter (lending watches)"),
+      healthFactorThreshold: z
+        .number().min(1.0).max(5.0).optional()
+        .describe("Alert when health factor drops below this (default 1.5, lending watches only)"),
+      // rate params
+      rateCollateral: z.string().optional().describe("Collateral asset to monitor, e.g. wBTC (rate watches)"),
+      rateBorrowAsset: z.string().optional().describe("Borrow asset, e.g. USDC (rate watches, default USDC)"),
+      rateChain: z.string().optional().describe("Chain to monitor rates on (rate watches)"),
+      rateProtocol: z
+        .enum(["aave-v3", "morpho", "spark", "compound-v3", "fluid", "all"])
+        .optional()
+        .describe("Protocol to monitor (rate watches)"),
+      rateBorrowThreshold: z.number().optional().describe("Borrow APY % threshold (rate watches)"),
+      rateSupplyThreshold: z.number().optional().describe("Supply APY % threshold (rate watches)"),
+      rateDirection: z
+        .enum(["above", "below"])
+        .optional()
+        .describe("Fire when rate goes above or below threshold (default above, rate watches)"),
+      // yield params
+      yieldAsset: z.string().optional().describe("Asset to find yields for, e.g. ETH, USDC, stables (yield watches)"),
+      yieldChains: z.array(z.string()).optional().describe("Chains to include, e.g. ['ethereum', 'solana'] (yield watches)"),
+      yieldRisk: z.enum(["low", "medium", "high"]).optional().describe("Max risk level to include (yield watches)"),
+      yieldApyThreshold: z.number().optional().describe("APY % threshold to fire alert at (yield watches)"),
+      yieldDirection: z
+        .enum(["above", "below"])
+        .optional()
+        .describe("Fire when best APY goes above or below threshold (default above, yield watches)"),
     },
     outputSchema: alertWatchOutput,
   }, withLogging(
     clientIp,
     "alerts.watch",
-    (p) => handleAlertWatch(p as { address: string; protocol?: string; chain?: string; healthFactorThreshold?: number; webhookUrl?: string }),
-    (p) => ({ address: "***", protocol: p.protocol, chain: p.chain, healthFactorThreshold: p.healthFactorThreshold, webhookUrl: p.webhookUrl ? "[set]" : undefined })
+    (p) => handleAlertWatch(p as Parameters<typeof handleAlertWatch>[0]),
+    (p) => ({ type: p.type, address: p.address ? "***" : undefined, rateCollateral: p.rateCollateral,
+      rateBorrowAsset: p.rateBorrowAsset, yieldAsset: p.yieldAsset, webhookUrl: p.webhookUrl ? "[set]" : undefined })
   ));
 
   // ── alerts.check ──────────────────────────────────────────────────

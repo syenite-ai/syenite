@@ -3,7 +3,7 @@ export function wellKnownMcp() {
     name: "syenite",
     version: "0.6.0",
     description:
-      "The DeFi interface for AI agents — swap and bridge (30+ chains), yield and lending with execution (supply, borrow, withdraw, repay), prediction markets and signals, carry and strategy search, position alerts with webhooks, wallet and gas, and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt) for verification before and after signing. MCP.",
+      "Real-time lending rates (Aave, Morpho, Compound, Spark) and yield opportunities — with position alerts and webhooks. Swap and bridge routing (30+ chains), lending execution, prediction markets, carry screening, wallet and gas, and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt). DeFi MCP for AI agents.",
     transport: "streamable-http",
     endpoint: "/mcp",
     authentication: "none",
