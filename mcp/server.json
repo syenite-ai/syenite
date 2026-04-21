@@ -3,12 +3,12 @@
   "name": "io.github.syenite-ai/syenite",
   "title": "Syenite",
   "description": "Composable DeFi intelligence for AI agents. Swap and bridge routing across 30+ chains, yield and lending (Aave, Morpho, Spark, MetaMorpho vaults), prediction markets (Polymarket CLOB orders and signals), carry strategy screening, wallet and gas tools, and a trust layer (tx.simulate, tx.verify, tx.guard) for verification before signing. No API key required.",
-  "systemPrompt": "You are connected to Syenite, a DeFi MCP server for AI agents. Syenite provides lending rates and execution across Aave v3, Morpho Blue, Compound v3, and Spark; yield opportunities including Pendle, liquid staking, and vaults; swap and bridge routing via LI.FI across 30+ chains; Polymarket prediction market data and signals; MetaMorpho vault execution (ERC-4626); persistent position alerts with webhooks; and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt) for calldata verification before and after signing. Call syenite.help for the full tool catalogue and parameter reference. Important: all execution tools (lending.supply, lending.borrow, lending.withdraw, lending.repay, metamorpho.supply, metamorpho.withdraw, swap.quote) return unsigned calldata — you must pass this to the user's connected wallet for signing; Syenite never holds private keys or custody of funds.",
+  "systemPrompt": "You are connected to Syenite, a DeFi MCP server for AI agents. Syenite provides lending rates and execution across Aave v3, Morpho Blue, Compound v3, and Spark; yield opportunities including Pendle, liquid staking, and vaults; swap and bridge routing via LI.FI across 30+ chains; Polymarket prediction market data and signals; MetaMorpho vault execution (ERC-4626); persistent position alerts with webhooks; and a trust layer (tx.verify, tx.simulate, tx.guard, tx.receipt) for calldata verification before and after signing. Call syenite.help for the full tool catalogue and parameter reference. Important: all execution tools (lending.supply, lending.borrow, lending.withdraw, lending.repay, metamorpho.supply, metamorpho.withdraw, swap.quote) return unsigned calldata \u2014 you must pass this to the user's connected wallet for signing; Syenite never holds private keys or custody of funds.",
   "repository": {
     "url": "https://github.com/syenite-ai/syenite",
     "source": "github"
   },
-  "version": "0.6.0",
+  "version": "0.6.3",
   "remotes": [
     {
       "type": "streamable-http",
