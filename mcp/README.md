@@ -1,52 +1,38 @@
 # @syenite/mcp
 
+> **This package is deprecated and unmaintained.**
+>
+> The hosted endpoint at `syenite.ai/mcp` has been shut down. This package is no
+> longer published or supported. Source remains at
+> [github.com/syenite-ai/syenite](https://github.com/syenite-ai/syenite) under MIT.
+
 Composable DeFi intelligence for AI agents — swap routing, bridge execution, yield and lending with execution (supply, borrow, withdraw, repay), prediction markets, carry and strategy search, alerts with webhooks, wallet and gas tools, and a **trust layer** (`tx.verify`, `tx.simulate`, `tx.guard`, `tx.receipt`) for verification before and after signing — via the [Model Context Protocol](https://modelcontextprotocol.io).
 
-**One endpoint. 30+ chains. No API key required.**
+## Running It Yourself
 
-## Quick Start
-
-### Claude Desktop / Cursor (remote)
-
-```json
-{
-  "mcpServers": {
-    "syenite": {
-      "url": "https://syenite.ai/mcp"
-    }
-  }
-}
-```
-
-### npx (local stdio)
-
-```json
-{
-  "mcpServers": {
-    "syenite": {
-      "command": "npx",
-      "args": ["-y", "@syenite/mcp"]
-    }
-  }
-}
-```
-
-### cURL
+Stdio mode is self-contained — it queries Aave, Morpho, LI.FI, Polymarket, and
+Kalshi directly, with no dependency on syenite.ai. Build from source:
 
 ```bash
-curl -X POST https://syenite.ai/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "lending.rates.query",
-      "arguments": { "collateral": "wBTC" }
-    },
-    "id": 1
-  }'
+git clone https://github.com/syenite-ai/syenite.git
+cd syenite/mcp && npm install && npm run build
 ```
+
+```json
+{
+  "mcpServers": {
+    "syenite": {
+      "command": "node",
+      "args": ["/absolute/path/to/syenite/mcp/dist/stdio.js"]
+    }
+  }
+}
+```
+
+The last npm release was `0.5.0`; the repo is at `0.6.3`, so building from source is
+the only way to get the Kalshi and cross-exchange prediction tools. The four
+`alerts.*` tools require a Postgres instance (`DATABASE_URL`) and will fail without
+one. Upstream protocol APIs may have changed since this stopped being maintained.
 
 ## Tools
 

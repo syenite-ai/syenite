@@ -8,11 +8,5 @@
     "url": "https://github.com/syenite-ai/syenite",
     "source": "github"
   },
-  "version": "0.6.3",
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://syenite.ai/mcp"
-    }
-  ]
+  "version": "0.6.3"
 }

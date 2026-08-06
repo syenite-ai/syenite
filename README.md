@@ -1,8 +1,13 @@
 # Syenite — DeFi MCP Server for AI Agents
 
-The complete DeFi interface for AI agents via the Model Context Protocol (MCP). One endpoint covers lending rates across Aave, Morpho, Compound, and Spark; yield discovery; swap and bridge routing across 30+ chains; Polymarket prediction markets; position alerts; and a trust layer that verifies and simulates calldata before signing.
+> **Retired.** The hosted endpoint at `syenite.ai/mcp` has been shut down, and the
+> package is deprecated on npm. The source remains here, unmaintained, under MIT.
+>
+> Syenite ran from March to August 2026. It can still be run locally — see
+> [Running It Yourself](#running-it-yourself) — but nothing is hosted and no
+> support is offered.
 
-**Live at [syenite.ai](https://syenite.ai) · Docs at [syenite.ai/docs](https://syenite.ai/docs)**
+A DeFi interface for AI agents via the Model Context Protocol (MCP). One endpoint covered lending rates across Aave, Morpho, Compound, and Spark; yield discovery; swap and bridge routing across 30+ chains; Polymarket and Kalshi prediction markets; position alerts; and a trust layer that verified and simulated calldata before signing.
 
 ---
 
@@ -12,36 +17,36 @@ Syenite is an MCP server that gives AI agents composable access to DeFi. Agents 
 
 ---
 
-## Quick Start
+## Running It Yourself
 
-Add to your MCP client config (Claude Desktop, Cursor, or any MCP-compatible agent):
+The hosted endpoint is gone, but stdio mode is self-contained — it talks directly to
+Aave, Morpho, LI.FI, Polymarket, and Kalshi, with no dependency on syenite.ai. Build
+from source:
+
+```bash
+git clone https://github.com/syenite-ai/syenite.git
+cd syenite/mcp && npm install && npm run build
+```
+
+Then point an MCP client at it:
 
 ```json
 {
   "mcpServers": {
     "syenite": {
-      "url": "https://syenite.ai/mcp"
+      "command": "node",
+      "args": ["/absolute/path/to/syenite/mcp/dist/stdio.js"]
     }
   }
 }
 ```
 
-Or run locally via stdio:
+The last version published to npm was `0.5.0`; this repo is at `0.6.3`, so building
+from source is the only way to get the Kalshi and cross-exchange prediction tools.
 
-```json
-{
-  "mcpServers": {
-    "syenite": {
-      "command": "npx",
-      "args": ["-y", "@syenite/mcp"]
-    }
-  }
-}
-```
-
-No API key required. Rate limited to 30 requests/minute per IP.
-
-Call `syenite.help` on the live endpoint for the full tool catalogue.
+Two caveats: the four `alerts.*` tools need a Postgres instance (`DATABASE_URL`) and
+will fail without one, and some upstream APIs may have changed since this stopped
+being maintained. Call `syenite.help` for the tool catalogue.
 
 ---
 
@@ -166,7 +171,11 @@ All execution tools (`lending.supply`, `lending.borrow`, `lending.withdraw`, `le
 
 Syenite is designed for agent-native DeFi workflows. Every tool is an atomic primitive: agents compose them to achieve outcomes like "find the best lending rate for wBTC, supply collateral, and set a health factor alert."
 
-Syenite is a registered on-chain agent via [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) on Ethereum, Arbitrum, Base, and BNB Chain, and supports [x402](https://www.x402.org/) machine-to-machine payments.
+The server included scaffolding for [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004)
+on-chain agent registration (Ethereum, Arbitrum, Base, BNB Chain) via
+`src/scripts/register-agent.ts`, and served an
+`x402`-flagged `.well-known/agent-registration.json`. No agent IDs were ever
+configured in production, so the served registration list was always empty.
 
 The `server.json` manifest includes a `systemPrompt` field that MCP clients can inject to orient the agent on Syenite's capabilities automatically.
 
@@ -202,6 +211,12 @@ syenite/
 
 ## Status
 
-MCP server is live at [syenite.ai/mcp](https://syenite.ai/mcp). Swap/bridge across 30+ chains, multi-protocol lending rates and execution, yield discovery, Polymarket prediction markets, carry screening, position alerts, wallet/gas tools, and the tx trust layer are all in production.
+Retired as of August 2026. The hosted endpoint, the docs site, and the usage
+dashboard are all offline. `@syenite/mcp` is deprecated on npm and the MCP Registry
+listing has been removed.
 
-**npm:** [`@syenite/mcp`](https://www.npmjs.com/package/@syenite/mcp) · **Source:** [github.com/syenite-ai/syenite](https://github.com/syenite-ai/syenite) · **Docs:** [syenite.ai/docs](https://syenite.ai/docs)
+Final tally: 46 tools across 8 protocol families, ~20k lines of TypeScript, and
+574 logged calls over five months — most of them from an automated registry
+health-check rather than real users.
+
+**Source:** [github.com/syenite-ai/syenite](https://github.com/syenite-ai/syenite) · MIT
